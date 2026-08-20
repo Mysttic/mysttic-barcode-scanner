@@ -49,7 +49,7 @@ jobs:
           mkdir -p hardware/downloads/extracted
           curl -fsSL -o "hardware/downloads/$(basename "$CIRCUITPYTHON_URL")" "$CIRCUITPYTHON_URL"
           curl -fsSL -o /tmp/bundle.zip "$BUNDLE_URL"
-          unzip -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
+          unzip -o -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
 
       - name: Build konfiguratora
         working-directory: configurator
