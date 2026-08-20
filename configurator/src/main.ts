@@ -355,7 +355,17 @@ $("btn-bootloader").addEventListener("click", () => void bootloaderFlow());
 $("btn-update-bootloader").addEventListener("click", () => void bootloaderFlow());
 
 // Adres wydan - podmien po opublikowaniu repo na GitHubie.
-const RELEASES_URL = "https://github.com/TWOJ-LOGIN/barcode-reader/releases";
+const RELEASES_URL = "https://github.com/Mysttic/barcode-reader/releases";
 ($("fw-releases") as HTMLAnchorElement).href = RELEASES_URL;
+
+// ---------- zakladki ----------
+const TAB_IDS = ["sec-device", "sec-profiles", "sec-test", "sec-update", "sec-actions"];
+document.querySelectorAll<HTMLButtonElement>("#tabs .tab").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll("#tabs .tab").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    TAB_IDS.forEach((id) => ($(id).hidden = id !== btn.dataset.tab));
+  });
+});
 
 setConnected(false);

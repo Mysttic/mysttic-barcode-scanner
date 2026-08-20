@@ -5,7 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "config_store.h"
+#include "mini_regex.h"
 #include "parser_gs1.h"
+#include "profile_matcher.h"
 #include "scan_framer.h"
 
 static int tests = 0;
@@ -95,9 +98,174 @@ static int test_gs1(void) {
   return 0;
 }
 
+static int test_regex(void) {
+  mr_match_t m;
+  char g[64];
+  const char *prc = "PRC;JAN;KOWALSKI;12345;IT";
+
+  // detect + parse profilu pracownik-tab (4 grupy)
+  CHECK(mr_match("^PRC;", prc, &m) == 1);
+  CHECK(mr_match("^PRC;", "EMP;ANNA;NOWAK;1;HR", &m) == 0);
+  CHECK(mr_match("^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$", prc, &m) == 1);
+  CHECK(m.group_count == 4);
+  CHECK(mr_group(&m, 1, prc, g, sizeof(g)) == 0 && strcmp(g, "JAN") == 0);
+  CHECK(mr_group(&m, 2, prc, g, sizeof(g)) == 0 && strcmp(g, "KOWALSKI") == 0);
+  CHECK(mr_group(&m, 3, prc, g, sizeof(g)) == 0 && strcmp(g, "12345") == 0);
+  CHECK(mr_group(&m, 4, prc, g, sizeof(g)) == 0 && strcmp(g, "IT") == 0);
+  CHECK(mr_match("^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$", "PRC;JAN;KOWALSKI", &m) == 0);
+
+  // profil demo-prefiks-P: grupy przylegajace
+  CHECK(mr_match("^P[0-9]+$", "P0058746601261", &m) == 1);
+  CHECK(mr_match("^P[0-9]+$", "P00587X", &m) == 0);
+  CHECK(mr_match("^(P[0-9][0-9][0-9])([0-9]+)$", "P0058746601261", &m) == 1);
+  CHECK(m.group_count == 2);
+  CHECK(mr_group(&m, 1, "P0058746601261", g, sizeof(g)) == 0 && strcmp(g, "P005") == 0);
+  CHECK(mr_group(&m, 2, "P0058746601261", g, sizeof(g)) == 0 && strcmp(g, "8746601261") == 0);
+
+  // detect gs1: opcjonalna grupa (\]d2)? - w C-stringu backslash podwojony
+  CHECK(mr_match("^(\\]d2)?01[0-9]", "0105901234123457", &m) == 1);
+  CHECK(mr_match("^(\\]d2)?01[0-9]", "]d20105901234123457", &m) == 1);
+  CHECK(mr_group(&m, 1, "]d20105901234123457", g, sizeof(g)) == 0 && strcmp(g, "]d2") == 0);
+  CHECK(mr_match("^(\\]d2)?01[0-9]", "EMP;cos", &m) == 0);
+
+  // klasy, kropka, kwantyfikatory, negacje klas
+  CHECK(mr_match("^\\d\\d?-[a-z]+$", "12-abc", &m) == 1);
+  CHECK(mr_match("^\\d\\d?-[a-z]+$", "1-x", &m) == 1);
+  CHECK(mr_match("^\\d\\d?-[a-z]+$", "abc", &m) == 0);
+  CHECK(mr_match("^A.C$", "ABC", &m) == 1);
+  CHECK(mr_match("^A.C$", "AC", &m) == 0);
+  CHECK(mr_match("^[^;]*$", "bez srednika", &m) == 1);
+  CHECK(mr_match("^[^;]*$", "ze;srednikiem", &m) == 0);
+
+  // zachlannosc z backtrackingiem
+  CHECK(mr_match("^(.*)B$", "AAABBB", &m) == 1);
+  CHECK(mr_group(&m, 1, "AAABBB", g, sizeof(g)) == 0 && strcmp(g, "AAABB") == 0);
+
+  printf("mini_regex OK\n");
+  return 0;
+}
+
+static int test_config(void) {
+  static config_t cfg;
+  static char json[8192];
+
+  // realny default_config.json z wersji CircuitPython (to samo zrodlo prawdy)
+  FILE *f = fopen("../firmware-circuitpython/default_config.json", "rb");
+  if (!f) f = fopen("firmware-circuitpython/default_config.json", "rb");
+  CHECK(f != NULL);
+  size_t n = fread(json, 1, sizeof(json) - 1, f);
+  fclose(f);
+  json[n] = '\0';
+
+  const char *err = config_parse(json, n, &cfg);
+  if (err) printf("config_parse: %s\n", err);
+  CHECK(err == NULL);
+  CHECK(cfg.baudrate == 9600 && cfg.term_count == 2 && cfg.terminators[0] == 0x0D);
+  CHECK(cfg.frame_timeout_ms == 250 && cfg.duplicate_block_ms == 1500);
+  CHECK(cfg.key_delay_ms == 10 && cfg.action_delay_ms == 30);
+  CHECK(cfg.out_mode == OUT_PASSTHROUGH && strcmp(cfg.suffix_key, "ENTER") == 0);
+  CHECK(cfg.profile_count == 3);
+
+  const cfg_profile_t *gs1p = &cfg.profiles[0];
+  CHECK(strcmp(gs1p->name, "gs1-datamatrix") == 0 && gs1p->parse_type == PARSE_GS1 && !gs1p->enabled);
+  CHECK(gs1p->output_count == 8 && gs1p->output[0].type == ACT_FIELD &&
+        strcmp(gs1p->output[0].value, "gtin") == 0);
+
+  const cfg_profile_t *prac = &cfg.profiles[1];
+  CHECK(strcmp(prac->name, "pracownik-tab") == 0 && prac->parse_type == PARSE_REGEX_GROUPS);
+  CHECK(prac->field_count == 4 && prac->fields[0].group >= 1);
+  CHECK(strcmp(prac->detect_pattern, "^PRC;") == 0);
+
+  // przypadki bledne
+  const char *bad1 = "{\"version\": 2}";
+  CHECK(config_parse(bad1, strlen(bad1), &cfg) != NULL);
+  const char *bad2 = "{\"version\": 1, \"scanner\": {\"baudrate\": 1234}}";
+  CHECK(config_parse(bad2, strlen(bad2), &cfg) != NULL);
+  const char *bad3 =
+      "{\"version\": 1, \"profiles\": [{\"name\": \"x\", \"enabled\": true, \"detect\": {\"type\": "
+      "\"regex\", \"pattern\": \"^[0-9]{14}$\"}, \"parse\": {\"type\": \"gs1\"}, \"output\": "
+      "[{\"type\": \"key\", \"key\": \"ENTER\"}]}]}";
+  err = config_parse(bad3, strlen(bad3), &cfg);
+  CHECK(err != NULL && strstr(err, "{m,n}") != NULL);
+  const char *bad4 =
+      "{\"version\": 1, \"profiles\": [{\"name\": \"x\", \"detect\": {\"pattern\": \"^A\"}, "
+      "\"parse\": {\"type\": \"gs1\"}, \"output\": [{\"type\": \"key\", \"key\": \"SUPER\"}]}]}";
+  err = config_parse(bad4, strlen(bad4), &cfg);
+  CHECK(err != NULL && strstr(err, "nieznany klawisz") != NULL);
+
+  printf("config_parse OK\n");
+  return 0;
+}
+
+static config_t g_cfg;  // duza struktura - poza stosem
+
+static int test_matcher(void) {
+  static char json[8192];
+  FILE *f = fopen("../firmware-circuitpython/default_config.json", "rb");
+  if (!f) f = fopen("firmware-circuitpython/default_config.json", "rb");
+  CHECK(f != NULL);
+  size_t n = fread(json, 1, sizeof(json) - 1, f);
+  fclose(f);
+  json[n] = '\0';
+  CHECK(config_parse(json, n, &g_cfg) == NULL);
+  g_cfg.profiles[0].enabled = 1;  // gs1-datamatrix
+  g_cfg.profiles[1].enabled = 1;  // pracownik-tab
+
+  pm_actions_t acts;
+
+  // profil pracownik-tab: JAN TAB KOWALSKI TAB 12345 TAB IT ENTER
+  const uint8_t prc[] = "PRC;JAN;KOWALSKI;12345;IT";
+  CHECK(pm_build_actions(&g_cfg, prc, sizeof(prc) - 1, &acts) == PM_MATCHED);
+  CHECK(acts.count == 8);
+  CHECK(acts.items[0].type == ACT_TEXT && strcmp(acts.items[0].value, "JAN") == 0);
+  CHECK(acts.items[1].type == ACT_KEY && strcmp(acts.items[1].value, "TAB") == 0);
+  CHECK(strcmp(acts.items[6].value, "IT") == 0 && strcmp(acts.items[7].value, "ENTER") == 0);
+
+  // profil gs1: gtin TAB dataISO TAB partia TAB serial ENTER
+  const uint8_t gs1[] = "0105901234123457" "17270630" "10P77" "\x1d" "21S001";
+  CHECK(pm_build_actions(&g_cfg, gs1, sizeof(gs1) - 1, &acts) == PM_MATCHED);
+  CHECK(acts.count == 8);
+  CHECK(strcmp(acts.items[0].value, "05901234123457") == 0);
+  CHECK(strcmp(acts.items[2].value, "2027-06-30") == 0);
+  CHECK(strcmp(acts.items[4].value, "P77") == 0 && strcmp(acts.items[6].value, "S001") == 0);
+
+  // EAN bez profilu -> passthrough + ENTER
+  const uint8_t ean[] = "8592601121847";
+  CHECK(pm_build_actions(&g_cfg, ean, sizeof(ean) - 1, &acts) == PM_FALLBACK);
+  CHECK(acts.count == 2 && strcmp(acts.items[0].value, "8592601121847") == 0 &&
+        strcmp(acts.items[1].value, "ENTER") == 0);
+
+  // onError: detect gs1 pasuje, parse pada
+  const uint8_t bad[] = "0105901234123457" "99XX";
+  g_cfg.on_error = ONERR_RAW;
+  CHECK(pm_build_actions(&g_cfg, bad, sizeof(bad) - 1, &acts) == PM_FALLBACK);
+  CHECK(strcmp(acts.items[0].value, "010590123412345799XX") == 0);
+  g_cfg.on_error = ONERR_SKIP;
+  CHECK(pm_build_actions(&g_cfg, bad, sizeof(bad) - 1, &acts) == PM_SKIPPED);
+  g_cfg.on_error = ONERR_RAW;
+
+  // nie-ASCII odrzucone
+  const uint8_t junk[] = {0xFF, 0xFE};
+  CHECK(pm_build_actions(&g_cfg, junk, 2, &acts) == PM_EMPTY);
+
+  // split fallback
+  g_cfg.out_mode = OUT_SPLIT;
+  g_cfg.split_at = 4;
+  const uint8_t abc[] = "ABCD1234";
+  CHECK(pm_build_actions(&g_cfg, abc, sizeof(abc) - 1, &acts) == PM_FALLBACK);
+  CHECK(acts.count == 4 && strcmp(acts.items[0].value, "ABCD") == 0 &&
+        strcmp(acts.items[1].value, "TAB") == 0 && strcmp(acts.items[2].value, "1234") == 0);
+
+  printf("profile_matcher OK\n");
+  return 0;
+}
+
 int main(void) {
   if (test_framer()) return 1;
   if (test_gs1()) return 1;
+  if (test_regex()) return 1;
+  if (test_config()) return 1;
+  if (test_matcher()) return 1;
   printf("WSZYSTKIE TESTY C PRZESZLY (%d asercji)\n", tests);
   return 0;
 }
