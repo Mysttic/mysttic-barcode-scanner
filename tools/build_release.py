@@ -28,7 +28,6 @@ ADAFRUIT_HID = next((UF2_DIR / "extracted").glob("*/lib/adafruit_hid"), None)
 DEVICE_FILES = [
     "boot.py",
     "code.py",
-    "version.py",
     "keys.py",
     "scanner_uart.py",
     "parser.py",
@@ -42,10 +41,11 @@ DEVICE_FILES = [
 
 
 def firmware_version() -> str:
-    text = (FIRMWARE / "version.py").read_text(encoding="utf-8")
-    m = re.search(r'FIRMWARE_VERSION\s*=\s*"([^"]+)"', text)
+    """Wersja wydania z VERSION.md (pierwszy wzorzec X.Y.Z w pliku)."""
+    text = (ROOT / "VERSION.md").read_text(encoding="utf-8")
+    m = re.search(r"\b(\d+\.\d+\.\d+)\b", text)
     if not m:
-        sys.exit("BLAD: brak FIRMWARE_VERSION w version.py")
+        sys.exit("BLAD: brak wersji X.Y.Z w VERSION.md")
     return m.group(1)
 
 
@@ -87,6 +87,11 @@ def main() -> None:
     shutil.copy2(uf2, stage / "flash" / uf2.name)
     for name in DEVICE_FILES:
         shutil.copy2(FIRMWARE / name, device / name)
+    (device / "version.py").write_text(
+        "# Plik generowany przez tools/build_release.py z VERSION.md.\n"
+        f'FIRMWARE_VERSION = "{version}"\n',
+        encoding="utf-8",
+    )
     shutil.copytree(ADAFRUIT_HID, device / "lib" / "adafruit_hid")
     shutil.copy2(configurator, device / "konfigurator.html")
     shutil.copy2(ROOT / "tools" / "install.ps1", stage / "install.ps1")

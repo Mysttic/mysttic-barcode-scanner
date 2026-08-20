@@ -58,11 +58,11 @@ problemów): **[docs/INSTALL.md](docs/INSTALL.md)**.
 | `tools/` | budowanie paczki wydania (`build_release.py`) i instalator (`install.ps1`) |
 | `test-vectors/` | formularze demonstracyjne + kody QR do testów |
 | `hardware/` | schemat prototypu (Wokwi), przypięte pliki instalacyjne CircuitPython |
-| `docs/` | [INSTALL](docs/INSTALL.md) · [CHANGELOG](docs/CHANGELOG.md) · [decyzje projektowe](docs/decisions.md) · manual skanera |
+| `docs/` | [INSTALL](docs/INSTALL.md) · [decyzje projektowe](docs/decisions.md) · manual skanera |
 
 ## Rozwój i wydania
 
 Praca odbywa się na gałęzi `develop`. Wydanie = PR `develop` → `master`:
-w PR podbij `FIRMWARE_VERSION` w `firmware-circuitpython/version.py` i uzupełnij
-[CHANGELOG](docs/CHANGELOG.md) — po merge CI zbuduje paczkę i opublikuje ją
-w Releases automatycznie.
+w PR podbij wersję w [VERSION.md](VERSION.md) i uzupełnij [CHANGELOG.md](CHANGELOG.md) —
+po merge CI zbuduje paczkę i opublikuje ją w Releases automatycznie.
+Merge **bez podniesienia wersji** nie tworzy wydania (CI kończy się czystym pominięciem).
