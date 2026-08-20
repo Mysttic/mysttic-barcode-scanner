@@ -1,5 +1,11 @@
 # Decyzje projektowe
 
+## 2026-08-20 — test na obcej stronie; decyzja o wtyczce (Etap 12)
+
+- **Test na rzeczywistej stronie (httpbin.org/forms/post):** profil z sekwencją `{imie} " " {nazwisko} TAB {numer} TAB "email"` poprawnie wypełnił 3 pola formularza, na który nie mamy żadnego wpływu. Wniosek: **tryb sekwencji TAB działa na dowolnej stronie/aplikacji** — czytnik to klawiatura; warunkiem jest stabilna kolejność pól i kliknięcie w pole startowe.
+- **Wypełnianie „po nazwach pól" na obcych stronach** wymaga kodu po stronie przeglądarki (nasza forma B działała, bo miała wbudowany skrypt nasłuchujący). Bez wtyczki się tego nie zrobi.
+- **Decyzja: Etap 12 (wtyczka) ODROCZONY** — obecne potrzeby pokrywają: (a) sekwencje TAB na dowolnych stronach, (b) skrypt keyboard-wedge na stronach, które kontrolujemy. Wtyczka wróci na stół, jeśli pojawi się wymaganie: obce strony + niestabilna kolejność pól / wypełnianie po nazwach.
+
 ## 2026-08-20 — wersjonowanie przez VERSION.md
 
 - **`VERSION.md` (root) = jedyne źródło wersji** (parsowane jako pierwszy wzorzec X.Y.Z). `firmware-circuitpython/version.py` trzyma w repo `0.0.0-dev` — przy budowaniu paczki `build_release.py` generuje `device/version.py` z wersją z VERSION.md (deploy ręczny z repo odróżnisz od wydania po „-dev").
