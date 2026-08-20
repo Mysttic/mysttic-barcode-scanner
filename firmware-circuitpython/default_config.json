@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "device": {
+    "keyboardLayout": "US",
+    "keyDelayMs": 10
+  },
+  "scanner": {
+    "baudrate": 9600,
+    "terminators": ["0D", "0A"],
+    "frameTimeoutMs": 250
+  },
+  "output": {
+    "mode": "passthrough",
+    "suffixKey": "ENTER"
+  },
+  "profiles": [
+    {
+      "name": "pracownik-tab",
+      "enabled": false,
+      "detect": {
+        "type": "regex",
+        "pattern": "^PRC;"
+      },
+      "parse": {
+        "type": "regexGroups",
+        "pattern": "^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$",
+        "fields": {
+          "imie": 1,
+          "nazwisko": 2,
+          "numer": 3,
+          "dzial": 4
+        }
+      },
+      "output": [
+        {"type": "field", "name": "imie"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "nazwisko"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "numer"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "dzial"},
+        {"type": "key", "key": "ENTER"}
+      ]
+    },
+    {
+      "name": "demo-prefiks-P",
+      "enabled": false,
+      "detect": {
+        "type": "regex",
+        "pattern": "^P[0-9]+$"
+      },
+      "parse": {
+        "type": "regexGroups",
+        "pattern": "^(P[0-9][0-9][0-9])([0-9]+)$",
+        "fields": {
+          "naglowek": 1,
+          "numer": 2
+        }
+      },
+      "output": [
+        {"type": "field", "name": "naglowek"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "numer"},
+        {"type": "key", "key": "ENTER"}
+      ]
+    }
+  ]
+}

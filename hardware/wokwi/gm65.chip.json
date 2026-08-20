@@ -1,0 +1,5 @@
+{
+  "name": "GM65",
+  "author": "barcode-reader",
+  "pins": ["", "", "", "", "RX", "TX", "GND", "VCC"]
+}

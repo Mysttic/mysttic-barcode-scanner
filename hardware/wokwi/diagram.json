@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "author": "mystticdruid",
+  "editor": "wokwi",
+  "parts": [
+    { "id": "pico", "type": "wokwi-pi-pico", "top": 0, "left": 0, "attrs": { "env": "micropython-20260406-v1.28.0" } },
+    { "id": "gm65", "type": "chip-gm65", "top": 60, "left": -420, "attrs": {} },
+    { "id": "bb1", "type": "wokwi-breadboard-half", "top": 380, "left": -300, "attrs": {} },
+    { "id": "r1", "type": "wokwi-resistor", "top": 330, "left": -235, "attrs": { "value": "330" } },
+    { "id": "led1", "type": "wokwi-led", "top": 280, "left": -160, "attrs": { "color": "green" } },
+    { "id": "btn1", "type": "wokwi-pushbutton", "top": 290, "left": -70, "attrs": { "color": "blue" } },
+    { "id": "bz1", "type": "wokwi-buzzer", "top": 285, "left": 30, "attrs": { "volume": "0.1" } }
+  ],
+  "connections": [
+    [ "pico:VBUS", "bb1:tp.1", "red", [] ],
+    [ "pico:GND.1", "bb1:tn.1", "black", [] ],
+    [ "gm65:VCC", "bb1:tp.3", "red", [] ],
+    [ "gm65:GND", "bb1:tn.3", "black", [] ],
+    [ "gm65:TX", "pico:GP1", "gold", [] ],
+    [ "gm65:RX", "pico:GP0", "green", [] ],
+    [ "pico:GP6", "bb1:7t.a", "orange", [] ],
+    [ "r1:1", "bb1:7t.b", "orange", [] ],
+    [ "r1:2", "bb1:10t.b", "orange", [] ],
+    [ "led1:A", "bb1:10t.a", "orange", [] ],
+    [ "led1:C", "bb1:12t.a", "black", [] ],
+    [ "bb1:12t.b", "bb1:tn.9", "black", [] ],
+    [ "pico:GP2", "bb1:16t.a", "violet", [] ],
+    [ "btn1:1.l", "bb1:16t.b", "violet", [] ],
+    [ "btn1:2.l", "bb1:18t.b", "black", [] ],
+    [ "bb1:18t.a", "bb1:tn.13", "black", [] ],
+    [ "pico:GP7", "bb1:22t.a", "cyan", [] ],
+    [ "bz1:2", "bb1:22t.b", "cyan", [] ],
+    [ "bz1:1", "bb1:24t.b", "black", [] ],
+    [ "bb1:24t.a", "bb1:tn.17", "black", [] ]
+  ]
+}

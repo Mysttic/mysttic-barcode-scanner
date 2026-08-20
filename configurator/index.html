@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Czytnik kodów — konfigurator</title>
+  </head>
+  <body>
+    <header>
+      <h1>Czytnik kodów — konfigurator</h1>
+      <div id="conn-bar">
+        <button id="btn-connect">Połącz</button>
+        <button id="btn-disconnect" hidden>Rozłącz</button>
+        <span id="conn-status" class="badge off">rozłączony</span>
+        <span id="dev-info"></span>
+      </div>
+    </header>
+
+    <main id="app" hidden>
+      <section id="sec-device">
+        <h2>Urządzenie</h2>
+        <div class="grid">
+          <label>Opóźnienie klawiszy (ms)
+            <input type="number" id="dev-keydelay" min="0" max="500" />
+          </label>
+          <label>Klawisz kończący (bez profilu)
+            <select id="dev-suffix"></select>
+          </label>
+          <label>Tryb bez profilu
+            <select id="dev-outmode">
+              <option value="passthrough">przepisz 1:1</option>
+              <option value="split">podziel (splitAt)</option>
+            </select>
+          </label>
+          <label>Podział po znaku nr
+            <input type="number" id="dev-splitat" min="1" value="4" />
+          </label>
+        </div>
+      </section>
+
+      <section id="sec-profiles">
+        <h2>Profile</h2>
+        <p class="hint">
+          Sekwencja akcji: <code>{pole}</code> wpisuje sparsowane pole,
+          <code>"tekst"</code> wpisuje stały tekst, a słowa
+          <code>TAB ENTER ESC BACKSPACE UP DOWN LEFT RIGHT F1–F12</code> naciskają klawisz.
+          Przykład: <code>{imie} TAB TAB ENTER {nazwisko}</code>
+        </p>
+        <div id="profiles-list"></div>
+        <button id="btn-add-profile">+ Dodaj profil</button>
+      </section>
+
+      <section id="sec-test">
+        <h2>Test</h2>
+        <label class="switch">
+          <input type="checkbox" id="chk-testmode" />
+          Tryb testowy (skany lecą tutaj, nic nie wpisuje się do okien)
+        </label>
+        <div id="test-log" class="log"></div>
+      </section>
+
+      <section id="sec-actions">
+        <h2>Zapis</h2>
+        <div class="row">
+          <button id="btn-apply" class="primary">Zastosuj (RAM)</button>
+          <button id="btn-save" class="primary">Zapisz trwale (NVM)</button>
+          <button id="btn-reload">Odśwież z urządzenia</button>
+        </div>
+        <div class="row">
+          <button id="btn-export">Eksport JSON</button>
+          <button id="btn-import">Import JSON</button>
+          <input type="file" id="file-import" accept=".json" hidden />
+        </div>
+        <div class="row danger-zone">
+          <button id="btn-factory">Ustawienia fabryczne</button>
+          <button id="btn-reboot">Restart</button>
+          <button id="btn-bootloader">Restart do bootloadera (UF2)</button>
+        </div>
+        <pre id="validation" class="log" hidden></pre>
+      </section>
+    </main>
+
+    <footer>
+      <span id="fw-note">Otwórz w Chrome/Edge. Strona łączy się z czytnikiem przez WebSerial (USB).</span>
+    </footer>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
