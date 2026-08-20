@@ -1,6 +1,6 @@
 # Buduje i publikuje wydanie po zmergowaniu PR z develop do master.
-# Wersja wydania = FIRMWARE_VERSION z firmware-circuitpython/version.py
-# (CI sam tworzy tag v<wersja>; PR musi podbic wersje, inaczej build sie zatrzyma).
+# Wersja wydania = VERSION.md (jedyne zrodlo prawdy; CI tworzy tag v<wersja>).
+# Bez PODNIESIENIA wersji w VERSION.md release sie NIE wykonuje (czysty skip).
 name: release
 
 on:
@@ -22,29 +22,40 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: master
+          fetch-depth: 2
 
-      - name: Ustalenie wersji i kontrola duplikatu wydania
+      - name: Czy wersja w VERSION.md zostala podniesiona?
         id: ver
         run: |
-          VERSION=$(grep -oP 'FIRMWARE_VERSION\s*=\s*"\K[^"]+' firmware-circuitpython/version.py)
+          VERSION=$(grep -oP '\b\d+\.\d+\.\d+\b' VERSION.md | head -1)
+          test -n "$VERSION" || { echo "::error::Brak wersji X.Y.Z w VERSION.md"; exit 1; }
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Wersja: $VERSION"
-          if git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
-            echo "::error::Wydanie v$VERSION już istnieje — podbij FIRMWARE_VERSION w version.py w PR."
-            exit 1
+          PREV=$(git show 'HEAD^1:VERSION.md' 2>/dev/null | grep -oP '\b\d+\.\d+\.\d+\b' | head -1 || true)
+          echo "poprzednia=$PREV nowa=$VERSION"
+          if [ "$PREV" = "$VERSION" ]; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Wersja niezmieniona — pomijam wydanie."
+          elif git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Tag v$VERSION już istnieje — pomijam wydanie."
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/setup-node@v4
+        if: steps.ver.outputs.release == 'true'
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: configurator/package-lock.json
 
       - uses: actions/setup-python@v5
+        if: steps.ver.outputs.release == 'true'
         with:
           python-version: "3.12"
 
       - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
+        if: steps.ver.outputs.release == 'true'
         run: |
           mkdir -p hardware/downloads/extracted
           curl -fsSL -o "hardware/downloads/$(basename "$CIRCUITPYTHON_URL")" "$CIRCUITPYTHON_URL"
@@ -52,15 +63,18 @@ jobs:
           unzip -o -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
 
       - name: Build konfiguratora
+        if: steps.ver.outputs.release == 'true'
         working-directory: configurator
         run: |
           npm ci --no-fund --no-audit
           npm run build
 
       - name: Budowa paczki wydania
+        if: steps.ver.outputs.release == 'true'
         run: python tools/build_release.py --skip-npm
 
       - name: Publikacja wydania (tworzy tag automatycznie)
+        if: steps.ver.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
@@ -69,4 +83,4 @@ jobs:
           files: |
             release/barcode-reader-v*.zip
             release/barcode-reader-v*.zip.sha256
-          body_path: docs/CHANGELOG.md
+          body_path: CHANGELOG.md
