@@ -1,0 +1,7 @@
+# zależności i artefakty deweloperskie
+configurator/node_modules/
+__pycache__/
+*.pyc
+
+# duże pliki do ponownego pobrania (instalki firmware trzymamy świadomie)
+hardware/downloads/*.zip
