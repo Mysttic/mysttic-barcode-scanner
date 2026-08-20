@@ -77,6 +77,19 @@
         <div id="test-log" class="log"></div>
       </section>
 
+      <section id="sec-update">
+        <h2>Aktualizacja firmware</h2>
+        <p>Zainstalowana wersja: <b id="fw-version">?</b>
+          <a id="fw-releases" href="#" target="_blank" rel="noopener">sprawdź najnowsze wydanie i changelog</a></p>
+        <ol class="hint">
+          <li>Pobierz paczkę wydania i zweryfikuj sumę SHA-256 z pliku <code>SHA256SUMS.txt</code>.</li>
+          <li>Kliknij niżej <b>Restart do bootloadera</b> — czytnik pojawi się jako dysk <code>RPI-RP2</code>.</li>
+          <li>Jeśli wydanie zawiera nowy CircuitPython — przeciągnij plik <code>.uf2</code> na <code>RPI-RP2</code> i poczekaj na dysk <code>CIRCUITPY</code>.</li>
+          <li>Skopiuj zawartość katalogu <code>device/</code> z paczki na dysk <code>CIRCUITPY</code> (nadpisz pliki), po czym odłącz i podłącz USB.</li>
+        </ol>
+        <button id="btn-update-bootloader">Restart do bootloadera (RPI-RP2)</button>
+      </section>
+
       <section id="sec-actions">
         <h2>Zapis</h2>
         <div class="row">

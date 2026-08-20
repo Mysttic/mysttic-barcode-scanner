@@ -31,7 +31,9 @@ $("btn-connect").addEventListener("click", async () => {
   try {
     await link.connect();
     const pong = await link.command("ping");
-    elDevInfo.textContent = `firmware v${pong.version} | tryb: ${pong.mode}`;
+    const fw = String(pong.fw ?? "(starsze niż 0.9.0)");
+    elDevInfo.textContent = `firmware ${fw} | protokół v${pong.version} | tryb: ${pong.mode}`;
+    $("fw-version").textContent = fw;
     setConnected(true);
     await reloadFromDevice();
   } catch (e) {
@@ -344,10 +346,16 @@ $("btn-reboot").addEventListener("click", async () => {
   await link.disconnect();
 });
 
-$("btn-bootloader").addEventListener("click", async () => {
+const bootloaderFlow = async (): Promise<void> => {
   if (!confirm("Urządzenie zrestartuje się jako dysk RPI-RP2 (wgrywanie firmware). Kontynuować?")) return;
   await link.command("rebootBootloader").catch(() => undefined);
   await link.disconnect();
-});
+};
+$("btn-bootloader").addEventListener("click", () => void bootloaderFlow());
+$("btn-update-bootloader").addEventListener("click", () => void bootloaderFlow());
+
+// Adres wydan - podmien po opublikowaniu repo na GitHubie.
+const RELEASES_URL = "https://github.com/TWOJ-LOGIN/barcode-reader/releases";
+($("fw-releases") as HTMLAnchorElement).href = RELEASES_URL;
 
 setConnected(false);
