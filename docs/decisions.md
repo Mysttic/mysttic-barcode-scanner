@@ -1,5 +1,14 @@
 # Decyzje projektowe
 
+## 2026-08-20 — Etap 10 + paczka instalacyjna + CI
+
+- **Wersjonowanie:** `firmware-circuitpython/version.py` (semver, start 0.9.0); `ping` zwraca `fw`; konfigurator pokazuje wersję + sekcję „Aktualizacja firmware" (kroki UF2, przycisk restartu do bootloadera, link do Releases — stała `RELEASES_URL` w main.ts do podmiany po publikacji repo).
+- **Paczka wydania** (`tools/build_release.py`): `INSTALL.md` + `install.ps1` + `flash/*.uf2` + `device/` (firmware, lib/adafruit_hid, konfigurator.html) + `SHA256SUMS.txt`; zip + osobny .sha256. Lokalny build: 683 KB / 25 plików.
+- **Instalator Windows (`tools/install.ps1`):** wykrywa dyski po plikach-markerach (`INFO_UF2.TXT`, `boot_out.txt`) — NIE przez Get-Volume (bootloader RP2040 jest tam niewidoczny); świeża płytka = pełne prowizjonowanie, istniejąca = tylko podmiana plików (aktualizacja). **Przetestowany na żywo w obu… ścieżka aktualizacji potwierdzona na urządzeniu.**
+- **CI (`.github/workflows/release.yml`):** trigger tag `v*`; pilnuje zgodności tagu z FIRMWARE_VERSION; pobiera przypięte UF2+bundle, buduje konfigurator (npm ci), składa paczkę, publikuje w GitHub Releases z changelogiem (`docs/CHANGELOG.md`). Zadziała po wypchnięciu repo na GitHuba.
+- **Proces wydania (decyzja właściciela — bez ręcznych tagów):** praca na gałęzi `develop`; wydanie = **merge PR `develop` → `master`**. CI (trigger `pull_request closed` + warunek merged z develop) czyta wersję z `version.py`, sam tworzy tag `v<wersja>` i publikuje Release. Guard: jeśli wydanie o tej wersji istnieje, build się zatrzymuje z komunikatem „podbij FIRMWARE_VERSION". W PR wydaniowym: podbić `version.py` + uzupełnić `CHANGELOG.md`.
+- **Dokumentacja użytkownika:** `docs/INSTALL.md` — instalacja, okablowanie, jednorazowa konfiguracja modułu skanera (Series Output/Induction), konfigurator, aktualizacja, tabela najczęstszych problemów (wyciąg z doświadczeń tej budowy).
+
 ## 2026-08-20 — Etap 8 zaliczony + rdzeń Etapu 9
 
 - **Parser GS1 (`parser_gs1.py`):** AI 01 (GTIN, 14 cyfr), 17 (YYMMDD → pole pochodne `dataWaznosciISO`; **dzień 00 = ostatni dzień miesiąca**, z latami przestępnymi), 10 i 21 (zmienne ≤20, kończone GS 0x1D lub końcem kodu). AIM ID (`]d2` itp.) zdejmowany i dostępny jako pole `aim`. Praca na surowych bajtach; czytelne błędy (nieznany AI, urwane/niecyfrowe pole).
