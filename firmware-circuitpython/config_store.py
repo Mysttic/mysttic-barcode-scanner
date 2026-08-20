@@ -88,15 +88,27 @@ def clear_nvm(nvm=None):
 
 DEFAULTS = {
     "version": 1,
-    "device": {"keyboardLayout": "US", "keyDelayMs": 10},
-    "scanner": {"baudrate": 9600, "terminators": ["0D", "0A"], "frameTimeoutMs": 250},
-    "output": {"mode": "passthrough", "suffixKey": "ENTER"},
+    "device": {"keyboardLayout": "US", "keyDelayMs": 10, "actionDelayMs": 30},
+    "scanner": {
+        "baudrate": 9600,
+        "terminators": ["0D", "0A"],
+        "frameTimeoutMs": 250,
+        "duplicateBlockMs": 1500,
+    },
+    "output": {
+        "mode": "passthrough",
+        "suffixKey": "ENTER",
+        "prefixText": "",
+        "suffixText": "",
+        "onError": "raw",
+    },
     "profiles": [],
 }
 
 _ALLOWED_DETECT = ("regex",)
-_ALLOWED_PARSE = ("regexGroups",)
+_ALLOWED_PARSE = ("regexGroups", "gs1")
 _ALLOWED_OUTPUT = ("field", "key", "text")
+_GS1_FIELDS = ("gtin", "dataWaznosci", "dataWaznosciISO", "partia", "numerSeryjny", "aim")
 
 
 def _merge(base, override):
@@ -137,16 +149,25 @@ def validate(config):
     device = config.get("device", {})
     if not isinstance(device.get("keyDelayMs", 10), int) or not 0 <= device.get("keyDelayMs", 10) <= 500:
         errors.append("device.keyDelayMs: oczekiwane 0-500 ms")
+    if not isinstance(device.get("actionDelayMs", 30), int) or not 0 <= device.get("actionDelayMs", 30) <= 1000:
+        errors.append("device.actionDelayMs: oczekiwane 0-1000 ms")
 
     scanner = config.get("scanner", {})
     if scanner.get("baudrate", 9600) not in (1200, 4800, 9600, 14400, 19200, 38400, 57600, 115200):
         errors.append("scanner.baudrate: niedozwolona wartosc")
+    if not isinstance(scanner.get("duplicateBlockMs", 0), int) or not 0 <= scanner.get("duplicateBlockMs", 0) <= 10000:
+        errors.append("scanner.duplicateBlockMs: oczekiwane 0-10000 ms (0 = wylaczone)")
 
     out = config.get("output", {})
     if out.get("mode", "passthrough") not in ("passthrough", "split"):
         errors.append("output.mode: dozwolone passthrough/split")
     if out.get("suffixKey") and out.get("suffixKey") not in KEY_NAMES:
         errors.append("output.suffixKey: nieznany klawisz " + str(out.get("suffixKey")))
+    if out.get("onError", "raw") not in ("raw", "skip"):
+        errors.append("output.onError: dozwolone raw/skip")
+    for tkey in ("prefixText", "suffixText"):
+        if not isinstance(out.get(tkey, ""), str):
+            errors.append("output." + tkey + ": oczekiwany tekst")
 
     names = []
     profiles = config.get("profiles", [])
@@ -174,8 +195,11 @@ def validate(config):
 
         parse = profile.get("parse", {})
         field_names = []
-        if parse.get("type") not in _ALLOWED_PARSE:
+        ptype = parse.get("type")
+        if ptype not in _ALLOWED_PARSE:
             errors.append(where + ".parse.type: dozwolone " + str(_ALLOWED_PARSE))
+        elif ptype == "gs1":
+            field_names = list(_GS1_FIELDS)
         else:
             if parse.get("pattern"):
                 _check_pattern(parse.get("pattern"), where + ".parse", errors)

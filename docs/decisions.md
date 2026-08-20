@@ -1,5 +1,22 @@
 # Decyzje projektowe
 
+## 2026-08-20 — Etap 10 + paczka instalacyjna + CI
+
+- **Wersjonowanie:** `firmware-circuitpython/version.py` (semver, start 0.9.0); `ping` zwraca `fw`; konfigurator pokazuje wersję + sekcję „Aktualizacja firmware" (kroki UF2, przycisk restartu do bootloadera, link do Releases — stała `RELEASES_URL` w main.ts do podmiany po publikacji repo).
+- **Paczka wydania** (`tools/build_release.py`): `INSTALL.md` + `install.ps1` + `flash/*.uf2` + `device/` (firmware, lib/adafruit_hid, konfigurator.html) + `SHA256SUMS.txt`; zip + osobny .sha256. Lokalny build: 683 KB / 25 plików.
+- **Instalator Windows (`tools/install.ps1`):** wykrywa dyski po plikach-markerach (`INFO_UF2.TXT`, `boot_out.txt`) — NIE przez Get-Volume (bootloader RP2040 jest tam niewidoczny); świeża płytka = pełne prowizjonowanie, istniejąca = tylko podmiana plików (aktualizacja). **Przetestowany na żywo w obu… ścieżka aktualizacji potwierdzona na urządzeniu.**
+- **CI (`.github/workflows/release.yml`):** trigger tag `v*`; pilnuje zgodności tagu z FIRMWARE_VERSION; pobiera przypięte UF2+bundle, buduje konfigurator (npm ci), składa paczkę, publikuje w GitHub Releases z changelogiem (`docs/CHANGELOG.md`). Zadziała po wypchnięciu repo na GitHuba.
+- **Proces wydania (decyzja właściciela — bez ręcznych tagów):** praca na gałęzi `develop`; wydanie = **merge PR `develop` → `master`**. CI (trigger `pull_request closed` + warunek merged z develop) czyta wersję z `version.py`, sam tworzy tag `v<wersja>` i publikuje Release. Guard: jeśli wydanie o tej wersji istnieje, build się zatrzymuje z komunikatem „podbij FIRMWARE_VERSION". W PR wydaniowym: podbić `version.py` + uzupełnić `CHANGELOG.md`.
+- **Dokumentacja użytkownika:** `docs/INSTALL.md` — instalacja, okablowanie, jednorazowa konfiguracja modułu skanera (Series Output/Induction), konfigurator, aktualizacja, tabela najczęstszych problemów (wyciąg z doświadczeń tej budowy).
+
+## 2026-08-20 — Etap 8 zaliczony + rdzeń Etapu 9
+
+- **Parser GS1 (`parser_gs1.py`):** AI 01 (GTIN, 14 cyfr), 17 (YYMMDD → pole pochodne `dataWaznosciISO`; **dzień 00 = ostatni dzień miesiąca**, z latami przestępnymi), 10 i 21 (zmienne ≤20, kończone GS 0x1D lub końcem kodu). AIM ID (`]d2` itp.) zdejmowany i dostępny jako pole `aim`. Praca na surowych bajtach; czytelne błędy (nieznany AI, urwane/niecyfrowe pole).
+- **Profil typu `parse.type="gs1"`:** pola stałe (gtin/dataWaznosci/dataWaznosciISO/partia/numerSeryjny/aim) w sekwencjach akcji. Przykładowy profil `gs1-datamatrix` w default_config.json; na urządzeniu włączony przez CDC. **Test end-to-end przeszedł:** QR z separatorem GS (skan z ekranu) → formularz „Przyjęcie towaru" wypełniony, data przeliczona na ISO. GM65 przepuszcza GS 0x1D bez dodatkowej konfiguracji.
+- **Etap 9 (rdzeń):** blokada duplikatów `scanner.duplicateBlockMs` (domyślnie 1500; trzymanie kodu przed okiem odświeża okno blokady — wpis leci raz), pauza po klawiszach akcji `device.actionDelayMs` (domyślnie 30), `output.prefixText`/`suffixText`, `output.onError` raw/skip przy niesparsowanym profilu. Wszystko w walidatorze, konfiguratorze (nowe pola + wybór typu parsowania z podpowiedzią pól GS1) i testach hostowych.
+- **Pozostałość E9 (świadomie odłożona):** układy klawiatury PL/DE — kody kreskowe są ASCII, a US-layout pokrywa ASCII 1:1; polskie znaki diakrytyczne wymagałyby biblioteki layoutów (adafruit_circuitpython_keyboard_layouts, `keyboard_layout_win_pl`) — do dodania, gdy pojawi się realna potrzeba.
+- **Pułapka procesu buildu:** `npm run build | tail && cp` — pipe maskuje exit code tsc; deploy tylko po czystym `npm run build` bez pipe.
+
 ## 2026-08-20 — Etapy 6 i 7 zaliczone (NVM + konfigurator webowy)
 
 - **E6 — zapis trwały:** `microcontroller.nvm` (4 KB na tej płytce), format: magic `BC` + wersja + długość + CRC16-XModem + JSON; po zapisie readback i weryfikacja. Priorytet źródeł: **NVM → default_config.json → DEFAULTS**; uszkodzone NVM (zły CRC) → cichy fallback do pliku. `factoryReset` czyści NVM. Nowa komenda `reboot` (soft reset). Test end-to-end: setConfig→save→reboot→config z NVM przetrwał; factoryReset→reboot→wrócił plik. Realny config: ~600 B (dużo zapasu).
