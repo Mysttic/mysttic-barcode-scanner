@@ -23,14 +23,14 @@ Ten pendrive to pamięć czytnika kodów. Krótka ściąga dla osoby konfiguruj�
 
 ## Szybkie procedury
 
-- **Test bez wpisywania do okien:** konfigurator → sekcja *Test* → zaznacz tryb
+- **Test bez wpisywania do okien:** konfigurator → zakładka *Test* → zaznacz tryb
   testowy → skanuj (wyniki na stronie). Po zakończeniu ODZNACZ.
 - **Ustawienia fabryczne:** przycisk w konfiguratorze, albo przytrzymaj przycisk
   podłączony do GP2 ~1 s podczas wpinania USB.
 - **Czytnik pika, nic nie wpisuje:** patrz `docs/INSTALL.md` w repozytorium
   projektu (sekcja „Najczęstsze problemy") — najpewniej moduł skanera ma
   przestawione wyjście albo zamienione przewody TXD/RXD.
-- **Aktualizacja:** konfigurator → *Aktualizacja firmware* → postępuj wg kroków.
+- **Aktualizacja:** konfigurator → zakładka *Aktualizacja* → postępuj wg kroków.
 
 ## Czego nie robić
 

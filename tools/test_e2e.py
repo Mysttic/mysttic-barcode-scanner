@@ -28,12 +28,19 @@ def record(name, ok, info=""):
 
 class Link:
     def __init__(self, port):
-        self.s = serial.Serial(port, 115200, timeout=0.4)
+        self.s = serial.Serial(port, 115200, timeout=0.4, write_timeout=2)
         self.s.dtr = True
         self.s.rts = True
         self.buf = b""
         self.port = port
         self.rid = 100
+        # wyczysc pozostalosci po poprzednim kliencie (niedokonczona linia
+        # w buforze urzadzenia + zalegle dane wejsciowe po naszej stronie)
+        try:
+            self.s.write(b"\n")
+            self.s.reset_input_buffer()
+        except serial.SerialException:
+            pass
 
     def close(self):
         try:
@@ -46,7 +53,10 @@ class Link:
         req = {"cmd": cmd, "requestId": self.rid}
         if extra:
             req.update(extra)
-        self.s.write((json.dumps(req) + "\n").encode())
+        try:
+            self.s.write((json.dumps(req) + "\n").encode())
+        except serial.SerialException:  # w tym SerialTimeoutException (write_timeout)
+            return None
         t0 = time.time()
         while time.time() - t0 < timeout:
             try:

@@ -70,16 +70,18 @@ konfiguracji), `config/config.json` (konfiguracja startowa — można edytować)
 2. Kliknij **Połącz** i wybierz **drugi** port „Urządzenie szeregowe USB"
    (pierwszy to konsola diagnostyczna — jeśli trafisz źle, dostaniesz timeout;
    rozłącz i wybierz drugi).
-3. Ustawienia urządzenia: opóźnienia klawiszy, pauza po TAB/ENTER (dla wolnych
+3. Zakładka **Urządzenie**: opóźnienia klawiszy, pauza po TAB/ENTER (dla wolnych
    aplikacji), blokada duplikatów, prefiks/sufiks.
-4. **Profile** — serce urządzenia. Profil = wykrywanie (regex) + parsowanie
-   (regex z grupami albo **GS1**) + sekwencja akcji, np.:
+4. Zakładka **Profile** — serce urządzenia. Profil = wykrywanie (regex) +
+   parsowanie (regex z grupami albo **GS1**) + sekwencja akcji, np.:
    `{imie} TAB TAB ENTER {nazwisko}` albo `{gtin} TAB {dataWaznosciISO} ENTER`.
    Kody niepasujące do żadnego profilu przepisują się 1:1.
-5. **Tryb testowy**: skany pokazują się na stronie (surowo + rozbite na pola),
-   nic nie wpisuje się do okien — idealne do strojenia profili.
+5. Zakładka **Test** (tryb testowy): skany pokazują się na stronie (surowo +
+   rozbite na pola), nic nie wpisuje się do okien — idealne do strojenia profili.
 6. **Zastosuj (RAM)** = do pierwszego odłączenia; **Zapisz trwale (NVM)** =
-   na stałe w pamięci płytki.
+   na stałe w pamięci płytki. Oba przyciski są przy pasku zakładek.
+
+Zrzuty ekranu wszystkich zakładek z opisami: [KONFIGURACJA.md](KONFIGURACJA.md).
 
 Uwaga: wzorce regex działają na urządzeniu w okrojonym silniku — kwantyfikatory
 `{m,n}` są niedozwolone (konfigurator to wychwyci); rozpisuj jawnie, np. `[0-9][0-9]`.
@@ -87,7 +89,7 @@ Uwaga: wzorce regex działają na urządzeniu w okrojonym silniku — kwantyfika
 ## 6. Aktualizacja firmware
 
 1. Pobierz nową paczkę wydania i sprawdź sumę SHA-256 (`SHA256SUMS.txt`).
-2. W konfiguratorze: sekcja **Aktualizacja firmware** → **Restart do bootloadera**
+2. W konfiguratorze: zakładka **Aktualizacja** → **Restart do bootloadera**
    (albo ręcznie BOOT+RST).
 3. Postępuj jak przy instalacji (instalator wykryje istniejący `CIRCUITPY`
    i podmieni tylko pliki; UF2 wgrywaj tylko, gdy wydanie tego wymaga).
