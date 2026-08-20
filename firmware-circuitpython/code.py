@@ -42,12 +42,17 @@ scanner = ScannerUart(
     terminators=config_store.terminators_as_bytes(config),
     frame_timeout=config["scanner"]["frameTimeoutMs"] / 1000.0,
 )
-hid = output_hid.HidOutput(key_delay_ms=config["device"]["keyDelayMs"])
+hid = output_hid.HidOutput(
+    key_delay_ms=config["device"]["keyDelayMs"],
+    action_delay_ms=config["device"].get("actionDelayMs", 30),
+)
 
 led = digitalio.DigitalInOut(board.GP6)
 led.direction = digitalio.Direction.OUTPUT
 
 mode = "hid"  # "hid" | "test"
+_last_frame = None
+_last_frame_t = 0.0
 
 
 def _apply_config(new_config):
@@ -58,7 +63,10 @@ def _apply_config(new_config):
         terminators=config_store.terminators_as_bytes(config),
         frame_timeout=config["scanner"]["frameTimeoutMs"] / 1000.0,
     )
-    hid.set_key_delay(config["device"]["keyDelayMs"])
+    hid.set_delays(
+        key_delay_ms=config["device"]["keyDelayMs"],
+        action_delay_ms=config["device"].get("actionDelayMs", 30),
+    )
 
 
 def cmd_get_config(request):
@@ -142,12 +150,22 @@ while True:
 
     frame = scanner.poll()
     if frame:
+        # Blokada duplikatow (Etap 9): w trybie induction skaner ponawia
+        # odczyt tego samego kodu trzymanego przed okiem.
+        now = time.monotonic()
+        block_ms = config["scanner"].get("duplicateBlockMs", 0)
+        if block_ms and frame == _last_frame and (now - _last_frame_t) * 1000 < block_ms:
+            _last_frame_t = now  # kod wciaz przed okiem - odswiez okno blokady
+            frame = None
+    if frame:
+        _last_frame = frame
+        _last_frame_t = time.monotonic()
         print("SKAN HEX:", frame.hex())
         if mode == "test":
             text = parser._decode_ascii(frame)
             profile, fields = (None, None)
             if text:
-                profile, fields = profiles_mod.match_profile(text, config)
+                profile, fields, _ = profiles_mod.match_profile(text, config, raw=frame)
             protocol.send(
                 {
                     "event": "scan",

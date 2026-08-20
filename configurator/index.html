@@ -35,6 +35,24 @@
           <label>Podział po znaku nr
             <input type="number" id="dev-splitat" min="1" value="4" />
           </label>
+          <label>Pauza po TAB/ENTER (ms)
+            <input type="number" id="dev-actiondelay" min="0" max="1000" />
+          </label>
+          <label>Blokada duplikatów (ms, 0 = wył.)
+            <input type="number" id="dev-dupblock" min="0" max="10000" />
+          </label>
+          <label>Prefiks tekstowy
+            <input type="text" id="dev-prefixtext" placeholder="(brak)" />
+          </label>
+          <label>Sufiks tekstowy
+            <input type="text" id="dev-suffixtext" placeholder="(brak)" />
+          </label>
+          <label>Gdy profil nie sparsuje kodu
+            <select id="dev-onerror">
+              <option value="raw">wyślij surowy 1:1</option>
+              <option value="skip">pomiń skan</option>
+            </select>
+          </label>
         </div>
       </section>
 

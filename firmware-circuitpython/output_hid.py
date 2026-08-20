@@ -13,13 +13,20 @@ KEYMAP = {name: getattr(Keycode, attr) for name, attr in KEY_TO_KEYCODE_ATTR.ite
 
 
 class HidOutput:
-    def __init__(self, key_delay_ms=10):
+    def __init__(self, key_delay_ms=10, action_delay_ms=30):
         self._keyboard = Keyboard(usb_hid.devices)
         self._layout = KeyboardLayoutUS(self._keyboard)
         self._delay = max(0, key_delay_ms) / 1000.0
+        self._action_delay = max(0, action_delay_ms) / 1000.0
+
+    def set_delays(self, key_delay_ms=None, action_delay_ms=None):
+        if key_delay_ms is not None:
+            self._delay = max(0, key_delay_ms) / 1000.0
+        if action_delay_ms is not None:
+            self._action_delay = max(0, action_delay_ms) / 1000.0
 
     def set_key_delay(self, key_delay_ms):
-        self._delay = max(0, key_delay_ms) / 1000.0
+        self.set_delays(key_delay_ms=key_delay_ms)
 
     def type_text(self, text):
         for ch in text:
@@ -37,7 +44,11 @@ class HidOutput:
             print("HID: nieznany klawisz", name)
             return
         self._keyboard.send(code)
-        if self._delay:
+        # dodatkowa pauza po klawiszu akcji (TAB/ENTER/...) - starsze
+        # aplikacje potrzebuja czasu na zmiane fokusu / obsluge zdarzenia
+        if self._action_delay:
+            time.sleep(self._action_delay)
+        elif self._delay:
             time.sleep(self._delay)
 
     def run_actions(self, actions):

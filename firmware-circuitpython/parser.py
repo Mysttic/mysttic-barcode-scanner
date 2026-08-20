@@ -2,8 +2,11 @@
 # Format akcji (wspolny dla calego projektu):
 #   {"type": "text", "value": "..."}   - wpisz tekst
 #   {"type": "key", "key": "TAB"}      - nacisnij klawisz specjalny
-# Etap 3: tryby "passthrough" (1:1) i "split" (pole1, TAB, pole2, ENTER).
-# Profile z detekcja/regexem dochodza w Etapie 4.
+# Kolejnosc: profile (detekcja -> pola -> akcje), potem fallback
+# passthrough/split. Przy bledzie parsowania profilu decyduje output.onError:
+#   "raw"  - wyslij kod 1:1 (domyslnie)
+#   "skip" - pomin skan
+import profiles as profiles_mod
 
 
 def _decode_ascii(raw):
@@ -20,20 +23,24 @@ def build_actions(raw, config):
     if not text:
         return []
 
-    # Etap 4: najpierw profile (detekcja -> pola -> akcje), fallback nizej.
-    import profiles as profiles_mod
+    out = config.get("output", {})
 
-    profile, fields = profiles_mod.match_profile(text, config)
+    profile, fields, parse_error = profiles_mod.match_profile(text, config, raw=raw)
     if profile:
         actions = profiles_mod.build_output_actions(profile, fields)
         if actions:
             print("profil:", profile.get("name"), "| pola:", fields)
             return actions
+    if parse_error and out.get("onError", "raw") == "skip":
+        print("blad parsowania profilu - skan pominiety (onError=skip)")
+        return []
 
-    out = config.get("output", {})
-    mode = out.get("mode", "passthrough")
     actions = []
+    prefix = out.get("prefixText", "")
+    if prefix:
+        actions.append({"type": "text", "value": prefix})
 
+    mode = out.get("mode", "passthrough")
     if mode == "split":
         pos = int(out.get("splitAt", 0))
         if 0 < pos < len(text):
@@ -44,6 +51,10 @@ def build_actions(raw, config):
             actions.append({"type": "text", "value": text})
     else:
         actions.append({"type": "text", "value": text})
+
+    suffix_text = out.get("suffixText", "")
+    if suffix_text:
+        actions.append({"type": "text", "value": suffix_text})
 
     suffix = out.get("suffixKey", "ENTER")
     if suffix:
