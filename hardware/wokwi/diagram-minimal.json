@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "author": "barcode-reader",
+  "editor": "wokwi",
+  "parts": [
+    { "id": "pico", "type": "wokwi-pi-pico", "top": 0, "left": 0, "attrs": { "env": "micropython-20260406-v1.28.0" } },
+    { "id": "gm65", "type": "chip-gm65", "top": -45, "left": -205, "attrs": {} }
+  ],
+  "connections": [
+    [ "gm65:VCC", "pico:VBUS", "green", [] ],
+    [ "gm65:GND", "pico:GND.1", "red", [] ],
+    [ "gm65:TX", "pico:GP1", "gold", [] ],
+    [ "gm65:RX", "pico:GP0", "black", [] ]
+  ]
+}
