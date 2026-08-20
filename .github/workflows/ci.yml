@@ -1,0 +1,120 @@
+# CI: testy jednostkowe + budowa artefaktow + PACZKA TESTOWA.
+# - PR do master: testy Python, testy C, build konfiguratora, kompilacja UF2.
+# - reczne odpalenie (workflow_dispatch, np. na develop przed zrobieniem PR):
+#   to samo + pelna paczka wydania jako ARTIFACT (bez publikacji release).
+name: ci
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  CIRCUITPYTHON_URL: https://downloads.circuitpython.org/bin/raspberry_pi_pico/en_US/adafruit-circuitpython-raspberry_pi_pico-en_US-10.2.1.uf2
+  BUNDLE_URL: https://github.com/adafruit/Adafruit_CircuitPython_Bundle/releases/download/20260818/adafruit-circuitpython-bundle-10.x-mpy-20260818.zip
+
+jobs:
+  testy-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Testy hostowe firmware CircuitPython
+        working-directory: firmware-circuitpython
+        run: python tests/test_firmware.py
+
+  testy-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testy hostowe modulow C
+        working-directory: firmware-pico-sdk
+        run: |
+          gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c -o test_host
+          ./test_host
+
+  konfigurator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: configurator/package-lock.json
+      - name: Build (tsc = kontrola typow + vite single-file)
+        working-directory: configurator
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: konfigurator
+          path: configurator/dist/index.html
+
+  firmware-c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Narzedzia ARM
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+      - name: Cache Pico SDK
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/pico-sdk
+          key: pico-sdk-2-tinyusb
+      - name: Pobranie Pico SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
+          cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
+      - name: Kompilacja UF2
+        working-directory: firmware-pico-sdk
+        env:
+          PICO_SDK_PATH: ~/pico-sdk
+        run: |
+          cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
+          ninja -C build
+          ls -la build/barcode_reader.uf2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firmware-c-uf2
+          path: firmware-pico-sdk/build/barcode_reader.uf2
+
+  paczka-testowa:
+    needs: [testy-python, testy-c, konfigurator]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: configurator/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
+        run: |
+          mkdir -p hardware/downloads/extracted
+          curl -fsSL -o "hardware/downloads/$(basename "$CIRCUITPYTHON_URL")" "$CIRCUITPYTHON_URL"
+          curl -fsSL -o /tmp/bundle.zip "$BUNDLE_URL"
+          unzip -o -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
+      - name: Build konfiguratora
+        working-directory: configurator
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+      - name: Budowa paczki testowej (bez publikacji)
+        run: python tools/build_release.py --skip-npm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paczka-testowa
+          path: |
+            release/barcode-reader-v*.zip
+            release/barcode-reader-v*.zip.sha256
+          retention-days: 14

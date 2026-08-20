@@ -66,3 +66,10 @@ Praca odbywa się na gałęzi `develop`. Wydanie = PR `develop` → `master`:
 w PR podbij wersję w [VERSION.md](VERSION.md) i uzupełnij [CHANGELOG.md](CHANGELOG.md) —
 po merge CI zbuduje paczkę i opublikuje ją w Releases automatycznie.
 Merge **bez podniesienia wersji** nie tworzy wydania (CI kończy się czystym pominięciem).
+
+CI uruchamia się przy **utworzeniu PR do `master`**: testy hostowe firmware
+(Python, 52 asercje), testy modułów C (23 asercje), build konfiguratora (kontrola
+typów) i kompilacja firmware C do UF2. **Przed** zrobieniem PR-a wydaniowego
+możesz ręcznie odpalić ten sam workflow przyciskiem *Run workflow* (zakładka
+*Actions*, gałąź `develop`) — zbuduje dodatkowo **paczkę testową**: kompletny
+zip wydania jako artifact, bez publikowania czegokolwiek.
