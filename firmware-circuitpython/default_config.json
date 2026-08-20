@@ -11,9 +11,33 @@
   },
   "output": {
     "mode": "passthrough",
-    "suffixKey": "ENTER"
+    "suffixKey": "ENTER",
+    "prefixText": "",
+    "suffixText": "",
+    "onError": "raw"
   },
   "profiles": [
+    {
+      "name": "gs1-datamatrix",
+      "enabled": false,
+      "detect": {
+        "type": "regex",
+        "pattern": "^(\\]d2)?01[0-9]"
+      },
+      "parse": {
+        "type": "gs1"
+      },
+      "output": [
+        {"type": "field", "name": "gtin"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "dataWaznosciISO"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "partia"},
+        {"type": "key", "key": "TAB"},
+        {"type": "field", "name": "numerSeryjny"},
+        {"type": "key", "key": "ENTER"}
+      ]
+    },
     {
       "name": "pracownik-tab",
       "enabled": false,

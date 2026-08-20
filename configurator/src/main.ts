@@ -102,19 +102,35 @@ function addProfileRow(p: Profile): void {
       <button class="p-del">Usuń</button>
     </div>
     <div class="grid">
+      <label>Typ parsowania
+        <select class="p-ptype">
+          <option value="regexGroups">regex z grupami</option>
+          <option value="gs1">GS1 (AI 01/17/10/21)</option>
+        </select>
+      </label>
       <label>Wykrywanie (regex) <input type="text" class="p-detect" /></label>
       <label>Parsowanie (regex z grupami) <input type="text" class="p-parse" /></label>
       <label>Pola (nazwa=grupa, po przecinku) <input type="text" class="p-fields" /></label>
       <label>Sekwencja akcji <input type="text" class="p-seq" /></label>
     </div>
+    <div class="hint p-gs1hint" hidden>Pola GS1: {gtin} {dataWaznosci} {dataWaznosciISO} {partia} {numerSeryjny}</div>
     <div class="field-error p-err"></div>`;
   const q = <T extends HTMLElement>(cls: string): T => root.querySelector("." + cls) as T;
   (q<HTMLInputElement>("p-enabled")).checked = p.enabled;
   (q<HTMLInputElement>("p-name")).value = p.name;
   (q<HTMLInputElement>("p-detect")).value = p.detect.pattern;
-  (q<HTMLInputElement>("p-parse")).value = p.parse.pattern ?? "";
-  (q<HTMLInputElement>("p-fields")).value = formatFields(p.parse.fields);
+  (q<HTMLSelectElement>("p-ptype")).value = p.parse.type;
+  (q<HTMLInputElement>("p-parse")).value = p.parse.type === "regexGroups" ? (p.parse.pattern ?? "") : "";
+  (q<HTMLInputElement>("p-fields")).value = p.parse.type === "regexGroups" ? formatFields(p.parse.fields) : "";
   (q<HTMLInputElement>("p-seq")).value = formatSequence(p.output);
+  const syncPtype = (): void => {
+    const gs1 = (q<HTMLSelectElement>("p-ptype")).value === "gs1";
+    (q<HTMLInputElement>("p-parse")).disabled = gs1;
+    (q<HTMLInputElement>("p-fields")).disabled = gs1;
+    (q<HTMLElement>("p-gs1hint")).hidden = !gs1;
+  };
+  syncPtype();
+  q<HTMLSelectElement>("p-ptype").addEventListener("change", syncPtype);
   q<HTMLInputElement>("p-enabled").addEventListener("change", (ev) => {
     root.classList.toggle("disabled", !(ev.target as HTMLInputElement).checked);
   });
@@ -128,19 +144,27 @@ function addProfileRow(p: Profile): void {
     get() {
       const errors: string[] = [];
       const name = q<HTMLInputElement>("p-name").value.trim();
-      const fieldsRes = parseFields(q<HTMLInputElement>("p-fields").value);
+      const gs1 = (q<HTMLSelectElement>("p-ptype")).value === "gs1";
       const seqRes = parseSequence(q<HTMLInputElement>("p-seq").value);
-      errors.push(...fieldsRes.errors, ...seqRes.errors);
-      const parsePattern = q<HTMLInputElement>("p-parse").value.trim();
+      errors.push(...seqRes.errors);
+      let parse: Profile["parse"];
+      if (gs1) {
+        parse = { type: "gs1" };
+      } else {
+        const fieldsRes = parseFields(q<HTMLInputElement>("p-fields").value);
+        errors.push(...fieldsRes.errors);
+        const parsePattern = q<HTMLInputElement>("p-parse").value.trim();
+        parse = {
+          type: "regexGroups",
+          ...(parsePattern ? { pattern: parsePattern } : {}),
+          fields: fieldsRes.fields,
+        };
+      }
       const profile: Profile = {
         name,
         enabled: q<HTMLInputElement>("p-enabled").checked,
         detect: { type: "regex", pattern: q<HTMLInputElement>("p-detect").value.trim() },
-        parse: {
-          type: "regexGroups",
-          ...(parsePattern ? { pattern: parsePattern } : {}),
-          fields: fieldsRes.fields,
-        },
+        parse,
         output: seqRes.actions as Action[],
       };
       q("p-err").textContent = errors.join("; ");
@@ -164,6 +188,11 @@ $("btn-add-profile").addEventListener("click", () => {
 // ---------- config <-> UI ----------
 function uiFromConfig(cfg: Config): void {
   ($("dev-keydelay") as HTMLInputElement).value = String(cfg.device.keyDelayMs);
+  ($("dev-actiondelay") as HTMLInputElement).value = String(cfg.device.actionDelayMs);
+  ($("dev-dupblock") as HTMLInputElement).value = String(cfg.scanner.duplicateBlockMs);
+  ($("dev-prefixtext") as HTMLInputElement).value = cfg.output.prefixText;
+  ($("dev-suffixtext") as HTMLInputElement).value = cfg.output.suffixText;
+  ($("dev-onerror") as HTMLSelectElement).value = cfg.output.onError;
   selSuffix.value = cfg.output.suffixKey;
   ($("dev-outmode") as HTMLSelectElement).value = cfg.output.mode;
   ($("dev-splitat") as HTMLInputElement).value = String(cfg.output.splitAt ?? 4);
@@ -183,12 +212,23 @@ function configFromUi(): { cfg: Config | null; errors: string[] } {
   }
   const candidate = {
     ...config,
-    device: { ...config.device, keyDelayMs: parseInt(($("dev-keydelay") as HTMLInputElement).value || "10", 10) },
+    device: {
+      ...config.device,
+      keyDelayMs: parseInt(($("dev-keydelay") as HTMLInputElement).value || "10", 10),
+      actionDelayMs: parseInt(($("dev-actiondelay") as HTMLInputElement).value || "30", 10),
+    },
+    scanner: {
+      ...config.scanner,
+      duplicateBlockMs: parseInt(($("dev-dupblock") as HTMLInputElement).value || "1500", 10),
+    },
     output: {
       ...config.output,
       mode: ($("dev-outmode") as HTMLSelectElement).value as "passthrough" | "split",
       suffixKey: selSuffix.value as Config["output"]["suffixKey"],
       splitAt: parseInt(($("dev-splitat") as HTMLInputElement).value || "4", 10),
+      prefixText: ($("dev-prefixtext") as HTMLInputElement).value,
+      suffixText: ($("dev-suffixtext") as HTMLInputElement).value,
+      onError: ($("dev-onerror") as HTMLSelectElement).value as "raw" | "skip",
     },
     profiles,
   };

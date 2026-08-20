@@ -1,19 +1,22 @@
 # Profile kodow: detekcja -> parsowanie do nazwanych pol -> lista akcji.
-# Trzy jawne kroki (Etap 4):
-#   1. detect: {"type": "regex", "pattern": "^...$"}
-#   2. parse:  {"type": "regexGroups", "pattern": "^(...)(...)$",
-#               "fields": {"nazwa": nr_grupy}}
-#      (gdy parse nie ma "pattern", uzywany jest wzorzec z detect)
-#   3. output: [{"type": "field", "name": "..."}, {"type": "key", "key": "TAB"},
-#               {"type": "text", "value": "..."}]
-#
+# Typy parsowania:
+#   regexGroups - wzorzec z grupami, mapa pole->numer grupy
+#   gs1         - parser GS1 (AI 01/17/10/21), pola: gtin, dataWaznosci,
+#                 dataWaznosciISO, partia, numerSeryjny (patrz parser_gs1.py)
 # UWAGA na CircuitPython: modul `re` to okrojone ure - BEZ kwantyfikatorow
 # {m,n}. Walidator w config_store odrzuca wzorce z klamrami.
 import re
 
+import parser_gs1
 
-def match_profile(text, config):
-    """Zwraca (profil, pola) pierwszego pasujacego wlaczonego profilu albo (None, None)."""
+GS1_FIELD_NAMES = ("gtin", "dataWaznosci", "dataWaznosciISO", "partia", "numerSeryjny")
+
+
+def match_profile(text, config, raw=None):
+    """Zwraca (profil, pola, blad_parsowania).
+    blad_parsowania=True, gdy jakis wlaczony profil wykryl kod (detect),
+    ale nie dal sie sparsowac - o reakcji decyduje output.onError."""
+    had_parse_error = False
     for profile in config.get("profiles", []):
         if not profile.get("enabled", False):
             continue
@@ -26,16 +29,27 @@ def match_profile(text, config):
         except Exception as e:  # zly regex nie moze zawiesic petli
             print("profil", profile.get("name"), "- blad regex detect:", e)
             continue
-        fields = _parse_fields(text, profile, detect)
+        fields = _parse_fields(text, profile, detect, raw)
         if fields is None:
+            had_parse_error = True
             continue
-        return profile, fields
-    return None, None
+        return profile, fields, False
+    return None, None, had_parse_error
 
 
-def _parse_fields(text, profile, detect):
+def _parse_fields(text, profile, detect, raw):
     parse = profile.get("parse", {})
-    if parse.get("type") != "regexGroups":
+    ptype = parse.get("type")
+    if ptype == "gs1":
+        source = raw if raw is not None else text.encode("ascii")
+        fields, aim, error = parser_gs1.parse(source)
+        if error:
+            print("profil", profile.get("name"), "- GS1:", error)
+            return None
+        if aim:
+            fields["aim"] = aim
+        return fields
+    if ptype != "regexGroups":
         return {}
     pattern = parse.get("pattern") or detect.get("pattern", "")
     try:
