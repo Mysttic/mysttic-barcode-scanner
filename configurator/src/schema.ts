@@ -33,30 +33,38 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("text"), value: z.string() }),
 ]);
 
+export const GS1_FIELDS = ["gtin", "dataWaznosci", "dataWaznosciISO", "partia", "numerSeryjny", "aim"] as const;
+
+const parseSpec = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("regexGroups"),
+    pattern: cpRegex.optional(),
+    fields: z.record(z.string().min(1), z.number().int().min(1)),
+  }),
+  z.object({ type: z.literal("gs1") }),
+]);
+
 const profile = z
   .object({
     name: z.string().min(1, "profil musi mieć nazwę"),
     enabled: z.boolean(),
     detect: z.object({ type: z.literal("regex"), pattern: cpRegex }),
-    parse: z.object({
-      type: z.literal("regexGroups"),
-      pattern: cpRegex.optional(),
-      fields: z.record(z.string().min(1), z.number().int().min(1)),
-    }),
+    parse: parseSpec,
     output: z.array(action).min(1, "sekwencja nie może być pusta"),
   })
   .superRefine((p, ctx) => {
-    const known = Object.keys(p.parse.fields);
+    const known =
+      p.parse.type === "gs1" ? (GS1_FIELDS as readonly string[]) : Object.keys(p.parse.fields);
     p.output.forEach((a, i) => {
       if (a.type === "field" && !known.includes(a.name)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["output", i],
-          message: `pole "{${a.name}}" nie istnieje w mapie pól`,
+          message: `pole "{${a.name}}" nie istnieje (dostępne: ${known.join(", ")})`,
         });
       }
     });
-    if (Object.keys(p.parse.fields).length === 0) {
+    if (p.parse.type === "regexGroups" && Object.keys(p.parse.fields).length === 0) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["parse", "fields"], message: "podaj co najmniej jedno pole" });
     }
   });
@@ -67,6 +75,7 @@ export const configSchema = z
     device: z.object({
       keyboardLayout: z.string(),
       keyDelayMs: z.number().int().min(0).max(500),
+      actionDelayMs: z.number().int().min(0).max(1000).default(30),
     }),
     scanner: z.object({
       baudrate: z.union([
@@ -75,11 +84,15 @@ export const configSchema = z
       ]),
       terminators: z.array(z.string().regex(/^[0-9A-Fa-f]+$/)),
       frameTimeoutMs: z.number().int().min(50).max(5000),
+      duplicateBlockMs: z.number().int().min(0).max(10000).default(1500),
     }),
     output: z.object({
       mode: z.enum(["passthrough", "split"]),
       suffixKey: keyName.or(z.literal("")),
       splitAt: z.number().int().min(1).optional(),
+      prefixText: z.string().default(""),
+      suffixText: z.string().default(""),
+      onError: z.enum(["raw", "skip"]).default("raw"),
     }),
     profiles: z.array(profile),
   })

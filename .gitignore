@@ -5,3 +5,6 @@ __pycache__/
 
 # duże pliki do ponownego pobrania (instalki firmware trzymamy świadomie)
 hardware/downloads/*.zip
+
+# artefakty budowania wydań (CI buduje je od zera)
+release/

@@ -1,0 +1,72 @@
+# Buduje i publikuje wydanie po zmergowaniu PR z develop do master.
+# Wersja wydania = FIRMWARE_VERSION z firmware-circuitpython/version.py
+# (CI sam tworzy tag v<wersja>; PR musi podbic wersje, inaczej build sie zatrzyma).
+name: release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+env:
+  CIRCUITPYTHON_URL: https://downloads.circuitpython.org/bin/raspberry_pi_pico/en_US/adafruit-circuitpython-raspberry_pi_pico-en_US-10.2.1.uf2
+  BUNDLE_URL: https://github.com/adafruit/Adafruit_CircuitPython_Bundle/releases/download/20260818/adafruit-circuitpython-bundle-10.x-mpy-20260818.zip
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Ustalenie wersji i kontrola duplikatu wydania
+        id: ver
+        run: |
+          VERSION=$(grep -oP 'FIRMWARE_VERSION\s*=\s*"\K[^"]+' firmware-circuitpython/version.py)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Wersja: $VERSION"
+          if git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
+            echo "::error::Wydanie v$VERSION już istnieje — podbij FIRMWARE_VERSION w version.py w PR."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: configurator/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
+        run: |
+          mkdir -p hardware/downloads/extracted
+          curl -fsSL -o "hardware/downloads/$(basename "$CIRCUITPYTHON_URL")" "$CIRCUITPYTHON_URL"
+          curl -fsSL -o /tmp/bundle.zip "$BUNDLE_URL"
+          unzip -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
+
+      - name: Build konfiguratora
+        working-directory: configurator
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
+
+      - name: Budowa paczki wydania
+        run: python tools/build_release.py --skip-npm
+
+      - name: Publikacja wydania (tworzy tag automatycznie)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: v${{ steps.ver.outputs.version }}
+          files: |
+            release/barcode-reader-v*.zip
+            release/barcode-reader-v*.zip.sha256
+          body_path: docs/CHANGELOG.md
