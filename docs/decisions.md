@@ -1,5 +1,20 @@
 # Decyzje projektowe
 
+## 2026-08-20 — Etap 11 ZALICZONY na sprzęcie
+
+- **Test end-to-end wersji C na urządzeniu:** enumeracja kompozytu (COM6, VID 0xCAFE) ✓; `ping` (impl:"c") ✓; `setConfig` z produkcyjnym default_config.json ✓; `save` → **konfiguracja przetrwała reboot** (sloty A/B) ✓; `hidTest` ✓; formularz A (profil regexGroups: imię TAB nazwisko TAB numer TAB dział ENTER) ✓; formularz GS1 (GTIN/data ISO/partia/serial) ✓; passthrough EAN i blokada duplikatów ✓. **Kryterium etapu spełnione: ta sama konfiguracja, te same testy, ten sam wynik co CircuitPython.**
+- **Kolizja pamięci CP↔C (odnotowana):** sloty C leżą w ostatnich sektorach flasha, gdzie CircuitPython trzyma NVM — `save` w wersji C nadpisuje NVM CircuitPythona (po powrocie na CP config wróci z pliku, fallback zadziała; nagłówki są różne, więc CRC odsiewa cudze dane w obie strony).
+- **TODO wersji C przed uznaniem jej za wydawalną:** eventy trybu testowego z nazwą profilu i polami, wersja z VERSION.md wstrzykiwana przy buildzie (teraz 0.0.0-dev), decyzja o MSC (konfigurator.html z paczki działa przez CDC — MSC opcjonalny), paczka release dla wariantu C.
+
+## 2026-08-20 — Etap 11 faza 2: kompletny pipeline w C (zbudowany, do testu na sprzęcie)
+
+- **Nowe moduły:** `mini_regex.c` — własny silnik regex z grupami przechwytującymi (podzbiór ure: `^ $ . [] * + ? ()` + klasy `\d\w\s`, opcjonalne grupy `(...)?`, backtracking z limitem kroków; `{m,n}` i `|` odrzucane w walidacji); `config_parse.c` (jsmn, vendorowany) — pełny parser+walidator configu JSON do struktur runtime, surowy JSON zachowany do getConfig/save; `config_flash.c` — **atomowe sloty A/B** w 2 ostatnich sektorach flasha (magic+seq+CRC16; zapis zawsze do przeciwnego slotu, wybór po seq — przerwany zapis nie niszczy poprzedniego); `profile_matcher.c` — detect→parse(regexGroups/gs1)→akcje + fallback passthrough/split/prefiks/sufiks/onError.
+- **`main.c`:** UART0 GP0/GP1 z konfiguracji, watchdog 3 s, blokada duplikatów (okno odświeżane), LED GP6, factory reset GP2 przy starcie, tryb testowy (eventy scan z base64/hex po CDC), pending-reset po opróżnieniu kolejki HID (`watchdog_reboot`/`reset_usb_boot`).
+- **Protokół CDC w C:** komplet komend zgodny z wersją CP (ping z `impl:"c"`, getConfig zwraca zachowany surowy JSON, setConfig parsuje+waliduje+aktywuje, save→flash, factoryReset→erase, reboot/rebootBootloader, hidTest diagnostycznie).
+- **Testy hostowe C: 87 asercji** (framer, GS1, mini_regex na realnych wzorcach profili, config_parse na produkcyjnym default_config.json, profile_matcher end-to-end: pracownik/GS1/EAN-fallback/onError/split). UF2 111 KB.
+- **Świadome różnice vs CP (do decyzji przy zamrożeniu):** event testowy nie zwraca nazwy profilu ani pól (tylko fakt dopasowania) — do uzupełnienia; brak MSC (konfigurator.html z dysku CIRCUITPY nie istnieje w wersji C — konfigurator działa przez CDC otwarty skądkolwiek); limity: 6 profili / 8 pól / 16 akcji / config 4 KB.
+- **Pułapka dnia:** newlib nie podpowiada braków — `strtol`/`atoi` wymagają jawnego `<stdlib.h>` (2× ten sam błąd).
+
 ## 2026-08-20 — CI: testy jednostkowe + paczka testowa
 
 - **`ci.yml`** (decyzja właściciela: PR do master + workflow_dispatch; push NIE odpala CI): 4 joby testowo-budowlane + paczka testowa. Testy Python skonsolidowane w `firmware-circuitpython/tests/test_firmware.py` (52 asercje, zero zależności — czysty python); testy C `firmware-pico-sdk/tests/test_host.c` z `-Werror` (23 asercje); build konfiguratora (tsc jako kontrola typów); kompilacja UF2 na ubuntu (apt gcc-arm-none-eabi + cache pico-sdk przez actions/cache).
