@@ -1,5 +1,11 @@
 # Decyzje projektowe
 
+## 2026-08-20 — wersjonowanie przez VERSION.md
+
+- **`VERSION.md` (root) = jedyne źródło wersji** (parsowane jako pierwszy wzorzec X.Y.Z). `firmware-circuitpython/version.py` trzyma w repo `0.0.0-dev` — przy budowaniu paczki `build_release.py` generuje `device/version.py` z wersją z VERSION.md (deploy ręczny z repo odróżnisz od wydania po „-dev").
+- **`CHANGELOG.md` przeniesiony do roota** (release body w CI wskazuje nową ścieżkę).
+- **Release tylko przy podniesionej wersji:** CI porównuje VERSION.md z `HEAD^1` (poprzedni master) + sprawdza istnienie taga; bez podbicia wszystkie kroki wydania są pomijane (job zielony, zero release). Wcześniejszy guard „fail przy istniejącym tagu" zastąpiony skipem — merge dokumentacyjny do mastera nie wymaga podbijania wersji.
+
 ## 2026-08-20 — Etap 10 + paczka instalacyjna + CI
 
 - **Wersjonowanie:** `firmware-circuitpython/version.py` (semver, start 0.9.0); `ping` zwraca `fw`; konfigurator pokazuje wersję + sekcję „Aktualizacja firmware" (kroki UF2, przycisk restartu do bootloadera, link do Releases — stała `RELEASES_URL` w main.ts do podmiany po publikacji repo).
