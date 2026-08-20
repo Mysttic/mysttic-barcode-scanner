@@ -8,3 +8,7 @@ hardware/downloads/*.zip
 
 # artefakty budowania wydań (CI buduje je od zera)
 release/
+
+# build firmware C (Pico SDK)
+firmware-pico-sdk/build/
+firmware-pico-sdk/tests/*.exe
