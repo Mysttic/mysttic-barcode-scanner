@@ -17,6 +17,18 @@
     </header>
 
     <main id="app" hidden>
+      <nav id="tabs">
+        <button data-tab="sec-device" class="tab active">Urządzenie</button>
+        <button data-tab="sec-profiles" class="tab">Profile</button>
+        <button data-tab="sec-test" class="tab">Test</button>
+        <button data-tab="sec-update" class="tab">Aktualizacja</button>
+        <button data-tab="sec-actions" class="tab">Serwis</button>
+        <span class="spacer"></span>
+        <button id="btn-apply" class="primary">Zastosuj</button>
+        <button id="btn-save" class="primary">Zapisz trwale</button>
+      </nav>
+      <pre id="validation" class="log" hidden></pre>
+
       <section id="sec-device">
         <h2>Urządzenie</h2>
         <div class="grid">
@@ -56,7 +68,7 @@
         </div>
       </section>
 
-      <section id="sec-profiles">
+      <section id="sec-profiles" hidden>
         <h2>Profile</h2>
         <p class="hint">
           Sekwencja akcji: <code>{pole}</code> wpisuje sparsowane pole,
@@ -68,7 +80,7 @@
         <button id="btn-add-profile">+ Dodaj profil</button>
       </section>
 
-      <section id="sec-test">
+      <section id="sec-test" hidden>
         <h2>Test</h2>
         <label class="switch">
           <input type="checkbox" id="chk-testmode" />
@@ -77,7 +89,7 @@
         <div id="test-log" class="log"></div>
       </section>
 
-      <section id="sec-update">
+      <section id="sec-update" hidden>
         <h2>Aktualizacja firmware</h2>
         <p>Zainstalowana wersja: <b id="fw-version">?</b>
           <a id="fw-releases" href="#" target="_blank" rel="noopener">sprawdź najnowsze wydanie i changelog</a></p>
@@ -90,14 +102,12 @@
         <button id="btn-update-bootloader">Restart do bootloadera (RPI-RP2)</button>
       </section>
 
-      <section id="sec-actions">
-        <h2>Zapis</h2>
+      <section id="sec-actions" hidden>
+        <h2>Serwis</h2>
+        <p class="hint"><b>Zastosuj</b> (pasek u góry) działa do restartu urządzenia;
+          <b>Zapisz trwale</b> utrwala konfigurację w pamięci czytnika.</p>
         <div class="row">
-          <button id="btn-apply" class="primary">Zastosuj (RAM)</button>
-          <button id="btn-save" class="primary">Zapisz trwale (NVM)</button>
           <button id="btn-reload">Odśwież z urządzenia</button>
-        </div>
-        <div class="row">
           <button id="btn-export">Eksport JSON</button>
           <button id="btn-import">Import JSON</button>
           <input type="file" id="file-import" accept=".json" hidden />
@@ -107,7 +117,6 @@
           <button id="btn-reboot">Restart</button>
           <button id="btn-bootloader">Restart do bootloadera (UF2)</button>
         </div>
-        <pre id="validation" class="log" hidden></pre>
       </section>
     </main>
 

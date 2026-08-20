@@ -36,7 +36,6 @@ DEVICE_FILES = [
     "output_hid.py",
     "config_store.py",
     "protocol_cdc.py",
-    "default_config.json",
 ]
 
 
@@ -94,6 +93,11 @@ def main() -> None:
     )
     shutil.copytree(ADAFRUIT_HID, device / "lib" / "adafruit_hid")
     shutil.copy2(configurator, device / "konfigurator.html")
+    # struktura na urzadzeniu: config/ (edytowalne) + docs/ (dla inzyniera)
+    (device / "config").mkdir()
+    shutil.copy2(FIRMWARE / "default_config.json", device / "config" / "config.json")
+    (device / "docs").mkdir()
+    shutil.copy2(ROOT / "tools" / "device_docs" / "INSTRUKCJA.md", device / "docs" / "INSTRUKCJA.md")
     shutil.copy2(ROOT / "tools" / "install.ps1", stage / "install.ps1")
     shutil.copy2(ROOT / "docs" / "INSTALL.md", stage / "INSTALL.md")
 

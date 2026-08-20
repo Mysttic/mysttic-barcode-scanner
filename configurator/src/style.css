@@ -47,6 +47,14 @@ code { background: #0d1117; padding: 1px 5px; border-radius: 4px; }
 .field-error { color: var(--err); font-size: 0.8rem; }
 footer { color: var(--muted); font-size: 0.8rem; }
 #conn-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#tabs {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--line); padding: 6px 0; margin-bottom: 10px;
+  position: sticky; top: 0; background: var(--bg); z-index: 5;
+}
+#tabs .tab { background: transparent; border: 1px solid transparent; color: var(--muted); }
+#tabs .tab.active { color: var(--text); border-color: var(--line); background: var(--panel); }
+#tabs .spacer { flex: 1; }
 #dev-info { color: var(--muted); font-size: 0.85rem; }
 .scan-entry { border-bottom: 1px dashed var(--line); padding: 4px 0; }
 .scan-entry .p { color: var(--accent); }
