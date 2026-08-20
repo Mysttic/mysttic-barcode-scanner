@@ -8,7 +8,8 @@ import json
 
 from keys import KEY_NAMES
 
-CONFIG_PATH = "/default_config.json"
+CONFIG_PATH = "/config/config.json"
+LEGACY_CONFIG_PATH = "/default_config.json"  # starsze instalacje
 MAX_CONFIG_BYTES = 16 * 1024
 
 NVM_MAGIC = b"BC"
@@ -239,11 +240,16 @@ def load(skip_file=False, nvm=None):
     messages = []
     if data is None:
         source = "plik"
-        try:
-            with open(CONFIG_PATH) as f:
-                raw = f.read(MAX_CONFIG_BYTES + 1)
-        except OSError as e:
-            return dict(DEFAULTS), ["config: brak NVM i pliku, uzywam domyslnych (" + str(e) + ")"]
+        raw = None
+        for path in (CONFIG_PATH, LEGACY_CONFIG_PATH):
+            try:
+                with open(path) as f:
+                    raw = f.read(MAX_CONFIG_BYTES + 1)
+                break
+            except OSError:
+                continue
+        if raw is None:
+            return dict(DEFAULTS), ["config: brak NVM i pliku, uzywam domyslnych"]
         if len(raw) > MAX_CONFIG_BYTES:
             return dict(DEFAULTS), ["config: plik wiekszy niz " + str(MAX_CONFIG_BYTES) + " B"]
         try:

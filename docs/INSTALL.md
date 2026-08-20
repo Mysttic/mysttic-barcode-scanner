@@ -59,6 +59,11 @@ skaner pika przy odczycie, ale nic się nie wpisuje:
 Otwórz Notatnik, kliknij w niego i zeskanuj dowolny kod EAN — powinien wpisać się
 tekst + ENTER. Dziesięć skanów tego samego kodu = dziesięć identycznych linii.
 
+Po instalacji na pendrivie czytnika znajdziesz: `konfigurator.html` (narzędzie
+konfiguracji), `config/config.json` (konfiguracja startowa — można edytować),
+`docs/INSTRUKCJA.md` (ściąga dla inżyniera) oraz pliki firmware (`*.py`, `lib/`
+— nie ruszać).
+
 ## 5. Konfigurator (profile)
 
 1. Otwórz plik **`konfigurator.html`** z dysku `CIRCUITPY` w Chrome/Edge.

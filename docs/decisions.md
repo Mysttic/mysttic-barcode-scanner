@@ -1,5 +1,11 @@
 # Decyzje projektowe
 
+## 2026-08-20 — pełna dokumentacja + struktura urządzenia + skrypt e2e
+
+- **README** przepisany na nietechniczny opis z tabelą odnośników; szczegóły techniczne przeniesione do `docs/ARCHITEKTURA.md`. Nowe podstrony: `docs/KONFIGURACJA.md` (konfigurator, profile, mini-język sekwencji, priorytety zapisu), `docs/FORMULARZE.md` (warianty A/B/GS1 + granica „obce strony wymagają wtyczki"), `docs/TESTING.md` (jednostkowe, e2e, paczka testowa, plan akceptacyjny).
+- **Struktura plików na urządzeniu (CP):** `config/config.json` (edytowalne; CONFIG_PATH zmieniony, fallback na legacy `/default_config.json`), `docs/INSTRUKCJA.md` (ściąga dla inżyniera: co ruszać/czego nie — źródło w `tools/device_docs/`), `konfigurator.html` w root, firmware `*.py`+`lib/` oznaczone jako nietykalne. Paczka wydania buduje ten układ.
+- **`tools/test_e2e.py`** — scenariusz testów e2e (produkcyjny): autodetekcja urządzenia po ping (działa z CP i C), kroki automatyczne (getConfig, setConfig+odczyt zwrotny, save+reboot+persystencja) i operatorskie (skan w trybie testowym, wpis HID, duplikaty); raport PASS/FAIL, konfiguracja przywracana po teście.
+
 ## 2026-08-20 — Etap 11 ZALICZONY na sprzęcie
 
 - **Test end-to-end wersji C na urządzeniu:** enumeracja kompozytu (COM6, VID 0xCAFE) ✓; `ping` (impl:"c") ✓; `setConfig` z produkcyjnym default_config.json ✓; `save` → **konfiguracja przetrwała reboot** (sloty A/B) ✓; `hidTest` ✓; formularz A (profil regexGroups: imię TAB nazwisko TAB numer TAB dział ENTER) ✓; formularz GS1 (GTIN/data ISO/partia/serial) ✓; passthrough EAN i blokada duplikatów ✓. **Kryterium etapu spełnione: ta sama konfiguracja, te same testy, ten sam wynik co CircuitPython.**
