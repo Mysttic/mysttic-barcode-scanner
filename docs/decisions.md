@@ -1,5 +1,19 @@
 # Decyzje projektowe
 
+## 2026-08-20 — CI: testy jednostkowe + paczka testowa
+
+- **`ci.yml`** (decyzja właściciela: PR do master + workflow_dispatch; push NIE odpala CI): 4 joby testowo-budowlane + paczka testowa. Testy Python skonsolidowane w `firmware-circuitpython/tests/test_firmware.py` (52 asercje, zero zależności — czysty python); testy C `firmware-pico-sdk/tests/test_host.c` z `-Werror` (23 asercje); build konfiguratora (tsc jako kontrola typów); kompilacja UF2 na ubuntu (apt gcc-arm-none-eabi + cache pico-sdk przez actions/cache).
+- **Paczka testowa:** tylko na żądanie (Run workflow, np. na develop przed PR-em wydaniowym) — pełny zip wydania jako **artifact** (14 dni, bez publikacji).
+- Testy hostowe utrzymywać w parze: każda zmiana logiki w wersji CP musi mieć odpowiednik w wektorach C (kryterium E11).
+
+## 2026-08-20 — Etap 11 faza 1: toolchain + szkielet C zbudowany
+
+- **Toolchain (Windows):** CMake + Ninja + ARM GNU Toolchain 14.2 (winget) + WinLibs GCC 16 (testy hostowe i picotool) + Pico SDK 2.x (`C:/Workspaces/pico-sdk`, submoduł tinyusb). Pułapka SDK 2.x: build wymaga TAKŻE hostowego kompilatora (picotool budowany ze źródeł) — bez niego ninja pada na „No CMAKE_C_COMPILER".
+- **Szkielet `firmware-pico-sdk/`:** kompozyt USB CDC+HID na TinyUSB (deskryptory z IAD, unikalny serial z ID płytki, nazwane interfejsy, VID/PID deweloperskie 0xCAFE — przed produkcją wymagany legalny), pętla główna bez blokowania, protokół NDJSON (na razie `ping`/`hidTest`), kolejka HID z pełną mapą US.
+- **Porty czystych modułów:** `scan_framer.c` (ramkowanie z terminatorami+timeout) i `parser_gs1.c` — **testy hostowe C przechodzą (23 asercje, te same wektory co testy CircuitPythona)**, zgodnie z kryterium etapu.
+- **Build:** `barcode_reader.uf2` 72 KB (Release). Katalog `build/` w .gitignore.
+- **Do zrobienia w kolejnych fazach E11:** UART skanera + integracja framera, port config_store (flash, sloty A/B = zapis atomowy; LittleFS odłożony — odstępstwo od litery instrukcji na rzecz prostszej atomowości), profile+regex (tiny-regex-c), pełny protokół CDC (getConfig/setConfig/...), watchdog, MSC z konfiguratorem, CI dla buildu C.
+
 ## 2026-08-20 — test na obcej stronie; decyzja o wtyczce (Etap 12)
 
 - **Test na rzeczywistej stronie (httpbin.org/forms/post):** profil z sekwencją `{imie} " " {nazwisko} TAB {numer} TAB "email"` poprawnie wypełnił 3 pola formularza, na który nie mamy żadnego wpływu. Wniosek: **tryb sekwencji TAB działa na dowolnej stronie/aplikacji** — czytnik to klawiatura; warunkiem jest stabilna kolejność pól i kliknięcie w pole startowe.
