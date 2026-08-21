@@ -1,5 +1,6 @@
 # zależności i artefakty deweloperskie
 configurator/node_modules/
+browser-extension/node_modules/
 __pycache__/
 *.pyc
 

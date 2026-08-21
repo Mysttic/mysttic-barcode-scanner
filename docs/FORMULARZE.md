@@ -1,6 +1,6 @@
 # Wypełnianie formularzy — wszystkie warianty
 
-Czytnik jest klawiaturą, więc „wypełnianie formularza" to zawsze jedna z trzech
+Czytnik jest klawiaturą, więc „wypełnianie formularza" to zawsze jedna z czterech
 strategii. Gotowe formularze demonstracyjne do każdego wariantu są w
 [test-vectors](../test-vectors/README.md) (z kodami QR do skanowania z ekranu).
 
@@ -45,12 +45,26 @@ z niewidocznym separatorem GS), przelicza datę na format `RRRR-MM-DD`
 
 **Demo:** `test-vectors/forma-gs1.html`.
 
-## Obce strony z wypełnianiem po nazwie — czego NIE zrobimy bez wtyczki
+## Wariant C — pola po nazwie na obcych stronach (wtyczka)
 
-Na stronie, której kodu nie kontrolujemy, czytnik nie „widzi" nazw pól — jest
-klawiaturą. Jeśli kolejność pól jest stabilna → wariant A wystarcza. Jeśli
-wymagane jest celowanie po nazwach na cudzych stronach → potrzebne rozszerzenie
-przeglądarki (zaplanowany, odroczony Etap 12 — wróci przy realnym wymaganiu).
+**Kiedy:** strona, której kodu **nie** kontrolujemy, a wariant A odpada —
+pola w innej kolejności niż dane w kodzie, pola-pułapki między nimi, SPA
+przebudowujące formularz w locie.
+
+**Jak:** rozszerzenie przeglądarki rozpoznaje formularz (adres + obecność pól),
+przechwytuje skan i rozkłada go po polach po nazwach. Poza rozpoznanymi
+formularzami wtyczka nie robi nic — czytnik pisze jak zwykła klawiatura, więc
+warianty A i B działają dalej bez zmian. Firmware pozostaje nietknięty; do
+formularza demo wystarczy konfiguracja fabryczna (passthrough + ENTER).
+
+**Demo:** `test-vectors/forma-c-wtyczka.html` (kod `PRC;JAN;KOWALSKI;12345;IT`) —
+SPA z dwoma widokami: na pierwszym profil pasuje, na drugim wtyczka milczy.
+
+**Instalacja, tryb nauki i format profilu:** [WTYCZKA.md](WTYCZKA.md).
+
+**Ograniczenia:** działa tylko w przeglądarce (aplikacje desktopowe → wariant A);
+zamknięty Shadow DOM jest nieosiągalny dla selektorów; pola z podpowiedziami
+mogą wymagać ręcznego zatwierdzenia wyboru.
 
 ## Jak uruchomić formularze demonstracyjne
 
