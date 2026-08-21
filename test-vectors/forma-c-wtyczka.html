@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Test C — wtyczka wypełnia po nazwach (SPA)</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; color: #0f172a; }
+  .wrap { max-width: 940px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
+  .card { background: #fff; border: 1px solid #d8dee8; border-radius: 12px; padding: 20px; }
+  h1 { font-size: 1.2rem; margin-top: 0; }
+  nav { grid-column: 1 / -1; display: flex; gap: 10px; }
+  nav a { padding: 8px 14px; border-radius: 999px; background: #e2e8f0; color: #0f172a; text-decoration: none; font-size: .9rem; }
+  nav a.on { background: #2563eb; color: #fff; }
+  label { display: block; margin: 12px 0 4px; font-size: .85rem; color: #445; }
+  input, select { width: 100%; padding: 8px 10px; border: 1px solid #c5cdd9; border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+  .qr { text-align: center; }
+  .qr img { width: 220px; image-rendering: pixelated; }
+  .hint { font-size: .8rem; color: #667; line-height: 1.5; }
+  code { background: #eef1f6; padding: 1px 5px; border-radius: 4px; }
+  button { margin-top: 16px; padding: 9px 18px; background: #2563eb; color: #fff; border: 0; border-radius: 8px; font-size: 1rem; }
+  .model { margin-top: 16px; background: #0f172a; color: #e2e8f0; border-radius: 8px; padding: 12px; font-family: ui-monospace, monospace; font-size: .8rem; white-space: pre; }
+  .ok { color: #16a34a; font-weight: 600; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <a href="#/pracownik" id="nav-pracownik">Karta pracownika</a>
+    <a href="#/ustawienia" id="nav-ustawienia">Ustawienia</a>
+  </nav>
+  <div id="widok"></div>
+  <div class="card qr">
+    <h1>Kod do zeskanowania</h1>
+    <img alt="QR PRC" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAAD4AQAAAADpqhamAAABUklEQVR4nO1ZSY7DMAwjjf7/yxyIkp3DALkUTg0oauC61iFaqM2lcEvjno2Xf0/j5R9tnw8A5lbeCYSuk9FAfzgHEKAYW10n+LV84xE+aY+LyM86wRnybfb/JKbrC/399EcEfsbAU+8fR+gvrxn+RKzqpD+v35RBwFPkG5v5/N//OQs89f5xAJ8GfTxBPmjj/4FpAAe/KvvHF4+Rbz9f1fMF9gv9aYBD5NvNZyV9OQFGMAQUcIx8W/O/XPloBBTs5wSAFvmfVfiD5PRfkwB65H9V15+xnz1Qo/lHjvlCwGwInAlwhHz753+uSAhjzOmf6tX/MTTOxxZRG/+b5MY/bz6yCKrJ/KPVApQFsiigzfzLvPTy8LcqIbvgf5LrYNb/BD9+L994kK9qej0MNqn/H69z5Jmd37oHRgv9mfvqAWf4o8P9P9///472z3j5t/Stff4A0vNvHDpEU6QAAAAASUVORK5CYII=">
+    <p class="hint">Zawartość: <code>PRC;JAN;KOWALSKI;12345;IT</code></p>
+    <p class="hint">Czytnik może być w konfiguracji <b>fabrycznej</b> (passthrough + ENTER) —
+    kod leci 1:1, a rozkładem na pola zajmuje się wtyczka.</p>
+  </div>
+</div>
+
+<script>
+// Prosty SPA na hashu - sprawdza, czy wtyczka nadaza za zmiana widoku
+// bez przeladowania strony (rozpoznanie profilu = adres + obecnosc pol).
+var model = { imie: "", nazwisko: "", numer: "", dzial: "" };
+
+var WIDOKI = {
+  "#/pracownik": function () {
+    return '<form class="card" onsubmit="event.preventDefault();this.querySelector(\'.ok\').style.display=\'block\';">' +
+      '<h1>Karta pracownika — wariant C (wtyczka)</h1>' +
+      '<p class="hint">Pola sa <b>celowo w innej kolejnosci niz kod</b>, a miedzy nimi siedza ' +
+      'pola-pulapki. Sekwencja TAB-ow tu nie zadziala. Wtyczka rozpoznaje formularz i wstawia ' +
+      'wartosci <b>po nazwach</b> — fokus i kolejnosc nie maja znaczenia. <b>Po prostu zeskanuj kod.</b></p>' +
+      '<label>Dzial</label><select name="dzial">' +
+        '<option value="">— wybierz —</option>' +
+        '<option value="HR">Kadry</option>' +
+        '<option value="IT">Informatyka</option>' +
+        '<option value="FIN">Finanse</option>' +
+      '</select>' +
+      '<label>Adres e-mail (pulapka)</label><input name="email" placeholder="tego pola skan nie dotyczy">' +
+      '<label>Numer pracownika (pole kontrolowane)</label><input name="numer">' +
+      '<label>Imie</label><input name="imie">' +
+      '<label>Telefon (pulapka)</label><input name="telefon">' +
+      '<label>Nazwisko</label><input name="nazwisko">' +
+      '<button type="submit">Zapisz</button>' +
+      '<div class="ok">✔ Formularz zatwierdzony</div>' +
+      '<div class="model" id="model"></div>' +
+      '</form>';
+  },
+  "#/ustawienia": function () {
+    return '<form class="card">' +
+      '<h1>Ustawienia (tu profil NIE pasuje)</h1>' +
+      '<p class="hint">Ten widok nie ma pol <code>imie</code>/<code>nazwisko</code>, wiec wtyczka ' +
+      'sie wylacza (badge gasnie). Skan zachowa sie jak zwykle pisanie na klawiaturze — ' +
+      'kliknij w pole ponizej i zeskanuj, zeby to zobaczyc.</p>' +
+      '<label>Motyw</label><input name="motyw">' +
+      '<label>Jezyk</label><input name="jezyk">' +
+      '</form>';
+  }
+};
+
+// "Framework": strona trzyma wlasny stan i aktualizuje go WYLACZNIE ze
+// zdarzen input. Jesli wtyczka podmieni tylko .value bez zdarzen, ponizszy
+// podglad zostanie pusty - i wlasnie o to chodzi w tym tescie.
+function podepnijModel() {
+  var form = document.querySelector("form");
+  if (!form) return;
+  form.addEventListener("input", function (ev) {
+    if (ev.target.name in model) model[ev.target.name] = ev.target.value;
+    rysujModel();
+  });
+  form.addEventListener("change", function (ev) {
+    if (ev.target.name in model) model[ev.target.name] = ev.target.value;
+    rysujModel();
+  });
+  rysujModel();
+}
+
+function rysujModel() {
+  var box = document.getElementById("model");
+  if (!box) return;
+  var pelne = Object.keys(model).filter(function (k) { return model[k]; }).length;
+  box.textContent = "stan strony (to trafi na serwer):\n" +
+    JSON.stringify(model, null, 2) + "\n\n" +
+    (pelne === 4 ? "OK: strona zobaczyla wszystkie 4 wartosci" : "wypelnione: " + pelne + "/4");
+}
+
+function rysuj() {
+  var hash = location.hash || "#/pracownik";
+  if (!WIDOKI[hash]) hash = "#/pracownik";
+  document.getElementById("widok").innerHTML = WIDOKI[hash]();
+  document.getElementById("nav-pracownik").className = hash === "#/pracownik" ? "on" : "";
+  document.getElementById("nav-ustawienia").className = hash === "#/ustawienia" ? "on" : "";
+  model = { imie: "", nazwisko: "", numer: "", dzial: "" };
+  podepnijModel();
+}
+
+addEventListener("hashchange", rysuj);
+rysuj();
+</script>
+</body>
+</html>

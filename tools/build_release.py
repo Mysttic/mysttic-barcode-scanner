@@ -9,10 +9,12 @@ Zawartosc paczki:
   install.ps1         instalator Windows (prowizjonowanie plytki)
   flash/*.uf2         CircuitPython (przypieta wersja)
   device/             pliki na dysk CIRCUITPY (firmware + lib + konfigurator)
+  wtyczka/            rozszerzenie przegladarki (ladowane "bez pakowania")
   SHA256SUMS.txt      sumy kontrolne
 """
 import argparse
 import hashlib
+import json
 import re
 import shutil
 import subprocess
@@ -22,6 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FIRMWARE = ROOT / "firmware-circuitpython"
+EXTENSION = ROOT / "browser-extension"
 UF2_DIR = ROOT / "hardware" / "downloads"
 ADAFRUIT_HID = next((UF2_DIR / "extracted").glob("*/lib/adafruit_hid"), None)
 
@@ -46,6 +49,22 @@ def firmware_version() -> str:
     if not m:
         sys.exit("BLAD: brak wersji X.Y.Z w VERSION.md")
     return m.group(1)
+
+
+def copy_extension(stage: Path, version: str) -> None:
+    """Rozszerzenie przegladarki + wersja manifestu z VERSION.md.
+
+    Do paczki ida tylko pliki uruchomieniowe - bez testow i zaleznosci dev."""
+    target = stage / "wtyczka"
+    shutil.copytree(
+        EXTENSION,
+        target,
+        ignore=shutil.ignore_patterns("node_modules", "tests", "package.json", "package-lock.json", ".gitkeep"),
+    )
+    manifest_path = target / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["version"] = version
+    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def build_configurator(skip_npm: bool) -> Path:
@@ -100,6 +119,8 @@ def main() -> None:
     shutil.copy2(ROOT / "tools" / "device_docs" / "INSTRUKCJA.md", device / "docs" / "INSTRUKCJA.md")
     shutil.copy2(ROOT / "tools" / "install.ps1", stage / "install.ps1")
     shutil.copy2(ROOT / "docs" / "INSTALL.md", stage / "INSTALL.md")
+    copy_extension(stage, version)
+    shutil.copy2(ROOT / "docs" / "WTYCZKA.md", stage / "WTYCZKA.md")
 
     sums = []
     for path in sorted(stage.rglob("*")):

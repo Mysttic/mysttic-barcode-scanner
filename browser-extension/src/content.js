@@ -1,0 +1,546 @@
+// Content script: rozpoznanie formularza -> przechwycenie skanu -> wypelnienie.
+//
+// ZASADA: dopoki zaden profil nie pasuje do strony, ten skrypt NIE dotyka
+// klawiatury. Czytnik zachowuje sie wtedy dokladnie tak jak bez wtyczki
+// (sekwencje TAB, passthrough) - brak regresji na stronach spoza profili.
+(function () {
+  "use strict";
+
+  var state = null; // konfiguracja z magazynu
+  var active = null; // profil dopasowany do tej strony (albo null)
+  var lastUrl = location.href;
+  var ui = null; // shadow-root z panelem/dymkiem
+
+  var wedge = { buf: "", lastTs: 0, snapshot: null, blocked: false };
+  var learn = null; // stan kreatora "Ucz formularza"
+
+  // ---------------------------------------------------------------- UI ----
+
+  function ensureUi() {
+    if (ui && ui.host.isConnected) return ui;
+    var host = document.createElement("div");
+    host.style.cssText = "all:initial;position:fixed;z-index:2147483647;inset:auto auto 16px 16px;";
+    var root = host.attachShadow({ mode: "open" });
+    root.innerHTML =
+      "<style>" +
+      ":host,*{font-family:system-ui,sans-serif;box-sizing:border-box}" +
+      ".pill{display:none;align-items:center;gap:8px;background:#0f172a;color:#fff;border-radius:999px;padding:8px 14px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25)}" +
+      ".dot{width:8px;height:8px;border-radius:50%;background:#22c55e}" +
+      ".dot.warn{background:#f59e0b}" +
+      ".panel{display:none;width:340px;background:#fff;color:#0f172a;border:1px solid #d8dee8;border-radius:12px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);font-size:13px;line-height:1.5}" +
+      ".panel h2{margin:0 0 8px;font-size:14px}" +
+      ".panel p{margin:0 0 10px;color:#475569}" +
+      ".panel input,.panel select{width:100%;padding:6px 8px;border:1px solid #c5cdd9;border-radius:6px;font-size:13px;margin-bottom:6px}" +
+      ".panel button{padding:7px 12px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:13px;cursor:pointer;margin-right:6px}" +
+      ".panel button.ghost{background:#e2e8f0;color:#0f172a}" +
+      ".rows{max-height:200px;overflow:auto;margin-bottom:10px}" +
+      ".row{display:flex;gap:6px;align-items:center;margin-bottom:4px}" +
+      ".row code{flex:0 0 110px;background:#eef1f6;padding:2px 6px;border-radius:4px;overflow:hidden;text-overflow:ellipsis}" +
+      "</style>" +
+      "<div class='pill'><span class='dot'></span><span class='txt'></span></div>" +
+      "<div class='panel'></div>";
+    (document.body || document.documentElement).appendChild(host);
+    ui = {
+      host: host,
+      pill: root.querySelector(".pill"),
+      pillText: root.querySelector(".txt"),
+      pillDot: root.querySelector(".dot"),
+      panel: root.querySelector(".panel"),
+    };
+    return ui;
+  }
+
+  var pillTimer = 0;
+  function pill(text, warn, holdMs) {
+    var u = ensureUi();
+    u.pillText.textContent = text;
+    u.pillDot.className = warn ? "dot warn" : "dot";
+    u.pill.style.display = "flex";
+    clearTimeout(pillTimer);
+    if (holdMs !== 0) pillTimer = setTimeout(hidePill, holdMs || 4000);
+  }
+
+  function hidePill() {
+    if (ui) ui.pill.style.display = "none";
+  }
+
+  function highlight(el, ok) {
+    if (!el || !state.settings.highlight || !el.style) return;
+    var previous = el.style.boxShadow;
+    el.style.boxShadow = ok ? "0 0 0 2px #16a34a" : "0 0 0 2px #dc2626";
+    setTimeout(function () {
+      el.style.boxShadow = previous;
+    }, 2500);
+  }
+
+  // Wiadomosc do tla; brak odbiorcy nie moze wywrocic skryptu (badge to kosmetyka).
+  function notify(message) {
+    try {
+      chrome.runtime.sendMessage(message, function () {
+        void chrome.runtime.lastError;
+      });
+    } catch (e) {
+      /* kontekst rozszerzenia przeladowany - ignorujemy */
+    }
+  }
+
+  // -------------------------------------------------------- aktywacja ----
+
+  function resolve(selector) {
+    try {
+      return document.querySelector(selector);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Profil pasuje, gdy zgadza sie adres ORAZ wymagane pola sa na stronie.
+  // Drugi warunek odroznia formularze w SPA pod tym samym adresem.
+  function fieldsPresent(profile) {
+    var required = (profile.match && profile.match.requiredFields) || Object.keys(profile.fields || {});
+    if (!required.length) return false;
+    return required.every(function (name) {
+      var selector = (profile.fields || {})[name];
+      return selector ? !!resolve(selector) : false;
+    });
+  }
+
+  function evaluate() {
+    if (!state) return;
+    var found = null;
+    if (state.enabled) {
+      var candidates = BRStore.candidatesForUrl(state, location.href);
+      for (var i = 0; i < candidates.length; i += 1) {
+        if (fieldsPresent(candidates[i])) {
+          found = candidates[i];
+          break;
+        }
+      }
+    }
+    var changed = (found && found.id) !== (active && active.id);
+    active = found;
+    notify({ cmd: "activeProfile", name: active ? active.name : null });
+    if (changed) {
+      resetWedge();
+      if (active) pill("Czytnik: " + active.name);
+      else hidePill();
+    }
+  }
+
+  // SPA: adres zmienia sie bez przeladowania, a pola pojawiaja sie pozniej.
+  // Patchowanie history.pushState nie zadziala (content script ma osobny
+  // kontekst JS), wiec obserwujemy DOM i odpytujemy location.
+  function watchPage() {
+    var debounce = 0;
+    new MutationObserver(function () {
+      clearTimeout(debounce);
+      debounce = setTimeout(evaluate, 300);
+    }).observe(document.documentElement, { childList: true, subtree: true });
+
+    setInterval(function () {
+      if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        evaluate();
+      }
+    }, 500);
+
+    addEventListener("popstate", evaluate);
+    addEventListener("hashchange", evaluate);
+  }
+
+  // ------------------------------------------------------------ wedge ----
+
+  function resetWedge() {
+    wedge.buf = "";
+    wedge.snapshot = null;
+    wedge.blocked = false;
+  }
+
+  function captureFocus() {
+    var el = document.activeElement;
+    if (!el) return null;
+    var isField = (el.tagName === "INPUT" || el.tagName === "TEXTAREA") && !el.disabled && !el.readOnly;
+    if (!isField && !el.isContentEditable) return null;
+    return {
+      el: el,
+      value: el.isContentEditable ? el.textContent : el.value,
+      start: el.selectionStart == null ? 0 : el.selectionStart,
+      end: el.selectionEnd == null ? 0 : el.selectionEnd,
+    };
+  }
+
+  // Cofa to, co zdazylo wpasc do pola w trakcie skanu.
+  function restoreSnapshot(snap) {
+    if (!snap || !snap.el || !snap.el.isConnected) return;
+    if (snap.el.isContentEditable) snap.el.textContent = snap.value;
+    else BRFill.setNativeValue(snap.el, snap.value);
+    snap.el.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  // Ramka nie byla nasza, a znaki zablokowalismy - oddaj je stronie.
+  function replayBuffer(snap, text) {
+    if (!snap || !snap.el || !snap.el.isConnected) return;
+    var merged = snap.value.slice(0, snap.start) + text + snap.value.slice(snap.end);
+    if (snap.el.isContentEditable) snap.el.textContent = merged;
+    else BRFill.setNativeValue(snap.el, merged);
+    snap.el.dispatchEvent(new Event("input", { bubbles: true }));
+    snap.el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  // Blokujemy znaki tylko wtedy, gdy profil ma prefiks i ramka wciaz go
+  // przypomina - dzieki temu strona nie widzi nawet przelotnie kodu.
+  function shouldBlock(candidate) {
+    var prefix = active && active.parse && active.parse.prefix;
+    if (!prefix) return false;
+    return prefix.indexOf(candidate) === 0 || candidate.indexOf(prefix) === 0;
+  }
+
+  function onKeyDown(ev) {
+    if (learn) return onLearnKey(ev);
+    if (!active || !state.enabled) return;
+    if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.isComposing) return;
+
+    var now = performance.now();
+
+    if (ev.key === "Enter") {
+      var frame = wedge.buf;
+      var blocked = wedge.blocked;
+      var snapshot = wedge.snapshot;
+      var minLength = state.settings.minFrameLength;
+      resetWedge();
+      if (!frame || frame.length < minLength) return;
+      var parsed = BRParse.parseFrame(frame, active.parse);
+      if (parsed.fields) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        restoreSnapshot(snapshot);
+        applyScan(parsed.fields, frame);
+      } else if (blocked) {
+        // ramka nie byla nasza, a znaki przechwycilismy - oddaj je stronie
+        replayBuffer(snapshot, frame);
+        pill("Nierozpoznany kod: " + parsed.error, true);
+      }
+      return;
+    }
+
+    // TAB/strzalki w srodku ramki = to sekwencja z profilu urzadzenia,
+    // czyli wariant A - nie mieszamy sie do niego.
+    if (ev.key.length !== 1) {
+      resetWedge();
+      return;
+    }
+
+    if (now - wedge.lastTs > state.settings.burstGapMs) {
+      wedge.buf = "";
+      wedge.blocked = false;
+      wedge.snapshot = captureFocus();
+    }
+    wedge.lastTs = now;
+    var candidate = wedge.buf + ev.key;
+    wedge.buf = candidate;
+    if (shouldBlock(candidate)) {
+      wedge.blocked = true;
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  }
+
+  function applyScan(fields, frame) {
+    var result = BRFill.fillForm(document, active.fields || {}, fields);
+    result.filled.forEach(function (item) {
+      highlight(item.el, true);
+    });
+    result.failed.forEach(function (item) {
+      highlight(item.el, false);
+    });
+
+    var total = result.filled.length + result.failed.length;
+    if (result.failed.length) {
+      pill("Wypelniono " + result.filled.length + "/" + total + " - " + result.failed[0].name + ": " + result.failed[0].error, true, 7000);
+    } else {
+      pill("Wypelniono " + result.filled.length + " pol (" + active.name + ")");
+    }
+
+    var after = active.after || { action: "none" };
+    if (after.action === "focus" && after.selector) {
+      var target = resolve(after.selector);
+      if (target) target.focus();
+    } else if (after.action === "submit" && !result.failed.length) {
+      var form = after.selector ? resolve(after.selector) : (result.filled[0] && result.filled[0].el.form);
+      if (form) {
+        if (form.requestSubmit) form.requestSubmit();
+        else form.submit();
+      }
+    }
+    notify({ cmd: "scan", profile: active.name, filled: result.filled.length, total: total, frame: frame });
+  }
+
+  // ------------------------------------------------------ tryb nauki ----
+
+  var SEPARATORS = [";", "|", "\t", ","];
+
+  function startLearn() {
+    learn = { step: "scan", buf: "", lastTs: 0, frame: "", names: [], separator: ";", index: 0, fields: {} };
+    renderLearn();
+  }
+
+  function stopLearn() {
+    learn = null;
+    if (ui) ui.panel.style.display = "none";
+    document.removeEventListener("click", onLearnClick, true);
+    document.removeEventListener("mouseover", onLearnHover, true);
+    evaluate();
+  }
+
+  function onLearnKey(ev) {
+    if (learn.step !== "scan") return;
+    if (ev.key === "Enter") {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (!learn.buf) return;
+      learn.frame = learn.buf;
+      learn.separator = pickSeparator(learn.frame);
+      learn.names = learn.frame.split(learn.separator).map(function (part, i) {
+        return i === 0 && learn.frame.split(learn.separator).length > 1 ? "_" : "pole" + i;
+      });
+      learn.step = "names";
+      renderLearn();
+      return;
+    }
+    if (ev.key.length !== 1) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    var now = performance.now();
+    if (now - learn.lastTs > 400) learn.buf = "";
+    learn.lastTs = now;
+    learn.buf += ev.key;
+  }
+
+  function pickSeparator(frame) {
+    var best = SEPARATORS[0];
+    var bestCount = 1;
+    SEPARATORS.forEach(function (sep) {
+      var count = frame.split(sep).length;
+      if (count > bestCount) {
+        bestCount = count;
+        best = sep;
+      }
+    });
+    return best;
+  }
+
+  function esc(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  function renderLearn() {
+    var u = ensureUi();
+    u.panel.style.display = "block";
+    hidePill();
+
+    if (learn.step === "scan") {
+      u.panel.innerHTML =
+        "<h2>Ucz formularza (1/3)</h2><p>Zeskanuj kod, ktorym bedziesz wypelnial ten formularz. " +
+        "Znaki nie trafia na strone.</p><button class='ghost' data-act='cancel'>Anuluj</button>";
+    } else if (learn.step === "names") {
+      var parts = learn.frame.split(learn.separator);
+      var rows = parts
+        .map(function (part, i) {
+          return (
+            "<div class='row'><code>" +
+            esc(part) +
+            "</code><input data-idx='" +
+            i +
+            "' value='" +
+            esc(learn.names[i] || "") +
+            "'></div>"
+          );
+        })
+        .join("");
+      u.panel.innerHTML =
+        "<h2>Ucz formularza (2/3)</h2><p>Nazwij segmenty kodu. Wpisz <b>_</b> przy tych, ktore maja " +
+        "byc pominiete (np. prefiks).</p><div class='rows'>" +
+        rows +
+        "</div><button data-act='names'>Dalej</button><button class='ghost' data-act='cancel'>Anuluj</button>";
+    } else if (learn.step === "pick") {
+      var name = learn.names[learn.index];
+      u.panel.innerHTML =
+        "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do ktorego ma trafic <b>" +
+        esc(name) +
+        "</b> (wartosc: <code>" +
+        esc(learn.frame.split(learn.separator)[learn.index]) +
+        "</code>).</p><button class='ghost' data-act='skip'>Pomin pole</button>" +
+        "<button class='ghost' data-act='cancel'>Anuluj</button>";
+    } else if (learn.step === "save") {
+      u.panel.innerHTML =
+        "<h2>Zapisz profil</h2><p>Nazwa profilu i adres, na ktorym ma dzialac (gwiazdka = dowolny fragment).</p>" +
+        "<input data-field='name' value='" +
+        esc(document.title || "Formularz") +
+        "'><input data-field='url' value='" +
+        esc(location.origin + location.pathname + "*") +
+        "'><input data-field='prefix' value='" +
+        esc(learn.frame.split(learn.separator)[0] + learn.separator) +
+        "' placeholder='prefiks ramki'>" +
+        "<button data-act='save'>Zapisz i wlacz</button><button class='ghost' data-act='cancel'>Anuluj</button>";
+    }
+    u.panel.querySelectorAll("button").forEach(function (button) {
+      button.addEventListener("click", onLearnButton);
+    });
+  }
+
+  function onLearnButton(ev) {
+    var action = ev.currentTarget.getAttribute("data-act");
+    if (action === "cancel") return stopLearn();
+    if (action === "names") {
+      var inputs = ui.panel.querySelectorAll("input[data-idx]");
+      learn.names = Array.prototype.map.call(inputs, function (input) {
+        return input.value.trim();
+      });
+      learn.index = -1;
+      return nextPick();
+    }
+    if (action === "skip") return nextPick();
+    if (action === "save") return saveLearned();
+  }
+
+  function nextPick() {
+    do {
+      learn.index += 1;
+    } while (learn.index < learn.names.length && (!learn.names[learn.index] || learn.names[learn.index] === "_"));
+
+    if (learn.index >= learn.names.length) {
+      learn.step = "save";
+      document.removeEventListener("click", onLearnClick, true);
+      document.removeEventListener("mouseover", onLearnHover, true);
+      renderLearn();
+      return;
+    }
+    learn.step = "pick";
+    document.addEventListener("click", onLearnClick, true);
+    document.addEventListener("mouseover", onLearnHover, true);
+    renderLearn();
+  }
+
+  function isFormField(el) {
+    if (!el || !el.tagName) return false;
+    if (el.isContentEditable) return true;
+    return ["INPUT", "SELECT", "TEXTAREA"].indexOf(el.tagName) >= 0 && el.type !== "password";
+  }
+
+  function onLearnHover(ev) {
+    if (ev.composedPath().indexOf(ui.host) >= 0) return;
+    var el = ev.target;
+    if (isFormField(el)) highlight(el, true);
+  }
+
+  function onLearnClick(ev) {
+    if (ev.composedPath().indexOf(ui.host) >= 0) return;
+    var el = ev.target;
+    if (!isFormField(el)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    learn.fields[learn.names[learn.index]] = cssPath(el);
+    nextPick();
+  }
+
+  // Selektor: najpierw stabilne atrybuty, sciezka strukturalna na koncu.
+  function looksGenerated(id) {
+    return /[0-9]{4,}/.test(id) || /^[a-z]+[-_][0-9a-f]{6,}$/i.test(id);
+  }
+
+  function unique(selector) {
+    try {
+      return document.querySelectorAll(selector).length === 1;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function cssPath(el) {
+    var tag = el.tagName.toLowerCase();
+    if (el.name) {
+      var byName = tag + '[name="' + el.name + '"]';
+      if (unique(byName)) return byName;
+    }
+    if (el.id && !looksGenerated(el.id) && unique("#" + CSS.escape(el.id))) return "#" + CSS.escape(el.id);
+    var attrs = ["data-testid", "data-test", "data-qa", "aria-label", "placeholder"];
+    for (var i = 0; i < attrs.length; i += 1) {
+      var value = el.getAttribute(attrs[i]);
+      if (!value) continue;
+      var bySelector = tag + "[" + attrs[i] + '="' + value.replace(/"/g, '\\"') + '"]';
+      if (unique(bySelector)) return bySelector;
+    }
+    var parts = [];
+    var node = el;
+    while (node && node.nodeType === 1 && parts.length < 6) {
+      var step = node.tagName.toLowerCase();
+      var parent = node.parentElement;
+      if (parent) {
+        var siblings = Array.prototype.filter.call(parent.children, function (child) {
+          return child.tagName === node.tagName;
+        });
+        if (siblings.length > 1) step += ":nth-of-type(" + (siblings.indexOf(node) + 1) + ")";
+      }
+      parts.unshift(step);
+      if (node.id && !looksGenerated(node.id)) {
+        parts.unshift("#" + CSS.escape(node.id));
+        break;
+      }
+      node = parent;
+    }
+    return parts.join(" > ");
+  }
+
+  function saveLearned() {
+    var read = function (field) {
+      var input = ui.panel.querySelector('input[data-field="' + field + '"]');
+      return input ? input.value.trim() : "";
+    };
+    var profile = {
+      id: "profil-" + Date.now().toString(36),
+      name: read("name") || "Formularz",
+      enabled: true,
+      match: { urlPattern: read("url") || location.origin + location.pathname + "*", requiredFields: Object.keys(learn.fields).slice(0, 2) },
+      parse: {
+        type: "delimited",
+        prefix: read("prefix"),
+        separator: learn.separator,
+        fields: learn.names,
+      },
+      fields: learn.fields,
+      after: { action: "none" },
+    };
+    state.profiles.push(profile);
+    BRStore.save(state).then(function (saved) {
+      state = saved;
+      stopLearn();
+      pill("Zapisano profil: " + profile.name);
+    });
+  }
+
+  // ------------------------------------------------------------ start ----
+
+  chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
+    if (message.cmd === "learn") {
+      startLearn();
+      sendResponse({ ok: true });
+    } else if (message.cmd === "status") {
+      sendResponse({ ok: true, active: active ? active.name : null, enabled: state ? state.enabled : true });
+    } else if (message.cmd === "reload") {
+      BRStore.load().then(function (loaded) {
+        state = loaded;
+        evaluate();
+        sendResponse({ ok: true });
+      });
+      return true;
+    }
+    return false;
+  });
+
+  BRStore.load().then(function (loaded) {
+    state = loaded;
+    document.addEventListener("keydown", onKeyDown, true);
+    watchPage();
+    evaluate();
+  });
+})();

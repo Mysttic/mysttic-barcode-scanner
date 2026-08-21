@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Czytnik kodow - wypelnianie formularzy",
+  "version": "0.10.0",
+  "description": "Rozpoznaje formularz, przechwytuje skan z czytnika i rozklada dane po polach. Poza rozpoznanymi formularzami nie robi nic.",
+  "permissions": ["storage"],
+  "background": { "service_worker": "src/background.js" },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Czytnik kodow - wypelnianie formularzy"
+  },
+  "options_page": "src/options.html",
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["src/parse.js", "src/fill.js", "src/store.js", "src/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ]
+}
