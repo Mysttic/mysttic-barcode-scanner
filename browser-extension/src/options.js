@@ -31,7 +31,7 @@ function renderList() {
       escapeHtml(fields) +
       "</td><td><button class='ghost' data-del='" +
       index +
-      "'>Usun</button></td>";
+      "'>Usuń</button></td>";
     listaEl.appendChild(row);
   });
 
@@ -75,7 +75,7 @@ document.getElementById("zapisz").addEventListener("click", function () {
   try {
     parsed = JSON.parse(jsonEl.value);
   } catch (e) {
-    return log("Bledny JSON: " + e.message, false);
+    return log("Błędny JSON: " + e.message, false);
   }
   if (!Array.isArray(parsed.profiles)) return log("Brak tablicy 'profiles'.", false);
   state = parsed;
@@ -100,7 +100,7 @@ document.getElementById("plik").addEventListener("change", function (ev) {
   if (!file) return;
   file.text().then(function (text) {
     jsonEl.value = text;
-    log("Wczytano plik - sprawdz i kliknij Zapisz.", true);
+    log("Wczytano plik — sprawdź i kliknij Zapisz.", true);
   });
 });
 

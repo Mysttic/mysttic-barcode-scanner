@@ -31,5 +31,9 @@ npm test          # jednostkowe: parsowanie, dopasowanie adresow, transformacje
 npm run test:e2e  # Chromium z zaladowanym rozszerzeniem + test-vectors/forma-c-wtyczka.html
 ```
 
+Zrzuty do dokumentacji (`docs/img/wtyczka-*.png`) odtwarza `npm run shots` —
+ten sam scenariusz przechodzony na zywo w Chromium, wiec obrazki nie rozjezdzaja
+sie z kodem.
+
 Test e2e wymaga przegladarki Playwrighta (`npx playwright install chromium`)
 i srodowiska graficznego (`xvfb-run -a npm run test:e2e` na serwerze).

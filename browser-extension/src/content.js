@@ -245,6 +245,15 @@
     }
   }
 
+  // 1 pole / 2-4 pola / 5+ pol - inaczej dymek brzmi jak tlumaczenie z angielskiego.
+  function odmianaPol(ile) {
+    if (ile === 1) return "1 pole";
+    var jednosci = ile % 10;
+    var dziesiatki = ile % 100;
+    if (jednosci >= 2 && jednosci <= 4 && (dziesiatki < 12 || dziesiatki > 14)) return ile + " pola";
+    return ile + " pól";
+  }
+
   function applyScan(fields, frame) {
     var result = BRFill.fillForm(document, active.fields || {}, fields);
     result.filled.forEach(function (item) {
@@ -256,9 +265,9 @@
 
     var total = result.filled.length + result.failed.length;
     if (result.failed.length) {
-      pill("Wypelniono " + result.filled.length + "/" + total + " - " + result.failed[0].name + ": " + result.failed[0].error, true, 7000);
+      pill("Wypełniono " + result.filled.length + "/" + total + " — " + result.failed[0].name + ": " + result.failed[0].error, true, 7000);
     } else {
-      pill("Wypelniono " + result.filled.length + " pol (" + active.name + ")");
+      pill("Wypełniono " + odmianaPol(result.filled.length) + " (" + active.name + ")");
     }
 
     var after = active.after || { action: "none" };
@@ -284,11 +293,16 @@
     renderLearn();
   }
 
+  function odepnijWybor() {
+    document.removeEventListener("mousedown", onLearnMouseDown, true);
+    document.removeEventListener("click", onLearnClick, true);
+    document.removeEventListener("mouseover", onLearnHover, true);
+  }
+
   function stopLearn() {
     learn = null;
     if (ui) ui.panel.style.display = "none";
-    document.removeEventListener("click", onLearnClick, true);
-    document.removeEventListener("mouseover", onLearnHover, true);
+    odepnijWybor();
     evaluate();
   }
 
@@ -340,8 +354,8 @@
 
     if (learn.step === "scan") {
       u.panel.innerHTML =
-        "<h2>Ucz formularza (1/3)</h2><p>Zeskanuj kod, ktorym bedziesz wypelnial ten formularz. " +
-        "Znaki nie trafia na strone.</p><button class='ghost' data-act='cancel'>Anuluj</button>";
+        "<h2>Ucz formularza (1/3)</h2><p>Zeskanuj kod, którym będziesz wypełniał ten formularz. " +
+        "Znaki nie trafią na stronę.</p><button class='ghost' data-act='cancel'>Anuluj</button>";
     } else if (learn.step === "names") {
       var parts = learn.frame.split(learn.separator);
       var rows = parts
@@ -358,22 +372,22 @@
         })
         .join("");
       u.panel.innerHTML =
-        "<h2>Ucz formularza (2/3)</h2><p>Nazwij segmenty kodu. Wpisz <b>_</b> przy tych, ktore maja " +
-        "byc pominiete (np. prefiks).</p><div class='rows'>" +
+        "<h2>Ucz formularza (2/3)</h2><p>Nazwij segmenty kodu. Wpisz <b>_</b> przy tych, które mają " +
+        "zostać pominięte (np. prefiks).</p><div class='rows'>" +
         rows +
         "</div><button data-act='names'>Dalej</button><button class='ghost' data-act='cancel'>Anuluj</button>";
     } else if (learn.step === "pick") {
       var name = learn.names[learn.index];
       u.panel.innerHTML =
-        "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do ktorego ma trafic <b>" +
+        "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do którego ma trafić <b>" +
         esc(name) +
-        "</b> (wartosc: <code>" +
+        "</b> (wartość: <code>" +
         esc(learn.frame.split(learn.separator)[learn.index]) +
-        "</code>).</p><button class='ghost' data-act='skip'>Pomin pole</button>" +
+        "</code>).</p><button class='ghost' data-act='skip'>Pomiń pole</button>" +
         "<button class='ghost' data-act='cancel'>Anuluj</button>";
     } else if (learn.step === "save") {
       u.panel.innerHTML =
-        "<h2>Zapisz profil</h2><p>Nazwa profilu i adres, na ktorym ma dzialac (gwiazdka = dowolny fragment).</p>" +
+        "<h2>Zapisz profil</h2><p>Nazwa profilu i adres, na którym ma działać (gwiazdka = dowolny fragment).</p>" +
         "<input data-field='name' value='" +
         esc(document.title || "Formularz") +
         "'><input data-field='url' value='" +
@@ -381,7 +395,7 @@
         "'><input data-field='prefix' value='" +
         esc(learn.frame.split(learn.separator)[0] + learn.separator) +
         "' placeholder='prefiks ramki'>" +
-        "<button data-act='save'>Zapisz i wlacz</button><button class='ghost' data-act='cancel'>Anuluj</button>";
+        "<button data-act='save'>Zapisz i włącz</button><button class='ghost' data-act='cancel'>Anuluj</button>";
     }
     u.panel.querySelectorAll("button").forEach(function (button) {
       button.addEventListener("click", onLearnButton);
@@ -410,12 +424,12 @@
 
     if (learn.index >= learn.names.length) {
       learn.step = "save";
-      document.removeEventListener("click", onLearnClick, true);
-      document.removeEventListener("mouseover", onLearnHover, true);
+      odepnijWybor();
       renderLearn();
       return;
     }
     learn.step = "pick";
+    document.addEventListener("mousedown", onLearnMouseDown, true);
     document.addEventListener("click", onLearnClick, true);
     document.addEventListener("mouseover", onLearnHover, true);
     renderLearn();
@@ -425,6 +439,15 @@
     if (!el || !el.tagName) return false;
     if (el.isContentEditable) return true;
     return ["INPUT", "SELECT", "TEXTAREA"].indexOf(el.tagName) >= 0 && el.type !== "password";
+  }
+
+  // Natywna lista <select> otwiera sie na mousedown - w trybie wyboru pola
+  // musimy ja zatrzymac wczesniej niz na "click".
+  function onLearnMouseDown(ev) {
+    if (ev.composedPath().indexOf(ui.host) >= 0) return;
+    if (!isFormField(ev.target)) return;
+    ev.preventDefault();
+    ev.stopPropagation();
   }
 
   function onLearnHover(ev) {
