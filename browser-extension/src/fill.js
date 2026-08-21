@@ -57,7 +57,7 @@
         break;
       }
     }
-    if (!chosen) return { ok: false, error: "brak opcji '" + value + "' na liscie" };
+    if (!chosen) return { ok: false, error: "brak opcji '" + value + "' na liście" };
     el.value = chosen.value;
     fire(el, ["input", "change"]);
     return { ok: el.value === chosen.value };
@@ -95,7 +95,7 @@
   function fillField(el, rawValue) {
     if (!el) return { ok: false, error: "nie znaleziono pola" };
     if (el.disabled || el.readOnly) return { ok: false, error: "pole zablokowane" };
-    if (el.type === "password") return { ok: false, error: "pola hasla nie wypelniamy" };
+    if (el.type === "password") return { ok: false, error: "pola hasła nie wypełniamy" };
 
     var value = String(rawValue == null ? "" : rawValue);
     if (el.tagName === "SELECT") return fillSelect(el, value);
@@ -117,7 +117,7 @@
       fire(el, ["change"]);
     }
     fire(el, ["blur"]);
-    if (el.value !== value) return { ok: false, error: "pole odrzucilo wartosc (jest '" + el.value + "')" };
+    if (el.value !== value) return { ok: false, error: "pole odrzuciło wartość (jest '" + el.value + "')" };
     return { ok: true };
   }
 
@@ -131,7 +131,7 @@
       try {
         el = root.querySelector(selectors[name]);
       } catch (e) {
-        failed.push({ name: name, error: "bledny selektor" });
+        failed.push({ name: name, error: "błędny selektor" });
         return;
       }
       var result = fillField(el, values[name]);

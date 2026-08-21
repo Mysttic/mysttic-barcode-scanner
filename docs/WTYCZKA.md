@@ -17,6 +17,13 @@ Drugi wiersz jest równie ważny jak pierwszy: poza rozpoznanymi formularzami
 nie ma żadnej zmiany zachowania, więc warianty A i B z
 [FORMULARZE.md](FORMULARZE.md) działają dalej bez zmian.
 
+![Popup wtyczki na stronie z rozpoznanym formularzem](img/wtyczka-popup.png)
+![Popup wtyczki na stronie bez profilu](img/wtyczka-popup-bez-profilu.png)
+
+Kliknięcie ikony pokazuje, w którym z tych dwóch stanów jesteś: po lewej strona
+z rozpoznanym profilem (na pasku dochodzi badge `ON`), po prawej strona bez
+profilu — czytnik pisze wtedy jak zwykła klawiatura.
+
 Czytnik i firmware **pozostają nietknięte** — wtyczka nie łączy się
 z urządzeniem, tylko słucha klawiatury, bo czytnik *jest* klawiaturą.
 Do formularza demo wystarczy konfiguracja fabryczna (passthrough + ENTER).
@@ -60,24 +67,64 @@ Aby testować formularze z pliku (`file://`), włącz w szczegółach rozszerzen
 
 1. Otwórz `test-vectors/forma-c-wtyczka.html` (widok *Karta pracownika*).
 2. Badge powinien pokazać `ON`, a w rogu mignąć „Czytnik: Karta pracownika (demo)".
+
+![Formularz demo przed skanem](img/wtyczka-formularz-przed.png)
+
 3. Zeskanuj kod ze strony (`PRC;JAN;KOWALSKI;12345;IT`) — **bez klikania w pola**.
 4. Cztery pola wypełniają się po nazwach, pola-pułapki zostają puste,
    a panel „stan strony" pokazuje, że strona naprawdę zobaczyła wartości.
+
+![Formularz demo po skanie](img/wtyczka-formularz-po.png)
+
+Zwróć uwagę na trzy rzeczy naraz: dane trafiły w pola mimo **innej kolejności
+niż w kodzie**, pola-pułapki (e-mail, telefon) zostały puste, a `Dział` to
+`<select>` — wtyczka dobrała opcję po wartości. Panel na dole to stan
+wewnętrzny strony: gdyby wtyczka podmieniła tylko `value` bez zdarzeń,
+zostałby pusty i formularz zapisałby się bez danych.
+
 5. Przełącz na zakładkę *Ustawienia* — badge gaśnie. Kliknij w pole i zeskanuj:
    kod wpisze się surowo, jak z klawiatury.
 
 ## Dodanie własnego formularza
 
-Ikona wtyczki → **Ucz formularza**, trzy kroki:
+Otwórz formularz, dla którego chcesz zrobić profil, i kliknij ikonę wtyczki →
+**Ucz formularza**. Kreator ma trzy kroki.
 
-1. **Zeskanuj kod**, którym będziesz wypełniał ten formularz (znaki nie trafiają na stronę).
-2. **Nazwij segmenty** kodu; wpisz `_` przy tych, które mają zostać pominięte
-   (zwykle pierwszy segment to prefiks).
-3. **Kliknij pola** na stronie — po kolei dla każdej nazwy. Na końcu nadaj nazwę
-   profilowi i sprawdź wzorzec adresu.
+**Krok 1 — zeskanuj kod**, którym będziesz wypełniał ten formularz. Znaki nie
+trafiają na stronę, więc formularz zostaje czysty.
+
+![Tryb nauki, krok 1: skanowanie kodu](img/wtyczka-nauka-1-skan.png)
+
+**Krok 2 — nazwij segmenty.** Wtyczka sama tnie kod (dobiera separator spośród
+`;` `|` `,` i tabulatora) i pokazuje, co z niego wyszło. Po lewej wartości
+z Twojego kodu, po prawej nazwy do wpisania. Segmenty do pominięcia — zwykle
+prefiks — oznacz znakiem `_`.
+
+![Tryb nauki, krok 2: nazywanie segmentów kodu](img/wtyczka-nauka-2-segmenty.png)
+
+**Krok 3 — klikaj pola.** Wtyczka pyta po kolei o każdą nazwę i pokazuje, jaką
+wartość ma tam wstawić. Pole pod kursorem podświetla się na zielono; kliknięcie
+zapisuje selektor i przechodzi do następnej nazwy. Pola, których na tym
+formularzu nie ma, pomijasz przyciskiem.
+
+![Tryb nauki, krok 3: wskazywanie pól klikaniem](img/wtyczka-nauka-3-pola.png)
+
+**Zapis.** Na koniec nadajesz profilowi nazwę i sprawdzasz wzorzec adresu
+(podpowiadany z bieżącej strony) oraz prefiks ramki. Zielone obwódki pokazują
+pola, które właśnie przypisałeś.
+
+![Tryb nauki: zapis profilu](img/wtyczka-nauka-4-zapis.png)
 
 Profil zapisuje się lokalnie i działa od razu. Gotowe profile można wyeksportować
 do pliku (**Profile formularzy** → *Eksportuj*) i rozesłać na inne stanowiska.
+
+## Profile formularzy
+
+Ikona wtyczki → **Profile formularzy**: lista zapisanych profili (można je
+wyłączać i usuwać) oraz cała konfiguracja jako JSON — do ręcznej edycji,
+eksportu na inne stanowiska i importu.
+
+![Lista profili i konfiguracja JSON](img/wtyczka-opcje.png)
 
 ## Format profilu
 
@@ -163,6 +210,7 @@ cd browser-extension
 npm ci
 npm test         # parsowanie, dopasowanie adresów, transformacje (36 asercji)
 npm run test:e2e # Chromium z załadowanym rozszerzeniem + formularz demo
+npm run shots    # odtworzenie zrzutów z tej strony (docs/img/wtyczka-*.png)
 ```
 
 Test e2e sprawdza trzy rzeczy naraz: wypełnienie rozpoznanego formularza
