@@ -96,12 +96,30 @@ checkTrue("url: inna domena odrzucona", !urlMatches("https://erp.firma.pl/*", "h
 checkTrue("url: kropka nie jest metaznakiem", !urlMatches("https://a.b/*", "https://axb/c"));
 checkTrue("url: pusty wzorzec", !urlMatches("", "https://a.b/"));
 
+// ---------------------------------------------- ramki TAB-owe (bez prefiksu) ---
+const TABSPEC = {
+  type: "delimited",
+  separator: "\t",
+  fields: ["imie", "nazwisko", "numer", "dzial"],
+  segmentPatterns: { numer: "^[0-9]+$" },
+};
+check("tab-frame: sekwencja urzadzenia na pola",
+  parseFrame("JAN\tKOWALSKI\t12345\tIT", TABSPEC).fields,
+  { imie: "JAN", nazwisko: "KOWALSKI", numer: "12345", dzial: "IT" });
+checkTrue("tab-frame: bez prefiksu wymagana DOKLADNA liczba segmentow",
+  !!parseFrame("JAN\tKOWALSKI\t12345\tIT\tEXTRA", TABSPEC).error);
+checkTrue("tab-frame: za malo segmentow odrzucone",
+  !!parseFrame("JAN\tKOWALSKI", TABSPEC).error);
+checkTrue("tab-frame: wzorzec segmentu odsiewa cudza ramke (lek na pracowniku)",
+  !!parseFrame("05909991055172\t2027-10-31\tA23G05\tK7L9XW24MQ1R", TABSPEC).error);
+
 const state = defaults();
 check("profile: demo pasuje do strony testowej", candidatesForUrl(state, "http://localhost:8124/forma-c-wtyczka.html").length, 1);
+check("profile: demo leku pasuje do swojej strony", candidatesForUrl(state, "http://localhost:8124/forma-c-lek.html").length, 1);
 check("profile: obca strona bez profilu", candidatesForUrl(state, "https://example.com/").length, 0);
 state.profiles[0].enabled = false;
 check("profile: wylaczony pomijany", candidatesForUrl(state, "http://localhost:8124/forma-c-wtyczka.html").length, 0);
-check("stan: normalizacja pustego wejscia", normalize(null).profiles.length, 1);
+check("stan: normalizacja pustego wejscia", normalize(null).profiles.length, 2);
 check("stan: nieznane pola nie kasuja ustawien", normalize({ settings: { burstGapMs: 90 } }).settings.minFrameLength, 3);
 
 // ------------------------------------------------------------ wypelnianie ---

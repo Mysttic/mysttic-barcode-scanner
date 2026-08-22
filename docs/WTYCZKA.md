@@ -13,6 +13,13 @@ Wtyczka jest **pasywna, dopóki nie rozpozna formularza**.
 | formularz rozpoznany | przechwytuje skan i rozkłada dane po polach **po nazwach** | badge `ON`, dymek „Wypełniono 4 pola" |
 | formularz nierozpoznany | **nic** — nie dotyka klawiatury | czytnik pisze jak zwykle (TAB-y, passthrough) |
 
+Przechwytywany „skan" to także **sekwencja TAB-owa z profilu urządzenia**
+(profil wtyczki z `parse.separator: "\t"`): czytnik zostaje na stałe
+w produkcyjnej konfiguracji z włączonymi profilami, a na rozpoznanych stronach
+wtyczka łapie całą serię (TAB-y nie ruszają wtedy fokusa) i rozkłada pola po
+nazwach. **Nikt niczego nie przełącza podczas pracy** — na „głupich" stronach
+działają TAB-y (wariant A), na rozpoznanych wygrywa wtyczka.
+
 Drugi wiersz jest równie ważny jak pierwszy: poza rozpoznanymi formularzami
 nie ma żadnej zmiany zachowania, więc warianty A i B z
 [FORMULARZE.md](FORMULARZE.md) działają dalej bez zmian.
@@ -41,15 +48,20 @@ Do formularza demo wystarczy konfiguracja fabryczna (passthrough + ENTER).
 **Przy skanie (tylko gdy profil jest aktywny):**
 
 5. znaki lecące szybciej niż `burstGapMs` (domyślnie 60 ms) to czytnik,
-   nie człowiek — trafiają do bufora ramki,
-6. ENTER kończy ramkę,
+   nie człowiek — trafiają do bufora ramki (autorepeat przytrzymanego
+   klawisza jest ignorowany); przy profilu TAB-owym do bufora trafiają
+   też TAB-y z serii (samotny TAB człowieka przechodzi normalnie),
+6. ENTER kończy ramkę; przechwycona seria bez ENTER-a wraca do strony
+   po 350 ms ciszy,
 7. ramka idzie do parsera zgodnie z `parse.type` profilu,
 8. wartości trafiają do pól ze słownika `fields`, każde pole jest
    **weryfikowane odczytem zwrotnym**,
 9. podsumowanie w dymku + podświetlenie pól (zielone/czerwone).
 
 **Gdy ramka się nie sparsuje**, wtyczka oddaje przechwycone znaki stronie —
-tak, jakby jej tam nie było. To gwarancja braku regresji.
+tak, jakby jej tam nie było. To gwarancja braku regresji. Przy profilu
+prefiksowym TAB w środku ramki nadal przerywa przechwytywanie (to sekwencja
+wariantu A dla innej strony); przy profilu TAB-owym TAB-y są częścią ramki.
 
 ## Instalacja
 
@@ -65,7 +77,7 @@ Aby testować formularze z pliku (`file://`), włącz w szczegółach rozszerzen
 
 ## Pierwszy test
 
-1. Otwórz `test-vectors/forma-c-wtyczka.html` (widok *Karta pracownika*).
+1. Otwórz `test-vectors/formularze/forma-c-wtyczka.html` (widok *Karta pracownika*).
 2. Badge powinien pokazać `ON`, a w rogu mignąć „Czytnik: Karta pracownika (demo)".
 
 ![Formularz demo przed skanem](img/wtyczka-formularz-przed.png)
@@ -85,13 +97,40 @@ zostałby pusty i formularz zapisałby się bez danych.
 5. Przełącz na zakładkę *Ustawienia* — badge gaśnie. Kliknij w pole i zeskanuj:
    kod wpisze się surowo, jak z klawiatury.
 
+## Drugi przykład — zamówienie leku i przełączanie profili
+
+`test-vectors/formularze/forma-c-lek.html` pokazuje pełny pipeline GS1 i to, że profile
+(czytnika i wtyczki) dobierają się same do strony:
+
+1. Na opakowaniu leku jest **DataMatrix GS1** (na stronie: kod o treści jak na
+   prawdziwych lekach — GTIN z poprawną cyfrą kontrolną, data ważności `271000`,
+   seria, numer seryjny za separatorem GS).
+2. Profil **`lek-wtyczka` w czytniku** (w konfiguracji domyślnej, do włączenia)
+   parsuje GS1, przelicza datę (dzień „00" = ostatni dzień miesiąca → `2027-10-31`)
+   i wypisuje ramkę `LEK;gtin;data;seria;serial` — separator GS nie przechodzi
+   przez klawiaturę, więc granice pól wyznacza czytnik.
+3. **Drugi profil wtyczki** (wbudowany) rozpoznaje stronę zamówienia i rozkłada
+   ramkę po polach: numer seryjny i data ważności trafiają we właściwe miejsca
+   mimo pomieszanej kolejności pól.
+
+Przełączanie profili widać wprost: na stronie *Karta pracownika* aktywny jest
+profil pracownika (skan leku nic tam nie wypełni), na stronie zamówienia — profil
+leku (ramka pracownika zostaje oddana stronie). Badge i dymek zawsze mówią,
+który profil jest aktywny. Uwaga: profil `gs1-datamatrix` (TAB-y, wariant A)
+łapie te same kody co `lek-wtyczka` — do tego demo musi być wyłączony.
+
 ## Dodanie własnego formularza
+
+> Samouczek krok po kroku na pełnym przykładzie (zamówienie leku, kod GS1
+> z opakowania): **[NAUKA-PROFILU.md](NAUKA-PROFILU.md)**.
 
 Otwórz formularz, dla którego chcesz zrobić profil, i kliknij ikonę wtyczki →
 **Ucz formularza**. Kreator ma trzy kroki.
 
 **Krok 1 — zeskanuj kod**, którym będziesz wypełniał ten formularz. Znaki nie
-trafiają na stronę, więc formularz zostaje czysty.
+trafiają na stronę, więc formularz zostaje czysty. Uczysz z tego, co **wpisuje
+czytnik** — jeśli jego profil zamienia kod na sekwencję TAB-ową, nauka złapie
+ją w całości (segmenty rozdzieli tabulator).
 
 ![Tryb nauki, krok 1: skanowanie kodu](img/wtyczka-nauka-1-skan.png)
 
@@ -102,10 +141,13 @@ prefiks — oznacz znakiem `_`.
 
 ![Tryb nauki, krok 2: nazywanie segmentów kodu](img/wtyczka-nauka-2-segmenty.png)
 
-**Krok 3 — klikaj pola.** Wtyczka pyta po kolei o każdą nazwę i pokazuje, jaką
-wartość ma tam wstawić. Pole pod kursorem podświetla się na zielono; kliknięcie
-zapisuje selektor i przechodzi do następnej nazwy. Pola, których na tym
-formularzu nie ma, pomijasz przyciskiem.
+**Krok 3 — klikaj pola i zatwierdzaj.** Wtyczka pyta po kolei o każdą nazwę
+i pokazuje, jaką wartość ma tam wstawić. Kliknięcie **wybiera** pole (trwała
+zielona obwódka), a panel czeka na decyzję: **Zatwierdź i dalej**, **Wybierz
+inne pole** (pomyłka — kliknij inne) albo **← Wstecz** do poprzedniej nazwy,
+żeby poprawić wcześniejszy wybór. Pola, których na tym formularzu nie ma,
+pomijasz przyciskiem. Wstecz działa też z ekranu zapisu i z kroku nazw
+(powrót do skanowania).
 
 ![Tryb nauki, krok 3: wskazywanie pól klikaniem](img/wtyczka-nauka-3-pola.png)
 
@@ -118,11 +160,31 @@ pola, które właśnie przypisałeś.
 Profil zapisuje się lokalnie i działa od razu. Gotowe profile można wyeksportować
 do pliku (**Profile formularzy** → *Eksportuj*) i rozesłać na inne stanowiska.
 
-## Profile formularzy
+## Profile formularzy — dodawanie i zarządzanie
 
-Ikona wtyczki → **Profile formularzy**: lista zapisanych profili (można je
-wyłączać i usuwać) oraz cała konfiguracja jako JSON — do ręcznej edycji,
-eksportu na inne stanowiska i importu.
+Nowy profil dodajesz na dwa sposoby:
+
+- **tryb nauki** (zalecany) — otwórz formularz, ikona wtyczki →
+  **Ucz formularza**, trzy kroki opisane wyżej; profil działa od razu,
+- **import** — wczytaj plik JSON wyeksportowany na innym stanowisku
+  (prowizjonowanie: jeden inżynier uczy, reszta importuje).
+
+Zarządzanie: ikona wtyczki → **Profile formularzy**. Przy każdym profilu
+wprost na liście:
+
+| Operacja | Jak |
+|---|---|
+| zmiana nazwy | wpisz w polu nazwy — zapisuje się samo (po wyjściu z pola) |
+| zmiana adresu (gdzie działa) | pole „adres" — wzorzec z `*`, np. `https://erp.firma.pl/przyjecie*` |
+| włącz / wyłącz | checkbox „włączony" (wyłączony profil zostaje na liście) |
+| kolejność | strzałki ▲▼ — gdy do strony pasuje kilka profili, **wygrywa pierwszy** |
+| duplikowanie | „Duplikuj" — kopia do przerobienia (np. ten sam formularz pod drugim adresem) |
+| usunięcie | „Usuń" (z potwierdzeniem) |
+
+Pola, selektory i parsowanie zmienisz w sekcji **Konfiguracja (JSON)** poniżej
+listy (całość konfiguracji do ręcznej edycji) — albo po prostu naucz profil
+od nowa i usuń stary. **Eksportuj/Importuj do pliku** przenosi komplet profili
+między stanowiskami; **Przywróć domyślne** wraca do dwóch profili demo.
 
 ![Lista profili i konfiguracja JSON](img/wtyczka-opcje.png)
 
@@ -159,6 +221,8 @@ Celowo bliźniaczy do profilu w czytniku: *gdzie* → *jak rozłożyć* → *gdz
 | `match.requiredFields` | nazwy pól, które muszą istnieć w DOM, żeby profil się włączył |
 | `parse.type` | `delimited` (segmenty), `regex` (grupy jak w urządzeniu) albo `gs1` |
 | `parse.prefix` | początek ramki; dopóki pasuje, znaki nie trafiają na stronę |
+| `parse.separator` | separator segmentów; **`"\t"` = ramka TAB-owa** (sekwencja z profilu urządzenia — czytnik zostaje w konfiguracji produkcyjnej) |
+| `parse.segmentPatterns` | opcjonalne wzorce per pole (np. `{"gtin": "^[0-9]{14}$"}`) — bez prefiksu odróżniają ramki różnych profili; ramka bez prefiksu wymaga też DOKŁADNEJ liczby segmentów |
 | `fields` | mapa `nazwa pola → selektor CSS` |
 | `after.action` | `none` (domyślnie), `focus` + `selector`, `submit` |
 
@@ -170,11 +234,14 @@ można przepisać jeden do jednego.
 
 Firmware filtruje znaki niedrukowalne, więc **separator GS (0x1D) nie przechodzi
 przez klawiaturę** — parser nie miałby jak rozpoznać granic pól zmiennej długości
-(AI 10 i 21). Dwa wyjścia:
+(AI 10 i 21). Wyjścia:
 
-- **zalecane:** w czytniku zrób profil GS1, który wypisuje pola rozdzielone
-  widocznym znakiem (akcje `field` przeplatane `text "|"`), a we wtyczce użyj
-  `parse.type: "delimited"`;
+- **zalecane:** zostaw w czytniku produkcyjny profil GS1 z sekwencją TAB-ową
+  (np. `gs1-datamatrix`) i użyj we wtyczce ramki TAB-owej
+  (`parse.separator: "\t"`) — granice pól wyznacza czytnik, nic nie przełączasz;
+- profil w czytniku wypisujący pola rozdzielone widocznym znakiem (akcje `field`
+  przeplatane `text ";"`, jak `lek-wtyczka` w konfiguracji domyślnej) +
+  `parse.type: "delimited"` z prefiksem;
 - albo ustaw `parse.gsChar` na znak, którym rozdzielone są pola w kodzie.
 
 Sam parser GS1 (AI 01/17/10/21, data „00" = ostatni dzień miesiąca, zdejmowanie

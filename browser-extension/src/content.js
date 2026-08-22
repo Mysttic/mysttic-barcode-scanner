@@ -154,6 +154,21 @@
     wedge.buf = "";
     wedge.snapshot = null;
     wedge.blocked = false;
+    clearTimeout(wedge.flushTimer);
+  }
+
+  // Przerwany/niedokonczony przechwycony strumien: oddaj znaki stronie
+  // i zacznij od nowa. Bez tego zablokowane znaki przepadalyby.
+  function abortCapture() {
+    if (wedge.blocked && wedge.buf) replayBuffer(wedge.snapshot, wedge.buf);
+    resetWedge();
+  }
+
+  // Czy aktywny profil czyta ramke TAB-owa (sekwencje z profilu URZADZENIA)?
+  // Wtedy wtyczka przechwytuje takze TAB-y - na rozpoznanym formularzu ona
+  // rozklada pola, a urzadzenie moze zostac w produkcyjnej konfiguracji.
+  function isTabFrame() {
+    return !!(active && active.parse && active.parse.separator === "\t");
   }
 
   function captureFocus() {
@@ -201,6 +216,7 @@
     if (ev.ctrlKey || ev.altKey || ev.metaKey || ev.isComposing) return;
 
     var now = performance.now();
+    var tabFrame = isTabFrame();
 
     if (ev.key === "Enter") {
       var frame = wedge.buf;
@@ -223,26 +239,54 @@
       return;
     }
 
-    // TAB/strzalki w srodku ramki = to sekwencja z profilu urzadzenia,
-    // czyli wariant A - nie mieszamy sie do niego.
-    if (ev.key.length !== 1) {
-      resetWedge();
+    // Autorepeat = przytrzymany klawisz = czlowiek, nie skaner.
+    if (ev.repeat) {
+      abortCapture();
+      return;
+    }
+
+    var isChar = ev.key.length === 1;
+    var isTabInFrame = tabFrame && ev.key === "Tab" && wedge.buf !== "";
+
+    if (!isChar && !isTabInFrame) {
+      // Shift/CapsLock nie przerywaja ramki: czytnik pisze WIELKIE litery
+      // i HID wysyla osobny keydown Shift przed kazda z nich.
+      if (ev.key === "Shift" || ev.key === "CapsLock") return;
+      // Profil prefiksowy: TAB w srodku ramki = sekwencja z urzadzenia
+      // (wariant A) - nie mieszamy sie. Profil TAB-owy: samotny TAB czlowieka
+      // (pusty bufor) tez przechodzi normalnie.
+      abortCapture();
       return;
     }
 
     if (now - wedge.lastTs > state.settings.burstGapMs) {
-      wedge.buf = "";
-      wedge.blocked = false;
+      abortCapture();
       wedge.snapshot = captureFocus();
     }
     wedge.lastTs = now;
-    var candidate = wedge.buf + ev.key;
-    wedge.buf = candidate;
-    if (shouldBlock(candidate)) {
+    var key = isTabInFrame ? "\t" : ev.key;
+    var candidate = wedge.buf + key;
+
+    if (tabFrame) {
+      // Ramka bez prefiksu: pierwszy znak moze byc od czlowieka, wiec go
+      // przepuszczamy (przy udanym parsowaniu cofnie go restoreSnapshot).
+      // Od DRUGIEGO zdarzenia w szybkiej serii blokujemy - to skaner.
+      if (wedge.buf !== "") {
+        wedge.blocked = true;
+        ev.preventDefault();
+        ev.stopPropagation();
+      }
+    } else if (shouldBlock(candidate)) {
       wedge.blocked = true;
       ev.preventDefault();
       ev.stopPropagation();
     }
+    wedge.buf = candidate;
+
+    // Skan bez Entera na koncu (np. inna konfiguracja sufiksu) nie moze
+    // "zjesc" znakow na zawsze - po ciszy oddajemy je stronie.
+    clearTimeout(wedge.flushTimer);
+    if (wedge.blocked) wedge.flushTimer = setTimeout(abortCapture, 350);
   }
 
   // 1 pole / 2-4 pola / 5+ pol - inaczej dymek brzmi jak tlumaczenie z angielskiego.
@@ -289,8 +333,25 @@
   var SEPARATORS = [";", "|", "\t", ","];
 
   function startLearn() {
-    learn = { step: "scan", buf: "", lastTs: 0, frame: "", names: [], separator: ";", index: 0, fields: {} };
+    learn = { step: "scan", buf: "", lastTs: 0, frame: "", names: [], separator: ";", index: 0, fields: {}, pending: null, marked: null };
     renderLearn();
+  }
+
+  // Trwale zaznaczenie wybranego (niezatwierdzonego) pola.
+  function markLearn(el) {
+    unmarkLearn();
+    if (!el) return;
+    learn.marked = el;
+    el.__brPrevOutline = el.style.outline;
+    el.style.outline = "3px solid #16a34a";
+  }
+
+  function unmarkLearn() {
+    if (learn && learn.marked) {
+      learn.marked.style.outline = learn.marked.__brPrevOutline || "";
+      delete learn.marked.__brPrevOutline;
+      learn.marked = null;
+    }
   }
 
   function odepnijWybor() {
@@ -300,6 +361,7 @@
   }
 
   function stopLearn() {
+    unmarkLearn();
     learn = null;
     if (ui) ui.panel.style.display = "none";
     odepnijWybor();
@@ -321,13 +383,15 @@
       renderLearn();
       return;
     }
-    if (ev.key.length !== 1) return;
+    // TAB jest czescia ramki TAB-owej z profilu urzadzenia - buforujemy go
+    // jak znak (i nie pozwalamy mu ruszyc fokusa).
+    if (ev.key.length !== 1 && ev.key !== "Tab") return;
     ev.preventDefault();
     ev.stopPropagation();
     var now = performance.now();
     if (now - learn.lastTs > 400) learn.buf = "";
     learn.lastTs = now;
-    learn.buf += ev.key;
+    learn.buf += ev.key === "Tab" ? "\t" : ev.key;
   }
 
   function pickSeparator(frame) {
@@ -375,16 +439,37 @@
         "<h2>Ucz formularza (2/3)</h2><p>Nazwij segmenty kodu. Wpisz <b>_</b> przy tych, które mają " +
         "zostać pominięte (np. prefiks).</p><div class='rows'>" +
         rows +
-        "</div><button data-act='names'>Dalej</button><button class='ghost' data-act='cancel'>Anuluj</button>";
+        "</div><button data-act='names'>Dalej</button>" +
+        "<button class='ghost' data-act='back'>← Wstecz (skanuj ponownie)</button>" +
+        "<button class='ghost' data-act='cancel'>Anuluj</button>";
     } else if (learn.step === "pick") {
       var name = learn.names[learn.index];
-      u.panel.innerHTML =
-        "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do którego ma trafić <b>" +
-        esc(name) +
-        "</b> (wartość: <code>" +
-        esc(learn.frame.split(learn.separator)[learn.index]) +
-        "</code>).</p><button class='ghost' data-act='skip'>Pomiń pole</button>" +
-        "<button class='ghost' data-act='cancel'>Anuluj</button>";
+      var value = learn.frame.split(learn.separator)[learn.index];
+      if (learn.pending) {
+        // pole wybrane - czeka na potwierdzenie (mozna zmienic albo sie cofnac)
+        u.panel.innerHTML =
+          "<h2>Ucz formularza (3/3)</h2><p>Pole dla <b>" +
+          esc(name) +
+          "</b> (wartość: <code>" +
+          esc(value) +
+          "</code>):</p><p><code>" +
+          esc(learn.pending.selector) +
+          "</code></p>" +
+          "<button data-act='confirm'>Zatwierdź i dalej</button>" +
+          "<button class='ghost' data-act='repick'>Wybierz inne pole</button>" +
+          "<button class='ghost' data-act='back'>← Wstecz</button>" +
+          "<button class='ghost' data-act='cancel'>Anuluj</button>";
+      } else {
+        u.panel.innerHTML =
+          "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do którego ma trafić <b>" +
+          esc(name) +
+          "</b> (wartość: <code>" +
+          esc(value) +
+          "</code>).</p>" +
+          "<button class='ghost' data-act='back'>← Wstecz</button>" +
+          "<button class='ghost' data-act='skip'>Pomiń pole</button>" +
+          "<button class='ghost' data-act='cancel'>Anuluj</button>";
+      }
     } else if (learn.step === "save") {
       u.panel.innerHTML =
         "<h2>Zapisz profil</h2><p>Nazwa profilu i adres, na którym ma działać (gwiazdka = dowolny fragment).</p>" +
@@ -395,7 +480,9 @@
         "'><input data-field='prefix' value='" +
         esc(learn.frame.split(learn.separator)[0] + learn.separator) +
         "' placeholder='prefiks ramki'>" +
-        "<button data-act='save'>Zapisz i włącz</button><button class='ghost' data-act='cancel'>Anuluj</button>";
+        "<button data-act='save'>Zapisz i włącz</button>" +
+        "<button class='ghost' data-act='back'>← Wstecz</button>" +
+        "<button class='ghost' data-act='cancel'>Anuluj</button>";
     }
     u.panel.querySelectorAll("button").forEach(function (button) {
       button.addEventListener("click", onLearnButton);
@@ -413,8 +500,47 @@
       learn.index = -1;
       return nextPick();
     }
-    if (action === "skip") return nextPick();
+    if (action === "confirm") {
+      learn.fields[learn.names[learn.index]] = learn.pending.selector;
+      unmarkLearn();
+      learn.pending = null;
+      return nextPick();
+    }
+    if (action === "repick") {
+      unmarkLearn();
+      learn.pending = null;
+      return renderLearn();
+    }
+    if (action === "back") {
+      if (learn.step === "names") {
+        learn.step = "scan";
+        return renderLearn();
+      }
+      if (learn.step === "save") {
+        learn.index = learn.names.length; // cofnij do ostatniego pola
+      }
+      return prevPick();
+    }
+    if (action === "skip") {
+      delete learn.fields[learn.names[learn.index]]; // pomijane = bez przypisania
+      unmarkLearn();
+      learn.pending = null;
+      return nextPick();
+    }
     if (action === "save") return saveLearned();
+  }
+
+  // Wejscie w krok wyboru dla biezacej nazwy; wczesniejsze przypisanie
+  // (np. po cofnieciu) pokazuje sie jako wybor do zatwierdzenia.
+  function enterPick() {
+    learn.step = "pick";
+    var existing = learn.fields[learn.names[learn.index]];
+    learn.pending = existing ? { selector: existing } : null;
+    markLearn(existing ? resolve(existing) : null);
+    document.addEventListener("mousedown", onLearnMouseDown, true);
+    document.addEventListener("click", onLearnClick, true);
+    document.addEventListener("mouseover", onLearnHover, true);
+    renderLearn();
   }
 
   function nextPick() {
@@ -424,15 +550,30 @@
 
     if (learn.index >= learn.names.length) {
       learn.step = "save";
+      unmarkLearn();
+      learn.pending = null;
       odepnijWybor();
       renderLearn();
       return;
     }
-    learn.step = "pick";
-    document.addEventListener("mousedown", onLearnMouseDown, true);
-    document.addEventListener("click", onLearnClick, true);
-    document.addEventListener("mouseover", onLearnHover, true);
-    renderLearn();
+    enterPick();
+  }
+
+  function prevPick() {
+    do {
+      learn.index -= 1;
+    } while (learn.index >= 0 && (!learn.names[learn.index] || learn.names[learn.index] === "_"));
+
+    if (learn.index < 0) {
+      // przed pierwszym polem - wroc do nazywania segmentow
+      learn.step = "names";
+      unmarkLearn();
+      learn.pending = null;
+      odepnijWybor();
+      renderLearn();
+      return;
+    }
+    enterPick();
   }
 
   function isFormField(el) {
@@ -462,8 +603,11 @@
     if (!isFormField(el)) return;
     ev.preventDefault();
     ev.stopPropagation();
-    learn.fields[learn.names[learn.index]] = cssPath(el);
-    nextPick();
+    // klik = WYBOR (do zatwierdzenia w panelu), nie automatyczne przejscie -
+    // operator moze potwierdzic, wybrac inne pole albo sie cofnac
+    learn.pending = { selector: cssPath(el) };
+    markLearn(el);
+    renderLearn();
   }
 
   // Selektor: najpierw stabilne atrybuty, sciezka strukturalna na koncu.

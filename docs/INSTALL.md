@@ -66,7 +66,9 @@ konfiguracji), `config/config.json` (konfiguracja startowa — można edytować)
 
 ## 5. Konfigurator (profile)
 
-1. Otwórz plik **`konfigurator.html`** z dysku `CIRCUITPY` w Chrome/Edge.
+1. Otwórz plik **`konfigurator.html`** z dysku czytnika w Chrome/Edge
+   (firmware produkcyjny C: dysk **`CZYTNIK`**, tylko-do-odczytu;
+   prototyp CircuitPython: dysk `CIRCUITPY`).
 2. Kliknij **Połącz** i wybierz **drugi** port „Urządzenie szeregowe USB"
    (pierwszy to konsola diagnostyczna — jeśli trafisz źle, dostaniesz timeout;
    rozłącz i wybierz drugi).

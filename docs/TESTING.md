@@ -1,7 +1,41 @@
 # Testowanie
 
-Trzy poziomy: testy jednostkowe (automatyczne), scenariusz e2e na sprzęcie
-(półautomatyczny) i plan testów akceptacyjnych (checklista przed wdrożeniem).
+Cztery poziomy: scenariusz „od pudełka" (ręczny, z dysku czytnika), testy
+jednostkowe (automatyczne), scenariusz e2e na sprzęcie (półautomatyczny)
+i plan testów akceptacyjnych (checklista przed wdrożeniem).
+
+## 0. Scenariusz „od pudełka" — pełny test z dysku czytnika
+
+Wszystko, czego potrzeba, jest w czytniku. Konfiguracja urządzenia przez cały
+scenariusz jest JEDNA (produkcyjna) — niczego nie przełączasz między testami.
+
+**Przygotowanie (raz):**
+
+1. Podłącz czytnik do USB — pojawi się dysk **`CZYTNIK`**.
+2. Otwórz z dysku `konfigurator.html` (Chrome/Edge) → **Połącz** → zakładka
+   **Profile**: włączone mają być `pracownik-tab` i `gs1-datamatrix`
+   (stan fabryczny wydania; jeśli nie — zaznacz i **Zapisz trwale**) → Rozłącz.
+3. Zainstaluj wtyczkę: `chrome://extensions` → **Tryb dewelopera** →
+   **Załaduj rozpakowane** → katalog `browser-extension/` z repozytorium lub
+   paczki wydania. W **Szczegóły** wtyczki włącz **„Zezwalaj na dostęp do
+   adresów URL plików"** (strony testowe otwierają się z dysku).
+4. Otwórz z dysku **`testy.html`** — to menu całego scenariusza.
+
+**Testy (kolejno, kody skanujesz prosto z ekranu):**
+
+| # | Test | Kroki | Oczekiwany wynik |
+|---|---|---|---|
+| 1 | **A — TAB-y** | otwórz formularz A, kliknij pole „Imię", zeskanuj | pola wypełnione PO KOLEI (JAN/KOWALSKI/12345/IT), Enter zatwierdza |
+| 2 | **B — pola po nazwie** | otwórz formularz B, nic nie klikaj, zeskanuj | wartości trafiają po nazwach mimo pomieszanej kolejności; pułapki puste |
+| 3 | **GS1 — TAB-y** | otwórz formularz GS1, kliknij pierwsze pole, zeskanuj | GTIN, data `RRRR-MM-DD`, partia, numer seryjny po kolei |
+| 4 | **C — karta pracownika (wtyczka)** | otwórz, sprawdź dymek „Czytnik: Karta pracownika (demo)" i badge `ON`, zeskanuj BEZ klikania | te same dane co w teście 1, ale pola są pomieszane i wypełniają się PO NAZWACH; panel „stan strony" pokazuje 4/4 |
+| 5 | **C — negatywny** | na stronie testu 4 przełącz na widok *Ustawienia*, kliknij w pole, zeskanuj | badge gaśnie, TAB-y działają jak zwykła klawiatura (bez wtyczki) |
+| 6 | **C — zamówienie leku** | otwórz, sprawdź dymek „Czytnik: Zamówienie leku (demo)", zeskanuj DataMatrix | numer seryjny `K7L9XW24MQ1R`, data `2027-10-31` (z `271000` — dzień 00 = koniec miesiąca), GTIN, seria — po nazwach; pułapki puste |
+| 7 | **przełączanie profili** | wróć na stronę testu 4 i zeskanuj kod LEKU | nic się nie wypełnia (ramka odrzucona) — profile nie strzelają na krzyż |
+
+Kryterium zaliczenia: 1–7 zgodne z tabelą. Dalej (opcjonalnie): tryb nauki
+na obcej stronie z poligonu ([FORMULARZE.md](FORMULARZE.md), sekcja „Poligon")
+— procedura w [WTYCZKA.md](WTYCZKA.md).
 
 ## 1. Testy jednostkowe (bez sprzętu)
 

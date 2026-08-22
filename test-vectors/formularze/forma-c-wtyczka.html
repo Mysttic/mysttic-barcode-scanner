@@ -33,8 +33,10 @@
     <h1>Kod do zeskanowania</h1>
     <img alt="QR PRC" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAAD4AQAAAADpqhamAAABUklEQVR4nO1ZSY7DMAwjjf7/yxyIkp3DALkUTg0oauC61iFaqM2lcEvjno2Xf0/j5R9tnw8A5lbeCYSuk9FAfzgHEKAYW10n+LV84xE+aY+LyM86wRnybfb/JKbrC/399EcEfsbAU+8fR+gvrxn+RKzqpD+v35RBwFPkG5v5/N//OQs89f5xAJ8GfTxBPmjj/4FpAAe/KvvHF4+Rbz9f1fMF9gv9aYBD5NvNZyV9OQFGMAQUcIx8W/O/XPloBBTs5wSAFvmfVfiD5PRfkwB65H9V15+xnz1Qo/lHjvlCwGwInAlwhHz753+uSAhjzOmf6tX/MTTOxxZRG/+b5MY/bz6yCKrJ/KPVApQFsiigzfzLvPTy8LcqIbvgf5LrYNb/BD9+L994kK9qej0MNqn/H69z5Jmd37oHRgv9mfvqAWf4o8P9P9///472z3j5t/Stff4A0vNvHDpEU6QAAAAASUVORK5CYII=">
     <p class="hint">Zawartość: <code>PRC;JAN;KOWALSKI;12345;IT</code></p>
-    <p class="hint">Czytnik może być w konfiguracji <b>fabrycznej</b> (passthrough + ENTER) —
-    kod leci 1:1, a rozkładem na pola zajmuje się wtyczka.</p>
+    <p class="hint">Czytnik zostaje w konfiguracji <b>produkcyjnej</b> — profil
+    <code>pracownik-tab</code> może być WŁĄCZONY (kod zamienia się na sekwencję
+    TAB-ów). Wtyczka przechwytuje całą sekwencję i rozkłada pola po nazwach;
+    bez profilu w czytniku (kod 1:1) też zadziała. Niczego nie przełączasz.</p>
   </div>
 </div>
 

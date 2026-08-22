@@ -67,6 +67,28 @@
       ]
     },
     {
+      "name": "lek-wtyczka",
+      "enabled": false,
+      "detect": {
+        "type": "regex",
+        "pattern": "^(\\]d2)?01[0-9]"
+      },
+      "parse": {
+        "type": "gs1"
+      },
+      "output": [
+        {"type": "text", "value": "LEK;"},
+        {"type": "field", "name": "gtin"},
+        {"type": "text", "value": ";"},
+        {"type": "field", "name": "dataWaznosciISO"},
+        {"type": "text", "value": ";"},
+        {"type": "field", "name": "partia"},
+        {"type": "text", "value": ";"},
+        {"type": "field", "name": "numerSeryjny"},
+        {"type": "key", "key": "ENTER"}
+      ]
+    },
+    {
       "name": "demo-prefiks-P",
       "enabled": false,
       "detect": {

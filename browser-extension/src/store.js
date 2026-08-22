@@ -21,8 +21,11 @@
   };
 
   // Profil demonstracyjny dla test-vectors/forma-c-wtyczka.html.
-  // Czytnik moze byc w konfiguracji fabrycznej (passthrough + ENTER) - kod
-  // "PRC;JAN;KOWALSKI;12345;IT" leci 1:1, wtyczka sama go rozklada.
+  // RAMKA TAB-OWA (separator "\t"): czytnik zostaje w PRODUKCYJNEJ konfiguracji
+  // z wlaczonym profilem pracownik-tab (imie TAB nazwisko TAB numer TAB dzial
+  // ENTER) - na rozpoznanym formularzu wtyczka przechwytuje cala sekwencje
+  // (TAB-y nie ruszaja fokusa) i rozklada pola po nazwach. Nikt niczego nie
+  // przelacza. segmentPatterns odrozniaja te ramke od innych 4-segmentowych.
   var DEMO_PROFILE = {
     id: "demo-pracownik",
     name: "Karta pracownika (demo)",
@@ -33,9 +36,9 @@
     },
     parse: {
       type: "delimited",
-      prefix: "PRC;",
-      separator: ";",
-      fields: ["_", "imie", "nazwisko", "numer", "dzial"],
+      separator: "\t",
+      fields: ["imie", "nazwisko", "numer", "dzial"],
+      segmentPatterns: { numer: "^[0-9]+$" },
     },
     fields: {
       imie: "input[name=imie]",
@@ -46,8 +49,43 @@
     after: { action: "none" },
   };
 
+  // Drugi profil demonstracyjny: zamowienie leku (test-vectors/forma-c-lek.html).
+  // Rowniez ramka TAB-owa - z PRODUKCYJNEGO profilu gs1-datamatrix w czytniku
+  // (gtin TAB dataISO TAB partia TAB serial ENTER). Wzorce segmentow pilnuja,
+  // zeby ramka pracownika nie wpadla w formularz leku i odwrotnie.
+  var DEMO_PROFILE_LEK = {
+    id: "demo-lek",
+    name: "Zamówienie leku (demo)",
+    enabled: true,
+    match: {
+      urlPattern: "*forma-c-lek.html*",
+      requiredFields: ["numerSeryjny", "dataWaznosci"],
+    },
+    parse: {
+      type: "delimited",
+      separator: "\t",
+      fields: ["gtin", "dataWaznosci", "partia", "numerSeryjny"],
+      segmentPatterns: {
+        gtin: "^[0-9]{14}$",
+        dataWaznosci: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+      },
+    },
+    fields: {
+      gtin: "input[name=gtin]",
+      dataWaznosci: "input[name=dataWaznosci]",
+      partia: "input[name=partia]",
+      numerSeryjny: "input[name=numerSeryjny]",
+    },
+    after: { action: "none" },
+  };
+
   function defaults() {
-    return { version: 1, enabled: true, settings: Object.assign({}, DEFAULT_SETTINGS), profiles: [DEMO_PROFILE] };
+    return {
+      version: 1,
+      enabled: true,
+      settings: Object.assign({}, DEFAULT_SETTINGS),
+      profiles: [DEMO_PROFILE, DEMO_PROFILE_LEK],
+    };
   }
 
   function normalize(state) {
