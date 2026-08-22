@@ -1,6 +1,6 @@
 # Wypełnianie formularzy — wszystkie warianty
 
-Czytnik jest klawiaturą, więc „wypełnianie formularza" to zawsze jedna z trzech
+Czytnik jest klawiaturą, więc „wypełnianie formularza" to zawsze jedna z czterech
 strategii. Gotowe formularze demonstracyjne do każdego wariantu są w
 [test-vectors](../test-vectors/README.md) (z kodami QR do skanowania z ekranu).
 
@@ -45,38 +45,38 @@ z niewidocznym separatorem GS), przelicza datę na format `RRRR-MM-DD`
 
 **Demo:** `test-vectors/forma-gs1.html`.
 
-## Wariant C — obce strony po selektorach: wtyczka przeglądarki (Etap 12)
+## Wariant C — pola po nazwie na obcych stronach (wtyczka)
 
-Na stronie, której kodu nie kontrolujemy, czytnik nie „widzi" nazw pól — jest
-klawiaturą. Celowanie w pola po selektorach wymaga skryptu w przeglądarce —
-robi to **wtyczka Chrome/Edge** z katalogu
-[`browser-extension/`](../browser-extension/README.md).
+**Kiedy:** strona, której kodu **nie** kontrolujemy, a wariant A odpada —
+pola w innej kolejności niż dane w kodzie, pola-pułapki między nimi, SPA
+przebudowujące formularz w locie.
 
-**Jak działa:** czytnik wpisuje kod `WEB;…` 1:1 (nie łapie go żaden profil
-w czytniku), wtyczka na stronie z profilem nasłuchuje klawiatury, rozpoznaje
-ramkę po prefiksie, tnie po średnikach i wstawia wartości w pola po selektorach
-CSS — z natywnymi zdarzeniami `input`/`change` (działa z React/Angular),
-obsługą `select`ów i ponowieniem, gdy strona jeszcze się renderuje. Plakietka
-📷 w rogu potwierdza aktywny profil i liczbę wypełnionych pól. Profile
-(host → mapowania `selektor => szablon`) edytuje się w opcjach wtyczki,
-z importem/eksportem JSON do prowizjonowania stanowisk. Instalacja i szczegóły:
-[browser-extension/README.md](../browser-extension/README.md).
+**Jak:** rozszerzenie przeglądarki rozpoznaje formularz (adres + obecność pól),
+przechwytuje skan i rozkłada go po polach po nazwach. Poza rozpoznanymi
+formularzami wtyczka nie robi nic — czytnik pisze jak zwykła klawiatura, więc
+warianty A i B działają dalej bez zmian. Firmware pozostaje nietknięty; do
+formularza demo wystarczy konfiguracja fabryczna (passthrough + ENTER).
 
-**Zweryfikowane automatycznie (2026-08-21, symulacja wedge):** ParaBank 7/7 pól,
-DemoQA (React) 5/5, Toolshop 10/10 (w tym data ISO i select kraju), DataTables
-(filtr na żywo zadziałał), AutomationExercise (trafiło w signup, login pusty).
+**Demo:** `test-vectors/forma-c-wtyczka.html` (kod `PRC;JAN;KOWALSKI;12345;IT`) —
+SPA z dwoma widokami: na pierwszym profil pasuje, na drugim wtyczka milczy.
 
-**Wariant awaryjny bez instalacji:** ta sama logika jako bookmarklet —
-[`test-vectors/bookmarklet.html`](../test-vectors/bookmarklet.html)
+**Instalacja, tryb nauki i format profilu:** [WTYCZKA.md](WTYCZKA.md).
+
+**Ograniczenia:** działa tylko w przeglądarce (aplikacje desktopowe → wariant A);
+zamknięty Shadow DOM jest nieosiągalny dla selektorów; pola z podpowiedziami
+mogą wymagać ręcznego zatwierdzenia wyboru.
+
+**Wariant awaryjny bez instalacji:** uproszczona wersja tej samej idei jako
+bookmarklet — [`test-vectors/bookmarklet.html`](../test-vectors/bookmarklet.html)
 (przeciągnij link na pasek zakładek; klik po każdym przeładowaniu strony,
-profile zaszyte w linku — do diagnostyki, nie do produkcji).
+profile selektorowe zaszyte w linku — do diagnostyki, nie do produkcji).
 
-## Poligon: obce strony do testów wypełniania po polach (Etap 12)
+## Poligon: obce strony do testów wariantu C
 
-Zweryfikowane na żywo (2026-08-20) publiczne strony treningowe do testów
-procedury „profil dla strony → skan → wypełnienie po ZNALEZIENIU pól"
-(wymaga wtyczki z Etapu 12; strony są przeznaczone do nauki automatyzacji,
-więc można na nich bezkarnie ćwiczyć):
+Zweryfikowane na żywo (2026-08-20) publiczne strony treningowe do ćwiczenia
+procedury „profil dla strony → skan → wypełnienie pól" (i trybu nauki wtyczki);
+strony są przeznaczone do nauki automatyzacji, więc można na nich bezkarnie
+ćwiczyć:
 
 | Strona | Scenariusz | Pola (selektory) | Uwagi |
 |---|---|---|---|

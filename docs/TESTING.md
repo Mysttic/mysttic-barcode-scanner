@@ -13,11 +13,28 @@ cd firmware-circuitpython && python tests/test_firmware.py
 ```
 
 ```bash
-cd firmware-pico-sdk && gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c -o test_host && ./test_host
+cd firmware-pico-sdk && gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c src/config_parse.c src/profile_matcher.c -o test_host && ./test_host
+```
+
+```bash
+cd browser-extension && npm ci && npm test
 ```
 
 Zakres: ramkowanie UART, parser i profile (regex + GS1), walidacja konfiguracji,
-zapis NVM, protokół CDC — te same wektory w wersji Python i C.
+zapis NVM, protokół CDC — te same wektory w wersji Python i C; dla wtyczki
+dodatkowo dopasowanie adresów i transformacje wartości.
+
+### Test e2e wtyczki (Chromium, bez sprzętu)
+
+```bash
+cd browser-extension && npm run test:e2e      # na serwerze: xvfb-run -a npm run test:e2e
+```
+
+Startuje prawdziwy Chromium z załadowanym rozszerzeniem, otwiera
+`test-vectors/forma-c-wtyczka.html` i symuluje skan zdarzeniami klawiatury.
+Sprawdza, że rozpoznany formularz zostaje wypełniony **i że strona faktycznie
+widzi wartości** (nie tylko `value`), że na widoku bez profilu wtyczka milczy
+oraz że obcy kod zostaje oddany stronie. Chodzi też w CI przy każdym PR.
 
 ## 2. Scenariusz e2e na sprzęcie
 
@@ -58,6 +75,12 @@ Parsowanie i klawiatura:
 GS1:
 - [ ] AI 01/17/10/21 w różnej kolejności, pola zmienne na końcu i przed separatorem
 - [ ] separator GS (0x1D) nie ginie; data „00" przeliczana wg reguły
+
+Wtyczka (jeśli wdrażana):
+- [ ] profil włącza się na docelowym formularzu i gaśnie po wyjściu z niego
+- [ ] pola-pułapki zostają puste; formularz zapisuje się z kompletem danych
+- [ ] na stronie bez profilu skan zachowuje się jak przed instalacją wtyczki
+- [ ] tryb nauki tworzy działający profil na formularzu klienta
 
 Konfigurator:
 - [ ] połączenie w Chrome i Edge; tryb testowy nie wpisuje do okien

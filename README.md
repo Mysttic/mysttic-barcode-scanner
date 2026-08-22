@@ -17,6 +17,8 @@ stroną WWW otwieraną z pendrive'a czytnika.
   data ważności, partia, numer seryjny),
 - pilnuje duplikatów i tempa wpisywania (przyjazne dla wolnych aplikacji),
 - konfiguracja bez instalacji — strona `konfigurator.html` z pendrive'a czytnika,
+- wtyczka do przeglądarki wypełnia formularze **po nazwach pól** tam, gdzie
+  sekwencja TAB-ów jest zbyt krucha (obce strony, SPA),
 - aktualizacje przez przeciągnięcie pliku, paczki wydań budowane automatycznie.
 
 ## Od czego zacząć
@@ -26,6 +28,7 @@ stroną WWW otwieraną z pendrive'a czytnika.
 | zbudować / zainstalować czytnik | [docs/INSTALL.md](docs/INSTALL.md) |
 | skonfigurować skanowanie i profile | [docs/KONFIGURACJA.md](docs/KONFIGURACJA.md) |
 | wypełniać formularze (wszystkie warianty) | [docs/FORMULARZE.md](docs/FORMULARZE.md) |
+| wypełniać formularze po nazwach pól na obcych stronach | [docs/WTYCZKA.md](docs/WTYCZKA.md) |
 | przetestować urządzenie (testy + e2e) | [docs/TESTING.md](docs/TESTING.md) |
 | poznać szczegóły techniczne | [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) |
 | prześledzić decyzje projektowe | [docs/decisions.md](docs/decisions.md) |

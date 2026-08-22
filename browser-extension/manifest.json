@@ -1,19 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "Czytnik kodów — wypełnianie pól",
-  "version": "0.1.0",
-  "description": "Nasłuchuje ramek wpisywanych przez czytnik kodów (klawiatura USB) i wypełnia pola formularzy po selektorach CSS wg profili per strona.",
+  "name": "Czytnik kodów — wypełnianie formularzy",
+  "version": "0.10.0",
+  "description": "Rozpoznaje formularz, przechwytuje skan z czytnika i rozkłada dane po polach. Poza rozpoznanymi formularzami nie robi nic.",
   "permissions": ["storage"],
+  "background": { "service_worker": "src/background.js" },
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "Czytnik kodów — wypełnianie formularzy"
+  },
+  "options_page": "src/options.html",
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["profiles.js", "content.js"],
-      "run_at": "document_idle"
+      "matches": ["http://*/*", "https://*/*", "file:///*"],
+      "js": ["src/parse.js", "src/fill.js", "src/store.js", "src/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
     }
-  ],
-  "options_page": "options.html",
-  "action": {
-    "default_popup": "popup.html",
-    "default_title": "Czytnik kodów — wypełnianie pól"
-  }
+  ]
 }
