@@ -33,6 +33,13 @@ UART (9600 8N1) → ramkowanie (terminatory CR/LF lub timeout ciszy)
   → [tryb testowy: zamiast HID event JSON po CDC]
 ```
 
+Wtyczka do przeglądarki podpina się na końcu tego łańcucha — po stronie hosta,
+nie urządzenia: przechwytuje wpisywaną ramkę, parsuje ją ponownie własnym
+silnikiem (`browser-extension/src/parse.js`) i wstawia wartości do pól po
+nazwach. Firmware o niej nie wie. Uwaga: przez HID nie przechodzą znaki
+niedrukowalne, więc separator GS 0x1D nie dociera do wtyczki — szczegóły
+i obejście w [WTYCZKA.md](WTYCZKA.md).
+
 Surowe bajty żyją do momentu parsowania (separator GS 0x1D przechodzi
 nietknięty). Zasady GS1: AI 01 (14 cyfr), 17 (YYMMDD; dzień 00 = ostatni dzień
 miesiąca), 10 i 21 (zmienne ≤20, kończone GS/końcem kodu), AIM ID zdejmowany.
@@ -72,6 +79,7 @@ boot.py, *.py, lib/  firmware — NIE RUSZAĆ
 | `firmware-circuitpython/` | firmware CP + `tests/test_firmware.py` + diagnostyki `diag_*.py`, `setup_induction.py` |
 | `firmware-pico-sdk/` | firmware C (CMake + TinyUSB) + `tests/test_host.c` |
 | `configurator/` | źródła konfiguratora (vite + TS + zod → single-file HTML) |
+| `browser-extension/` | wtyczka MV3 (bez bundlera) + testy jednostkowe i e2e |
 | `tools/` | `build_release.py`, `install.ps1`, `test_e2e.py`, `device_docs/` |
 | `test-vectors/` | formularze demonstracyjne + kody QR |
 | `hardware/` | schematy (Wokwi), przypięte pliki instalacyjne |

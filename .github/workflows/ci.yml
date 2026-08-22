@@ -1,5 +1,5 @@
 # CI: testy jednostkowe + budowa artefaktow + PACZKA TESTOWA.
-# - PR do master: testy Python, testy C, build konfiguratora, kompilacja UF2.
+# - PR do master: testy Python, testy C, testy wtyczki, build konfiguratora, UF2.
 # - reczne odpalenie (workflow_dispatch, np. na develop przed zrobieniem PR):
 #   to samo + pelna paczka wydania jako ARTIFACT (bez publikacji release).
 name: ci
@@ -32,7 +32,7 @@ jobs:
       - name: Testy hostowe modulow C
         working-directory: firmware-pico-sdk
         run: |
-          gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c -o test_host
+          gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c src/config_parse.c src/profile_matcher.c -o test_host
           ./test_host
 
   konfigurator:
@@ -53,6 +53,27 @@ jobs:
         with:
           name: konfigurator
           path: configurator/dist/index.html
+
+  wtyczka:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: browser-extension/package-lock.json
+      - name: Instalacja zaleznosci
+        working-directory: browser-extension
+        run: npm ci --no-fund --no-audit
+      - name: Testy jednostkowe (parsowanie, dopasowanie adresow)
+        working-directory: browser-extension
+        run: npm test
+      - name: Testy e2e (Chromium z zaladowanym rozszerzeniem + formularz demo)
+        working-directory: browser-extension
+        run: |
+          npx playwright install --with-deps chromium
+          xvfb-run -a npm run test:e2e
 
   firmware-c:
     runs-on: ubuntu-latest
@@ -85,7 +106,7 @@ jobs:
           path: firmware-pico-sdk/build/barcode_reader.uf2
 
   paczka-testowa:
-    needs: [testy-python, testy-c, konfigurator]
+    needs: [testy-python, testy-c, konfigurator, wtyczka]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:

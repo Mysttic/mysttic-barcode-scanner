@@ -1,63 +1,39 @@
-# Wtyczka Chrome/Edge — wypełnianie pól po selektorach (Etap 12)
+# Rozszerzenie przegladarki
 
-Czytnik pozostaje zwykłą klawiaturą USB i wpisuje ramkę `WEB;pole1;pole2;…`
-zakończoną Enterem (kod `WEB;…` nie pasuje do żadnego profilu w czytniku, więc
-przechodzi 1:1). Wtyczka na stronie pasującej do profilu przechwytuje ramkę
-i wstawia wartości w pola wskazane **selektorami CSS** — kolejność pól, fokus
-i framework strony (React/Angular) nie mają znaczenia.
+Wypelnia formularze danymi ze skanu **po nazwach pol** — dla stron, na ktorych
+sekwencja TAB-ow jest zbyt krucha. Poza rozpoznanymi formularzami rozszerzenie
+nie robi nic i czytnik zachowuje sie jak zwykla klawiatura.
 
-## Instalacja (raz na przeglądarkę)
+Instrukcja uzytkownika (instalacja, tryb nauki, format profilu):
+[docs/WTYCZKA.md](../docs/WTYCZKA.md).
 
-1. Wejdź na `chrome://extensions` (Edge: `edge://extensions`).
-2. Włącz **Tryb dewelopera** (przełącznik w rogu).
-3. Kliknij **Załaduj rozpakowane** i wskaż katalog `browser-extension/` z repo
-   (albo z paczki wydania).
-4. Gotowe — na stronach z profilem w prawym dolnym rogu pojawia się plakietka
-   `📷 nasłuch: <nazwa profilu>`.
-
-Wdrożenie firmowe: rozszerzenie można wymusić polityką (GPO/Intune,
-`ExtensionInstallForcelist`) — wtedy stanowiska nie wymagają trybu dewelopera.
-
-## Użycie (operator)
-
-1. Otwórz stronę docelową — plakietka 📷 potwierdza aktywny profil.
-2. Zeskanuj kod — pola wypełniają się i migają na zielono; plakietka pokazuje
-   liczbę wypełnionych pól. Nie trzeba klikać w żadne pole przed skanem.
-
-Kod testowy: `test-vectors/qr_web.png`
-(`WEB;Jan;Kowalski;jan.kowalski@example.com;5551234567;Krotka 7;Warszawa;22-100;2026-08-31;Tokyo`).
-
-## Konfiguracja (inżynier)
-
-Ikona wtyczki → **Profile stron…** (albo `chrome://extensions` → Szczegóły →
-Opcje):
-
-- **Prefiks ramki** i **pola ramki** (kolejność = kolejność w skanowanym kodzie),
-- **profile stron**: host (+ opcjonalna dokładna ścieżka) i mapowania
-  `selektor => szablon`, po jednym na linię, np.:
-
-  ```
-  #first_name => {imie}
-  [id="customer.address.city"] => {miasto}
-  #state => mazowieckie
-  #currentAddress => {ulica}, {kod} {miasto}
-  ```
-
-- **Import/Eksport JSON** — prowizjonowanie wielu stanowisk tym samym plikiem.
-
-Zapis działa natychmiast na otwartych kartach. Profil ze ścieżką umieszczaj nad
-ogólnym profilem tego samego hosta (pierwszy pasujący wygrywa). Strony bez
-profilu: wtyczka jest całkowicie bierna (brak plakietki, znaki lecą normalnie).
-
-## Pliki
+## Uklad plikow
 
 | Plik | Rola |
 |---|---|
-| `manifest.json` | Manifest V3; content script na wszystkich stronach + uprawnienie `storage` |
-| `profiles.js` | domyślna konfiguracja (8 stron poligonu) + dopasowanie profilu |
-| `content.js` | nasłuch wedge, wypełnianie (natywny setter + `input`/`change`), plakietka, ponowienie dla SPA |
-| `options.html/js` | edytor profili + import/eksport JSON |
-| `popup.html/js` | włącznik globalny + skrót do ustawień |
+| `manifest.json` | MV3; content script na wszystkich stronach, uprawnienie tylko `storage` |
+| `src/parse.js` | ramka -> nazwane pola (`delimited` / `regex` / `gs1`) |
+| `src/fill.js` | wstawianie wartosci odporne na React/Vue/Angular + odczyt zwrotny |
+| `src/store.js` | profile formularzy, dopasowanie adresu, ustawienia |
+| `src/content.js` | rozpoznanie formularza (takze w SPA), przechwycenie skanu, tryb nauki |
+| `src/background.js` | badge ze stanem + rozglaszanie zmian konfiguracji |
+| `src/popup.*` | stan biezacej karty, wlacznik, wejscie w tryb nauki |
+| `src/options.*` | lista profili + edycja/import/eksport JSON |
 
-Strony do testów z selektorami pól: `docs/FORMULARZE.md` (sekcja „Poligon").
-Wariant awaryjny bez instalacji: `test-vectors/bookmarklet.html`.
+Bez bundlera — pliki ida do przegladarki takie, jakie sa w repozytorium.
+`package.json` istnieje wylacznie dla testow.
+
+## Testy
+
+```bash
+npm ci
+npm test          # jednostkowe: parsowanie, dopasowanie adresow, transformacje
+npm run test:e2e  # Chromium z zaladowanym rozszerzeniem + test-vectors/forma-c-wtyczka.html
+```
+
+Zrzuty do dokumentacji (`docs/img/wtyczka-*.png`) odtwarza `npm run shots` —
+ten sam scenariusz przechodzony na zywo w Chromium, wiec obrazki nie rozjezdzaja
+sie z kodem.
+
+Test e2e wymaga przegladarki Playwrighta (`npx playwright install chromium`)
+i srodowiska graficznego (`xvfb-run -a npm run test:e2e` na serwerze).

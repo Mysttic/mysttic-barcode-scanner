@@ -2,6 +2,23 @@
 
 Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](VERSION.md).
 
+## 0.10.0 — 2026-08-21
+
+- **Wtyczka do przeglądarki (Etap 12, faza 1)** — rozpoznaje formularz po adresie
+  i obecności pól (działa w SPA), przechwytuje skan i wypełnia pola **po nazwach**.
+  Poza rozpoznanym formularzem nie robi nic: czytnik zachowuje się jak zwykła
+  klawiatura, warianty A i B działają bez zmian. Firmware nietknięty.
+- Tryb **Ucz formularza**: zeskanuj kod → nazwij segmenty → klikaj pola;
+  profile można eksportować i rozsyłać na inne stanowiska.
+- Parsowanie `delimited` / `regex` / `gs1` (port parsera GS1 z firmware'u),
+  wstawianie wartości odporne na React/Vue/Angular z weryfikacją odczytem zwrotnym.
+- Formularz demonstracyjny `test-vectors/forma-c-wtyczka.html` (SPA, pola
+  w pomieszanej kolejności, pola-pułapki, podgląd stanu strony).
+- Testy: 36 asercji jednostkowych + 10 asercji e2e w Chromium z załadowanym
+  rozszerzeniem; nowy job `wtyczka` w CI.
+- Paczka wydania zawiera katalog `wtyczka/` (wersja manifestu z VERSION.md)
+  oraz `WTYCZKA.md`.
+
 ## 0.9.2 — 2026-08-20
 
 - Wersjonowanie przeniesione do `VERSION.md` (jedyne źródło prawdy); `device/version.py`
