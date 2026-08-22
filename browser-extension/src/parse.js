@@ -101,11 +101,32 @@
     if (parts.length < names.length) {
       return { error: "kod ma " + parts.length + " segmentów, profil oczekuje " + names.length };
     }
+    // Ramka bez prefiksu (np. sekwencja TAB-ow z urzadzenia) nie ma znacznika
+    // "to nasze" - jedyna kotwica to DOKLADNA liczba segmentow.
+    if (!spec.prefix && parts.length !== names.length) {
+      return { error: "kod ma " + parts.length + " segmentów, profil oczekuje dokładnie " + names.length };
+    }
     var fields = {};
     for (var i = 0; i < names.length; i += 1) {
       var name = names[i];
       if (!name || name === "_") continue; // segment celowo pomijany (np. prefiks)
       fields[name] = parts[i];
+    }
+    // Opcjonalna walidacja segmentow (parse.segmentPatterns: pole -> regex):
+    // odroznia ramki roznych profili o tej samej liczbie segmentow.
+    var patterns = spec.segmentPatterns || {};
+    for (var name2 in patterns) {
+      if (!Object.prototype.hasOwnProperty.call(patterns, name2)) continue;
+      if (!(name2 in fields)) continue;
+      var re;
+      try {
+        re = new RegExp(patterns[name2]);
+      } catch (e) {
+        return { error: "błędny wzorzec segmentu " + name2 };
+      }
+      if (!re.test(fields[name2])) {
+        return { error: "segment " + name2 + " nie pasuje do wzorca profilu" };
+      }
     }
     return { fields: fields };
   }

@@ -8,15 +8,18 @@ import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = resolve(new URL("../..", import.meta.url).pathname);
+const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
 const EXT = join(ROOT, "browser-extension");
 const IMG = join(ROOT, "docs", "img");
+const PYTHON = process.platform === "win32" ? "python" : "python3";
 const PORT = 8138;
-const KOD = "PRC;JAN;KOWALSKI;12345;IT";
-const STRONA = `http://127.0.0.1:${PORT}/forma-c-wtyczka.html`;
+// Sekwencja TAB-owa, ktora WYPISUJE produkcyjny profil pracownik-tab czytnika:
+const RAMKA = "JAN\tKOWALSKI\t12345\tIT";
+const STRONA = `http://127.0.0.1:${PORT}/formularze/forma-c-wtyczka.html`;
 
-const serwer = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], {
+const serwer = spawn(PYTHON, ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], {
   cwd: join(ROOT, "test-vectors"),
   stdio: "ignore",
 });
@@ -28,8 +31,19 @@ async function shot(target, nazwa) {
   console.log("  ->", `docs/img/wtyczka-${nazwa}.png`);
 }
 
+// Jak prawdziwy HID: Shift przy wielkich literach, "\t" = klawisz TAB.
 async function skanuj(page, tekst) {
-  await page.keyboard.type(tekst, { delay: 5 });
+  for (const ch of tekst) {
+    if (ch === "\t") {
+      await page.keyboard.press("Tab");
+    } else if (/[A-Z]/.test(ch)) {
+      await page.keyboard.down("Shift");
+      await page.keyboard.press("Key" + ch);
+      await page.keyboard.up("Shift");
+    } else {
+      await page.keyboard.type(ch);
+    }
+  }
   await page.keyboard.press("Enter");
   await page.waitForTimeout(400);
 }
@@ -53,7 +67,7 @@ try {
 
   // 1-2. rozpoznany formularz: przed i po skanie
   await shot(page, "formularz-przed");
-  await skanuj(page, KOD);
+  await skanuj(page, RAMKA);
   await shot(page, "formularz-po");
 
   // 3-6. tryb nauki, krok po kroku
@@ -71,9 +85,9 @@ try {
   await page.waitForTimeout(400);
   await shot(page, "nauka-1-skan");
 
-  await skanuj(page, KOD);
+  await skanuj(page, RAMKA);
   await page.waitForTimeout(300);
-  const nazwy = ["_", "imie", "nazwisko", "numer", "dzial"];
+  const nazwy = ["imie", "nazwisko", "numer", "dzial"];
   for (let i = 0; i < nazwy.length; i += 1) {
     await page.fill(`input[data-idx="${i}"]`, nazwy[i]);
   }
@@ -87,7 +101,9 @@ try {
 
   for (const selektor of ["input[name=imie]", "input[name=nazwisko]", "input[name=numer]", "select[name=dzial]"]) {
     await page.click(selektor);
-    await page.waitForTimeout(250);
+    await page.waitForTimeout(200);
+    await page.click('button[data-act="confirm"]'); // klik wybiera, przycisk zatwierdza
+    await page.waitForTimeout(200);
   }
   await shot(page, "nauka-4-zapis");
 
@@ -124,6 +140,68 @@ try {
   await page.waitForTimeout(900);
   await page.bringToFront();
   await popup("popup-bez-profilu");
+
+  // 10-14. samouczek NAUKA-PROFILU.md: nauka profilu na formularzu leku.
+  // Wylaczamy wbudowany profil demo-lek, zeby koncowe zrzuty pokazywaly
+  // dzialanie profilu NAUCZONEGO w tym scenariuszu, nie fabrycznego.
+  const RAMKA_LEK = "05909991055172\t2027-10-31\tA23G05\tK7L9XW24MQ1R";
+  const opc = await context.newPage();
+  await opc.goto(`chrome-extension://${extId}/src/options.html`);
+  await opc.waitForTimeout(400);
+  await opc.evaluate(() =>
+    BRStore.load().then((s) => {
+      s.profiles.forEach((p) => { if (p.id === "demo-lek") p.enabled = false; });
+      return BRStore.save(s);
+    }),
+  );
+  await opc.close();
+
+  const lek = await context.newPage();
+  await lek.setViewportSize({ width: 1180, height: 820 });
+  await lek.goto(`http://127.0.0.1:${PORT}/formularze/forma-c-lek.html`);
+  await lek.waitForSelector("input[name=gtin]");
+  await lek.waitForTimeout(700);
+  await lek.bringToFront();
+
+  const lekTabId = await worker.evaluate(async () => {
+    const tabs = await chrome.tabs.query({ active: true, windowType: "normal" });
+    return tabs[0].id;
+  });
+  await worker.evaluate((id) => chrome.tabs.sendMessage(id, { cmd: "learn" }), lekTabId);
+  await lek.waitForTimeout(400);
+  await shot(lek, "nauka-lek-1-start");
+
+  await skanuj(lek, RAMKA_LEK);
+  await lek.waitForTimeout(300);
+  const nazwyLek = ["gtin", "dataWaznosci", "partia", "numerSeryjny"];
+  for (let i = 0; i < nazwyLek.length; i += 1) {
+    await lek.fill(`input[data-idx="${i}"]`, nazwyLek[i]);
+  }
+  await shot(lek, "nauka-lek-2-segmenty");
+
+  await lek.click('button[data-act="names"]');
+  await lek.waitForTimeout(300);
+  // zrzut pokazuje stan POTWIERDZANIA: pole kliknięte, panel z Zatwierdź/Wybierz inne/Wstecz
+  await lek.click("input[name=gtin]");
+  await lek.waitForTimeout(250);
+  await shot(lek, "nauka-lek-3-pola");
+  await lek.click('button[data-act="confirm"]');
+  await lek.waitForTimeout(200);
+
+  for (const sel of ["input[name=dataWaznosci]", "input[name=partia]", "input[name=numerSeryjny]"]) {
+    await lek.click(sel);
+    await lek.waitForTimeout(200);
+    await lek.click('button[data-act="confirm"]');
+    await lek.waitForTimeout(200);
+  }
+  await lek.fill('input[data-field="name"]', "Zamówienie leku — mój profil");
+  await shot(lek, "nauka-lek-4-zapis");
+
+  await lek.click('button[data-act="save"]');
+  await lek.waitForTimeout(700);
+  await skanuj(lek, RAMKA_LEK);
+  await shot(lek, "nauka-lek-5-dziala");
+  await lek.close();
 } finally {
   if (context) await context.close();
   serwer.kill();

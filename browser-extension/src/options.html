@@ -7,8 +7,15 @@
   body { font-family: system-ui, sans-serif; max-width: 860px; margin: 0 auto; padding: 24px; color: #0f172a; background: #f4f6f9; }
   h1 { font-size: 1.2rem; }
   .card { background: #fff; border: 1px solid #d8dee8; border-radius: 12px; padding: 18px; margin-bottom: 18px; }
-  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-  th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid #eef1f6; vertical-align: top; }
+  .profil { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+  .profil.off { opacity: .55; }
+  .prow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .prow + .prow { margin-top: 8px; }
+  .prow label.chk { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: #445; white-space: nowrap; }
+  .prow input[type=text] { flex: 1; min-width: 160px; padding: 6px 9px; border: 1px solid #c5cdd9; border-radius: 8px; font-size: .9rem; }
+  .prow .lbl { font-size: .8rem; color: #64748b; white-space: nowrap; }
+  .prow button { padding: 5px 10px; font-size: .82rem; margin-right: 0; }
+  .pola { font-size: .8rem; color: #64748b; margin-top: 6px; }
   code { background: #eef1f6; padding: 1px 5px; border-radius: 4px; font-size: .85em; }
   textarea { width: 100%; height: 320px; font-family: ui-monospace, monospace; font-size: .82rem; border: 1px solid #c5cdd9; border-radius: 8px; padding: 10px; box-sizing: border-box; }
   button { padding: 8px 14px; border: 0; border-radius: 8px; background: #2563eb; color: #fff; font-size: .9rem; cursor: pointer; margin-right: 8px; }
@@ -28,7 +35,16 @@
 
   <div class="card">
     <h2 style="font-size:1rem">Zapisane profile</h2>
-    <table id="lista"><tbody></tbody></table>
+    <p class="hint"><b>Nowy profil:</b> otwórz formularz, na którym ma działać →
+    ikona wtyczki na pasku → <b>Ucz formularza</b> → (1) zeskanuj kod,
+    (2) nazwij segmenty, (3) klikaj wskazywane pola → Zapisz. Samouczek ze
+    zrzutami: <code>NAUKA-PROFILU.md</code>, pełna instrukcja: <code>WTYCZKA.md</code>
+    (oba na dysku CZYTNIK i w repozytorium, katalog <code>docs/</code>).</p>
+    <p class="hint">Nazwę i adres edytujesz wprost — zmiany zapisują się same.
+    Kolejność ma znaczenie: gdy do strony pasuje kilka profili, wygrywa
+    <b>pierwszy</b> z listy (przesuwaj strzałkami). Pola i parsowanie zmienisz
+    w JSON poniżej albo ucząc profil od nowa.</p>
+    <div id="lista"></div>
   </div>
 
   <div class="card">
