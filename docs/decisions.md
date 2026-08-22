@@ -1,5 +1,19 @@
 # Decyzje projektowe
 
+## 2026-08-21 — Etap 12: wtyczka przeglądarki (wariant C produkcyjnie)
+
+- **Decyzja właściciela:** bookmarklet „dziwny, użytkownicy go nie ogarną" → wtyczka jako produkcyjna droga wariantu C; bookmarklet zostaje jako diagnostyka bez instalacji.
+- **`browser-extension/` (Manifest V3, bez service workera):** `content.js` = sprawdzony kod wedge (profil liczony per klawisz — działa po nawigacji SPA; plakietka tylko na stronach z profilem, poza nimi wtyczka całkowicie bierna), `profiles.js` = domyślna konfiguracja (8 stron poligonu) + dopasowanie host/ścieżka współdzielone z opcjami, `options.html/js` = edytor (globalne: prefiks+pola ramki; profile: host/ścieżka/mapowania `selektor => szablon` po linii; import/eksport JSON; przywracanie domyślnych), `popup` = włącznik globalny + skrót do opcji. Konfiguracja w `chrome.storage.local` (klucz `bcConfig`), zmiany działają na otwartych kartach bez przeładowania (storage.onChanged). Separator mapowań `=>` (nie `=`, bo selektory atrybutów zawierają `=`).
+- **Weryfikacja:** content script wstrzyknięty na ParaBank (ścieżka fallbacku bez chrome.storage = pierwsze uruchomienie) — 7/7 pól + plakietka; logika identyczna z przetestowaną na 5 stronach wersją bookmarkletu; `node --check` na wszystkich JS.
+- **Instalacja:** `chrome://extensions` → tryb dewelopera → „Załaduj rozpakowane" → katalog `browser-extension/`; firmowo `ExtensionInstallForcelist` (GPO/Intune). Instrukcja: `browser-extension/README.md`.
+
+## 2026-08-21 — wariant C: bookmarklet (obejście przed wtyczką E12)
+
+- **Pytanie właściciela „czy wtyczka jest wymagana?"** — tak dla automatyki, ale jako obejście powstał **bookmarklet** (`test-vectors/bookmarklet.html`): zakładka-skrypt z nasłuchem wedge (prefiks `WEB;`, ramka 9 pól po średnikach, koniec = Enter z czytnika), profilami per hostname/ścieżka (selektor CSS → szablon `{pole}`), natywnym setterem wartości + zdarzenia `input`/`change` (React/Angular), dopasowaniem opcji `select` po value/tekście, ponowieniem po 600 ms gdy pola jeszcze się nie wyrenderowały (SPA), plakietką stanu. Źródło inline w HTML — href zakładki budowany z bloku `<script type="text/plain">` (jedno źródło prawdy). Kod QR ramki: `test-vectors/qr_web.png` (`WEB;Jan;Kowalski;…;2026-08-31;Tokyo` — nie pasuje do żadnego profilu w czytniku, więc przechodzi 1:1).
+- **Test automatyczny (symulacja klawiszy w Chrome):** ParaBank 7/7, DemoQA (React) 5/5 — wartości przetrwały re-render, Toolshop register 10/10 (data ISO + select kraju „PL/Poland"), DataTables — filtr na żywo (5 wierszy „Tokyo"), AutomationExercise — wypełniony signup, login pusty (celowanie w kontekście formularza przy dwóch polach `name=email`). Wykryty edge: skan tuż po wejściu na SPA trafia w niewyrenderowane pola → stąd retry w fill().
+- **Poligon zewnętrzny** (sekcja w FORMULARZE.md): 8 zweryfikowanych stron treningowych z selektorami pól; odpadły nopCommerce (kolejka) i saucedemo (adres za logowaniem).
+- **Awaria aplikacji Claude (odnotowana):** 2× crash procesu GPU (18:41, 18:46) podczas renderowania stron we wbudowanym panelu przeglądarki + blokada single-instance przy restarcie; od 19:09 stabilnie. Wniosek operacyjny: strony zewnętrzne sprawdzać w realnym Chrome, nie w panelu aplikacji.
+
 ## 2026-08-20 — konfigurator w zakładkach + zrzuty ekranu w dokumentacji
 
 - **UI konfiguratora przerobione na zakładki** (feedback właściciela: „ekran za mały na ten formularz"): Urządzenie / Profile / Test / Aktualizacja / Serwis; przyciski **Zastosuj** i **Zapisz trwale** przeniesione na pasek zakładek (sticky, zawsze widoczne), bo dotyczą całości konfiguracji. Log walidacji nad zakładkami (widoczny niezależnie od aktywnej karty). Zakładka Test przy wejściu nie zmienia stanu trybu testowego.
