@@ -45,12 +45,53 @@ z niewidocznym separatorem GS), przelicza datę na format `RRRR-MM-DD`
 
 **Demo:** `test-vectors/forma-gs1.html`.
 
-## Obce strony z wypełnianiem po nazwie — czego NIE zrobimy bez wtyczki
+## Wariant C — obce strony po selektorach: wtyczka przeglądarki (Etap 12)
 
 Na stronie, której kodu nie kontrolujemy, czytnik nie „widzi" nazw pól — jest
-klawiaturą. Jeśli kolejność pól jest stabilna → wariant A wystarcza. Jeśli
-wymagane jest celowanie po nazwach na cudzych stronach → potrzebne rozszerzenie
-przeglądarki (zaplanowany, odroczony Etap 12 — wróci przy realnym wymaganiu).
+klawiaturą. Celowanie w pola po selektorach wymaga skryptu w przeglądarce —
+robi to **wtyczka Chrome/Edge** z katalogu
+[`browser-extension/`](../browser-extension/README.md).
+
+**Jak działa:** czytnik wpisuje kod `WEB;…` 1:1 (nie łapie go żaden profil
+w czytniku), wtyczka na stronie z profilem nasłuchuje klawiatury, rozpoznaje
+ramkę po prefiksie, tnie po średnikach i wstawia wartości w pola po selektorach
+CSS — z natywnymi zdarzeniami `input`/`change` (działa z React/Angular),
+obsługą `select`ów i ponowieniem, gdy strona jeszcze się renderuje. Plakietka
+📷 w rogu potwierdza aktywny profil i liczbę wypełnionych pól. Profile
+(host → mapowania `selektor => szablon`) edytuje się w opcjach wtyczki,
+z importem/eksportem JSON do prowizjonowania stanowisk. Instalacja i szczegóły:
+[browser-extension/README.md](../browser-extension/README.md).
+
+**Zweryfikowane automatycznie (2026-08-21, symulacja wedge):** ParaBank 7/7 pól,
+DemoQA (React) 5/5, Toolshop 10/10 (w tym data ISO i select kraju), DataTables
+(filtr na żywo zadziałał), AutomationExercise (trafiło w signup, login pusty).
+
+**Wariant awaryjny bez instalacji:** ta sama logika jako bookmarklet —
+[`test-vectors/bookmarklet.html`](../test-vectors/bookmarklet.html)
+(przeciągnij link na pasek zakładek; klik po każdym przeładowaniu strony,
+profile zaszyte w linku — do diagnostyki, nie do produkcji).
+
+## Poligon: obce strony do testów wypełniania po polach (Etap 12)
+
+Zweryfikowane na żywo (2026-08-20) publiczne strony treningowe do testów
+procedury „profil dla strony → skan → wypełnienie po ZNALEZIENIU pól"
+(wymaga wtyczki z Etapu 12; strony są przeznaczone do nauki automatyzacji,
+więc można na nich bezkarnie ćwiczyć):
+
+| Strona | Scenariusz | Pola (selektory) | Uwagi |
+|---|---|---|---|
+| [selenium.dev/…/web-form.html](https://www.selenium.dev/selenium/web/web-form.html) | baseline — wszystkie typy pól | `name=my-text`, `my-password`, `my-textarea`, `my-select`, `my-check`, `my-radio`, `my-date` | najprostsza i najstabilniejsza; oficjalna strona Selenium |
+| [parabank.parasoft.com/…/register.htm](https://parabank.parasoft.com/parabank/register.htm) | rejestracja z pełnym adresem | `id=customer.firstName`, `customer.lastName`, `customer.address.street`, `customer.address.city`, `customer.address.state`, `customer.address.zipCode`, `customer.phoneNumber` | klasyczny HTML bez frameworka; kropki w id — selektor przez `[id="…"]` |
+| [practicesoftwaretesting.com/auth/register](https://practicesoftwaretesting.com/auth/register) | sklep — rejestracja z adresem | `id=first_name`, `last_name`, `dob` (RRRR-MM-DD!), `country` (select), `postal_code`, `house_number`, `street`, `city`, `state`, `phone`, `email` | Angular; ma też `data-test`; pole daty w ISO — idealne pod `{dataWaznosciISO}` z GS1 |
+| [practicesoftwaretesting.com](https://practicesoftwaretesting.com/) | sklep — wyszukiwanie + filtry | `id=search-query`, checkboxy `name=category_id` | test „wpisz w wyszukiwarkę i zatwierdź" oraz filtrów |
+| [demoqa.com/automation-practice-form](https://demoqa.com/automation-practice-form) | duży formularz treningowy | `id=firstName`, `lastName`, `userEmail`, `userNumber`, `currentAddress` | React — pułapka: samo ustawienie `value` nie zadziała, wtyczka musi wysłać natywne zdarzenia `input` |
+| [automationexercise.com/login](https://automationexercise.com/login) | sklep — signup (2 kroki) | krok 1: `name=name`, `name=email` (`data-qa=signup-name/-email`); pełny adres w kroku 2 | pułapka: DWA pola `name=email` na stronie (login+signup) — test celowania w kontekście formularza |
+| [datatables.net/examples/basic_init/zero_configuration.html](https://datatables.net/examples/basic_init/zero_configuration.html) | filtrowanie tabeli na żywo | `id=dt-search-0` | filtr reaguje na każdy znak — weryfikuje zdarzenia `input` przy wpisywaniu |
+| [httpbin.org/forms/post](https://httpbin.org/forms/post) | prosty formularz zamówienia | `name=custname`, `custtel`, `custemail` | już zweryfikowany z wariantem A (TAB-y) — dobry do porównania obu podejść |
+
+Odpadło: demo.nopcommerce.com (kolejka oczekiwania przed wejściem),
+saucedemo.com (adres dopiero po logowaniu). Do testów NIE wysyłać formularzy
+na prawdziwych sklepach produkcyjnych — powyższe strony są od tego.
 
 ## Jak uruchomić formularze demonstracyjne
 
