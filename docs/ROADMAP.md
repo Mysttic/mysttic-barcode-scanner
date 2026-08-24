@@ -16,8 +16,10 @@ uzasadnienia decyzji w [decisions.md](decisions.md).
   zrobione 2026-08-21: paczka ma `firmware/barcode_reader.uf2` (produkcja),
   `wtyczka/` z wersją z VERSION.md, komplet dokumentacji i osobno
   `prototyp-circuitpython/`; CI kompiluje firmware C przed budową paczki.
-- [ ] **Wydanie 1.0**: podbić [VERSION.md](../VERSION.md) + uzupełnić
-  [CHANGELOG.md](../CHANGELOG.md), PR `develop` → `master` (release automatyczny).
+- [x] ~~**Wydanie 1.0**~~ — opublikowane 2026-08-24 (tag `v1.0.0`, PR #7).
+  Paczka pobrana i zweryfikowana: suma SHA-256 zgodna, 40/40 plików zgodnych
+  z `SHA256SUMS.txt`, wersja 1.0.0 w firmware i manifeście wtyczki, dysk
+  `CZYTNIK` wewnątrz UF2 zawiera komplet 11 plików zgodnych z repo.
 - [ ] **Eventy trybu testowego w C** z nazwą profilu i polami (parytet z CP —
   ostatnia znana różnica).
 
