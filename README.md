@@ -29,13 +29,17 @@ stroną WWW otwieraną z pendrive'a czytnika.
 | skonfigurować skanowanie i profile | [docs/KONFIGURACJA.md](docs/KONFIGURACJA.md) |
 | wypełniać formularze (wszystkie warianty) | [docs/FORMULARZE.md](docs/FORMULARZE.md) |
 | wypełniać formularze po nazwach pól na obcych stronach | [docs/WTYCZKA.md](docs/WTYCZKA.md) |
-| przetestować urządzenie (testy + e2e) | [docs/TESTING.md](docs/TESTING.md) |
+| nauczyć wtyczkę nowego formularza (samouczek) | [docs/NAUKA-PROFILU.md](docs/NAUKA-PROFILU.md) |
+| przetestować urządzenie (scenariusz „od pudełka", testy, e2e) | [docs/TESTING.md](docs/TESTING.md) |
+| sprawdzić, co system umie, a czego nie (i jakie kody) | [docs/MOZLIWOSCI.md](docs/MOZLIWOSCI.md) |
+| zobaczyć plany rozwoju | [docs/ROADMAP.md](docs/ROADMAP.md) |
 | poznać szczegóły techniczne | [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) |
 | prześledzić decyzje projektowe | [docs/decisions.md](docs/decisions.md) |
 | zobaczyć historię zmian | [CHANGELOG.md](CHANGELOG.md) |
 
-Na pendrivie samego czytnika jest też krótka ściąga dla osoby konfigurującej
-(`docs/INSTRUKCJA.md` na urządzeniu): co wolno edytować, a czego nie ruszać.
+Na dysku samego czytnika (`CZYTNIK`) jest komplet do pracy bez repozytorium:
+konfigurator, instrukcje (`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`)
+i formularze testowe (`testy.html`).
 
 ## Schemat połączeń (minimum)
 

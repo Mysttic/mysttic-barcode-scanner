@@ -79,6 +79,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: configurator/package-lock.json
+      # Konfigurator jest wbudowywany w obraz dysku CZYTNIK wewnatrz UF2,
+      # wiec musi powstac PRZED kompilacja firmware.
+      - name: Build konfiguratora (trafia na dysk CZYTNIK)
+        working-directory: configurator
+        run: |
+          npm ci --no-fund --no-audit
+          npm run build
       - name: Narzedzia ARM
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
       - name: Cache Pico SDK
@@ -106,7 +118,7 @@ jobs:
           path: firmware-pico-sdk/build/barcode_reader.uf2
 
   paczka-testowa:
-    needs: [testy-python, testy-c, konfigurator, wtyczka]
+    needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -130,8 +142,13 @@ jobs:
         run: |
           npm ci --no-fund --no-audit
           npm run build
+      # UF2 wariantu produkcyjnego bierzemy z joba firmware-c (juz zbudowany)
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware-c-uf2
+          path: /tmp/firmware-c
       - name: Budowa paczki testowej (bez publikacji)
-        run: python tools/build_release.py --skip-npm
+        run: python tools/build_release.py --skip-npm --uf2-c /tmp/firmware-c/barcode_reader.uf2
       - uses: actions/upload-artifact@v4
         with:
           name: paczka-testowa
