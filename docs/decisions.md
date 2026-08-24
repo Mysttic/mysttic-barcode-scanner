@@ -1,5 +1,11 @@
 # Decyzje projektowe
 
+## 2026-08-24 — wydanie 1.0.0 opublikowane i zweryfikowane
+
+- **Proces:** PR #7 `develop` → `master`, CI zielone, merge → `release.yml` zbudował i opublikował tag `v1.0.0` (1 min 44 s; cache Pico SDK z joba CI). Wersja firmware C po raz pierwszy wstrzykiwana z VERSION.md (`#ifndef` + `target_compile_definitions`), więc `ping` i konfigurator pokazują 1.0.0 zamiast `0.0.0-dev`.
+- **Blokada po drodze:** pierwszy przebieg CI padł na `firmware-c` i `konfigurator` — nie z powodu kodu, tylko **wyczerpanego limitu magazynu artefaktów** na koncie GitHub (`Failed to CreateArtifact: storage quota has been hit`). Uploady artefaktów są pomocnicze, więc dostały `continue-on-error` + `retention-days: 7`, a `paczka-testowa` kompiluje firmware sama zamiast pobierać artefakt (nie może zależeć od quoty). Do zrobienia po stronie właściciela: wyczyścić stare artefakty w zakładce Actions.
+- **Weryfikacja wydanej paczki (pobrana z Releases):** suma SHA-256 zgodna z opublikowaną; 40/40 plików zgodnych z `SHA256SUMS.txt`; `wtyczka/manifest.json` i `device/version.py` = 1.0.0; firmware zawiera `1.0.0` i nie zawiera `0.0.0-dev`. **Obraz dysku wyciągnięty z UF2 i sparsowany** (dekoder UF2 + `parse_back` z generatora): etykieta `CZYTNIK`, komplet 11 plików, treści zgodne z repo. Cztery formularze różniły się bajtowo wyłącznie końcami linii (CRLF lokalnie na Windows vs LF z runnera Linux) — po normalizacji identyczne.
+
 ## 2026-08-21 — paczka wydania: produkcyjny firmware C + wtyczka w jednym
 
 - **Pytanie właściciela „czy wtyczka jest budowana w release?"** — była (`wtyczka/` z wersją manifestu z VERSION.md, od merge'a E12), ale przegląd wykrył **poważniejszy brak: paczka zawierała wyłącznie wariant prototypowy (CircuitPython)** — produkcyjnego UF2 wariantu C (tego z dyskiem `CZYTNIK`) nie było w niej wcale, mimo że to on jest wersją produkcyjną od E11.
