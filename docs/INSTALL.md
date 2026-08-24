@@ -29,18 +29,41 @@ Zasady: łącz przy odpiętym USB, najpierw masę; UART zawsze „na krzyż" (TX
 Moduł wymaga zasilania 5 V, a komunikuje się poziomem 3,3 V (bezpiecznym dla RP2040);
 jeśli masz inny moduł niż GM65/GM805, potwierdź poziom TX w jego dokumentacji.
 
-## 2. Instalacja oprogramowania (Windows)
+## 2. Instalacja oprogramowania
 
-1. Rozpakuj paczkę wydania.
-2. Uruchom **`install.ps1`** (prawy przycisk → *Uruchom w programie PowerShell*).
-3. Rób, co mówi instalator: przytrzymaj **BOOT** na płytce i wciśnij **RST** —
-   instalator sam wgra CircuitPython, poczeka na dysk `CIRCUITPY` i skopiuje
-   firmware + konfigurator.
-4. Po komunikacie **GOTOWE** odłącz i podłącz USB.
+Zawartość paczki wydania:
 
-Instalacja ręczna (dowolny system): wejdź w tryb bootloadera (BOOT+RST), przeciągnij
-`flash/*.uf2` na dysk `RPI-RP2`, poczekaj na dysk `CIRCUITPY`, skopiuj na niego całą
-zawartość katalogu `device/`, odłącz i podłącz USB.
+```
+firmware/barcode_reader.uf2   FIRMWARE PRODUKCYJNY — to wgrywasz
+wtyczka/                      rozszerzenie przeglądarki (wariant C formularzy)
+konfigurator.html             kopia konfiguratora (ten sam jest w urządzeniu)
+INSTALL.md, WTYCZKA.md, NAUKA-PROFILU.md
+prototyp-circuitpython/       wariant deweloperski (opcjonalny)
+SHA256SUMS.txt                sumy kontrolne
+```
+
+**Instalacja produkcyjna (dowolny system) — jeden krok:**
+
+1. Wejdź w tryb bootloadera: przytrzymaj **BOOT** na płytce i wciśnij **RST**
+   (albo podłącz USB trzymając BOOT) — pojawi się dysk `RPI-RP2`.
+2. Przeciągnij na niego **`firmware/barcode_reader.uf2`**. Płytka zrestartuje
+   się sama.
+3. Gotowe — czytnik zgłasza się jako klawiatura i pokazuje dysk **`CZYTNIK`**
+   z konfiguratorem, instrukcjami i formularzami testowymi w środku.
+
+Nic nie trzeba kopiować na urządzenie: konfigurator (`konfigurator.html`),
+instrukcje (`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`) i testy
+(`testy.html` + `formularze/`) są wbudowane w firmware.
+
+**Wariant prototypowy (CircuitPython)** — tylko do prac rozwojowych, katalog
+`prototyp-circuitpython/`: uruchom `install.ps1` (Windows; prawy przycisk →
+*Uruchom w programie PowerShell*) albo ręcznie przeciągnij `flash/*.uf2` na
+`RPI-RP2` i skopiuj zawartość `device/` na dysk `CIRCUITPY`. Różnice wariantów:
+[ARCHITEKTURA.md](ARCHITEKTURA.md).
+
+**Wtyczka do przeglądarki** (potrzebna tylko do wypełniania po nazwach pól):
+`chrome://extensions` → *Tryb dewelopera* → *Załaduj rozpakowane* → katalog
+`wtyczka/`. Szczegóły: [WTYCZKA.md](WTYCZKA.md).
 
 ## 3. Konfiguracja skanera (jednorazowo, nowy moduł)
 
@@ -59,10 +82,11 @@ skaner pika przy odczycie, ale nic się nie wpisuje:
 Otwórz Notatnik, kliknij w niego i zeskanuj dowolny kod EAN — powinien wpisać się
 tekst + ENTER. Dziesięć skanów tego samego kodu = dziesięć identycznych linii.
 
-Po instalacji na pendrivie czytnika znajdziesz: `konfigurator.html` (narzędzie
-konfiguracji), `config/config.json` (konfiguracja startowa — można edytować),
-`docs/INSTRUKCJA.md` (ściąga dla inżyniera) oraz pliki firmware (`*.py`, `lib/`
-— nie ruszać).
+Po instalacji na dysku czytnika (**`CZYTNIK`**, tylko-do-odczytu) znajdziesz:
+`konfigurator.html`, `testy.html` + `formularze/` (komplet testów),
+`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`. W wariancie prototypowym
+(dysk `CIRCUITPY`) dodatkowo `config/config.json` (można edytować) i pliki
+firmware `*.py`, `lib/` (nie ruszać).
 
 ## 5. Konfigurator (profile)
 

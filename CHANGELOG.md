@@ -2,6 +2,52 @@
 
 Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](VERSION.md).
 
+## 1.0.0 — 2026-08-21
+
+Pierwsze wydanie produkcyjne. Firmware w C jest wariantem docelowym, a paczka
+zawiera go jako gotowy plik do wgrania — konfigurator, instrukcje i formularze
+testowe są **w środku urządzenia**.
+
+### Firmware produkcyjny (C / Pico SDK)
+
+- Pełny pipeline: UART → ramkowanie → blokada duplikatów → profile
+  (regex z grupami / parser GS1) → sekwencje klawiszy → USB HID.
+- **Dysk `CZYTNIK`** (USB MSC, tylko-do-odczytu, obraz FAT12 budowany z repo):
+  `konfigurator.html`, `testy.html` + `formularze/`, `INSTRUKCJA.md`,
+  `WTYCZKA.md`, `NAUKA-PROFILU.md`. Podłączasz czytnik i masz wszystko —
+  bez internetu, bez instalowania czegokolwiek.
+- Atomowy zapis konfiguracji (sloty A/B z CRC), watchdog 3 s, factory reset
+  z przycisku, tryb testowy po CDC, restart do bootloadera komendą.
+- Wersja firmware wstrzykiwana przy buildzie z `VERSION.md` (widoczna w `ping`
+  i w konfiguratorze).
+
+### Wypełnianie formularzy
+
+- Wtyczka przechwytuje także **sekwencje TAB-owe z profilu urządzenia**:
+  czytnik zostaje na stałe w jednej, produkcyjnej konfiguracji, a na
+  rozpoznanych stronach wtyczka sama rozkłada dane po nazwach pól.
+  Poza nimi TAB-y działają jak dotąd (brak regresji).
+- Kreator nauki profilu: potwierdzanie wyboru pola, cofanie do poprzedniego
+  kroku, duplikowanie i porządkowanie profili, import/eksport JSON.
+- Drugie demo: zamówienie leku z prawdziwym DataMatrix GS1 (GTIN, data „00"
+  = koniec miesiąca, seria, numer seryjny) i automatyczne przełączanie profili.
+
+### Paczka wydania
+
+- `firmware/barcode_reader.uf2` (produkcja — instalacja to jeden krok),
+  `wtyczka/`, `konfigurator.html`, `INSTALL.md`, `WTYCZKA.md`,
+  `NAUKA-PROFILU.md`, `prototyp-circuitpython/` (wariant deweloperski).
+- CI kompiluje firmware C po zbudowaniu konfiguratora (trafia do obrazu dysku)
+  i publikuje paczkę automatycznie po merge `develop` → `master`.
+
+### Dokumentacja i testy
+
+- Nowe: `MOZLIWOSCI.md` (co działa, co zweryfikowane, jakie kody i gdzie są
+  granice), `ROADMAP.md`, `NAUKA-PROFILU.md`, scenariusz „od pudełka”
+  w `TESTING.md`.
+- Testy: 52 asercje (Python) + 87 (C) + 41 (wtyczka, jednostkowe)
+  + 18 (wtyczka, e2e w Chromium) — wszystkie w CI.
+
 ## 0.10.0 — 2026-08-21
 
 - **Wtyczka do przeglądarki (Etap 12, faza 1)** — rozpoznaje formularz po adresie

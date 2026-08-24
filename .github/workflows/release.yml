@@ -69,6 +69,33 @@ jobs:
           npm ci --no-fund --no-audit
           npm run build
 
+      # Firmware produkcyjny (C) ma konfigurator i instrukcje w srodku (dysk
+      # CZYTNIK), wiec kompilujemy go PO buildzie konfiguratora.
+      - name: Narzedzia ARM
+        if: steps.ver.outputs.release == 'true'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+
+      - name: Cache Pico SDK
+        if: steps.ver.outputs.release == 'true'
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/pico-sdk
+          key: pico-sdk-2-tinyusb
+
+      - name: Pobranie Pico SDK
+        if: steps.ver.outputs.release == 'true' && steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
+          cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
+
+      - name: Kompilacja firmware produkcyjnego (UF2 z dyskiem CZYTNIK)
+        if: steps.ver.outputs.release == 'true'
+        working-directory: firmware-pico-sdk
+        run: |
+          cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
+          ninja -C build
+
       - name: Budowa paczki wydania
         if: steps.ver.outputs.release == 'true'
         run: python tools/build_release.py --skip-npm

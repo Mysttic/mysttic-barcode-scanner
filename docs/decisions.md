@@ -1,5 +1,20 @@
 # Decyzje projektowe
 
+## 2026-08-21 — paczka wydania: produkcyjny firmware C + wtyczka w jednym
+
+- **Pytanie właściciela „czy wtyczka jest budowana w release?"** — była (`wtyczka/` z wersją manifestu z VERSION.md, od merge'a E12), ale przegląd wykrył **poważniejszy brak: paczka zawierała wyłącznie wariant prototypowy (CircuitPython)** — produkcyjnego UF2 wariantu C (tego z dyskiem `CZYTNIK`) nie było w niej wcale, mimo że to on jest wersją produkcyjną od E11.
+- **Nowa struktura paczki:** `firmware/barcode_reader.uf2` (produkcja — instalacja to JEDEN krok: przeciągnij na `RPI-RP2`; konfigurator, instrukcje i formularze testowe są w środku), `wtyczka/`, `konfigurator.html`, `INSTALL.md` + `WTYCZKA.md` + `NAUKA-PROFILU.md`, oraz zepchnięty do podkatalogu `prototyp-circuitpython/` (install.ps1 + flash/ + device/ — `install.ps1` liczy ścieżki względem siebie, więc działa bez zmian). Zweryfikowane lokalnie: 41 plików, 837 KB.
+- **Znaleziona przy okazji regresja CI:** job `firmware-c` w `ci.yml` nie budował konfiguratora, a od czasu dodania MSC obraz dysku zależy od `configurator/dist/index.html` — kompilacja UF2 w CI padłaby. Naprawione: build konfiguratora przed kompilacją firmware (ta sama kolejność w `release.yml`). `paczka-testowa` bierze UF2 z artefaktu joba `firmware-c` (`--uf2-c`), release kompiluje firmware inline po konfiguratorze.
+- **Zabezpieczenie:** `build_release.py` przerywa z czytelnym komunikatem, gdy brakuje UF2 wariantu C — niekompletna paczka nie powstanie po cichu.
+
+## 2026-08-21 — STOP na konsolidację: architektura, możliwości, roadmapa
+
+- **Decyzja właściciela:** „działa bardzo dobrze — zatrzymujemy się i opracowujemy opis architektury, co możemy/czego nie możemy, jakie kody obsługujemy i mamy sprawdzone, oraz dalsze kroki".
+- **ARCHITEKTURA.md zaktualizowana do stanu faktycznego:** MSC/dysk `CZYTNIK` w tabeli wariantów + osobna sekcja (obraz FAT12 z buildu, read-only, zawartość), wtyczka w pipeline z ramkami TAB-owymi i zasadą pierwszeństwa, sekcja „Testy i weryfikacja" (52/87/41/18 + poziomy sprzętowe).
+- **Nowy `MOZLIWOSCI.md`** — macierz możliwości w trzech kategoriach (zweryfikowane na sprzęcie / automatycznie / granice): symbologie przetestowane fizycznie (EAN-13, QR, DataMatrix GS1 z GS), formaty logiczne (tabela AI: 01/17/10/21 ✔, pozostałe ✖ z opisanym fail-safe), granice twarde z zachowaniem systemu (ASCII/US, GS przez HID, PPN/krypto, Shadow DOM, polityki USB), limity parametryczne wariantu C, znane różnice C vs CP.
+- **Nowy `ROADMAP.md`** — 5 obszarów wg priorytetu: (1) domknięcie 1.0 (scenariusz od pudełka, wersja z VERSION.md w C, paczka z UF2+wtyczką, eventy testowe C), (2) odporność formatów (rozszerzenie AI ×3 implementacje, macierz realnych kodów z hurtowni), (3) Etap 13 PCB/obudowa/VID-PID, (4) ergonomia wdrożeń (tryb prosty, GPO, układ PL), (5) wtyczka faza 2 (CDC). Sekcja „Zamrożone/odrzucone", żeby stare pomysły nie wracały bez powodu.
+- README: tabela „Chcę → Zajrzyj do" uzupełniona o NAUKA-PROFILU/MOZLIWOSCI/ROADMAP; akapit o pendrivie zastąpiony opisem dysku `CZYTNIK`.
+
 ## 2026-08-21 — kreator nauki: potwierdzanie wyboru + krok wstecz
 
 - **Wymaganie właściciela:** „po zaznaczeniu elementu możliwość potwierdzenia wyboru oraz cofnięcia do poprzedniego pola — użytkownik musi móc poprawić pomyłkę". Kliknięcie pola w kroku 3 już NIE przechodzi dalej automatycznie: wybór dostaje trwałą zieloną obwódkę, a panel czeka na decyzję — **Zatwierdź i dalej / Wybierz inne pole / ← Wstecz / Pomiń**. Wstecz wraca do poprzedniej nazwy z jej przypisaniem do ponownego zatwierdzenia lub zmiany; działa też z ekranu zapisu (do ostatniego pola) i z kroku nazw (powrót do skanowania). Pomiń kasuje wcześniejsze przypisanie nazwy.

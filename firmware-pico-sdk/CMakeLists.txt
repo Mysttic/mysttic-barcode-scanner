@@ -58,6 +58,15 @@ add_executable(barcode_reader
 
 target_include_directories(barcode_reader PRIVATE src)
 
+# Wersja wydania: VERSION.md w korzeniu repo jest jedynym zrodlem prawdy.
+file(READ ${REPO_ROOT}/VERSION.md _version_md)
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" FW_VERSION "${_version_md}")
+if(NOT FW_VERSION)
+  set(FW_VERSION "0.0.0-dev")
+endif()
+message(STATUS "Wersja firmware (z VERSION.md): ${FW_VERSION}")
+target_compile_definitions(barcode_reader PRIVATE FIRMWARE_VERSION_C="${FW_VERSION}")
+
 target_link_libraries(barcode_reader
   pico_stdlib
   pico_unique_id
