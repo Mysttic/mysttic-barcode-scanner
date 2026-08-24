@@ -164,7 +164,7 @@ static int test_config(void) {
   CHECK(cfg.frame_timeout_ms == 250 && cfg.duplicate_block_ms == 1500);
   CHECK(cfg.key_delay_ms == 10 && cfg.action_delay_ms == 30);
   CHECK(cfg.out_mode == OUT_PASSTHROUGH && strcmp(cfg.suffix_key, "ENTER") == 0);
-  CHECK(cfg.profile_count == 3);
+  CHECK(cfg.profile_count == 4);  // gs1-datamatrix, pracownik-tab, lek-wtyczka, demo-prefiks-P
 
   const cfg_profile_t *gs1p = &cfg.profiles[0];
   CHECK(strcmp(gs1p->name, "gs1-datamatrix") == 0 && gs1p->parse_type == PARSE_GS1 && !gs1p->enabled);

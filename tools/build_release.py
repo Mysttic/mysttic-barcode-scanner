@@ -5,14 +5,19 @@ Uzycie:  python tools/build_release.py [--skip-npm]
 Wynik:   release/barcode-reader-v<wersja>.zip + SHA256SUMS.txt
 
 Zawartosc paczki:
-  INSTALL.md          instrukcja instalacji i konfiguracji
-  install.ps1         instalator Windows (prowizjonowanie plytki)
-  flash/*.uf2         CircuitPython (przypieta wersja)
-  device/             pliki na dysk CIRCUITPY (firmware + lib + konfigurator)
-  SHA256SUMS.txt      sumy kontrolne
+  INSTALL.md              instrukcja instalacji i konfiguracji
+  WTYCZKA.md              instrukcja wtyczki
+  NAUKA-PROFILU.md        samouczek nauki profilu
+  firmware/*.uf2          PRODUKCJA (wariant C): przeciagnij na RPI-RP2 i gotowe
+                          - konfigurator, instrukcje i formularze testowe sa
+                            w srodku, na dysku CZYTNIK
+  wtyczka/                rozszerzenie przegladarki (ladowane "bez pakowania")
+  prototyp-circuitpython/ wariant deweloperski: install.ps1 + flash/ + device/
+  SHA256SUMS.txt          sumy kontrolne
 """
 import argparse
 import hashlib
+import json
 import re
 import shutil
 import subprocess
@@ -22,8 +27,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 FIRMWARE = ROOT / "firmware-circuitpython"
+EXTENSION = ROOT / "browser-extension"
 UF2_DIR = ROOT / "hardware" / "downloads"
 ADAFRUIT_HID = next((UF2_DIR / "extracted").glob("*/lib/adafruit_hid"), None)
+# Produkcyjny firmware (wariant C) - budowany przez CMake/Ninja przed paczka.
+UF2_C_DEFAULT = ROOT / "firmware-pico-sdk" / "build" / "barcode_reader.uf2"
+# Dokumenty kopiowane do korzenia paczki (obok INSTALL.md).
+DOCS_IN_PACKAGE = ["WTYCZKA.md", "NAUKA-PROFILU.md"]
 
 DEVICE_FILES = [
     "boot.py",
@@ -48,6 +58,22 @@ def firmware_version() -> str:
     return m.group(1)
 
 
+def copy_extension(stage: Path, version: str) -> None:
+    """Rozszerzenie przegladarki + wersja manifestu z VERSION.md.
+
+    Do paczki ida tylko pliki uruchomieniowe - bez testow i zaleznosci dev."""
+    target = stage / "wtyczka"
+    shutil.copytree(
+        EXTENSION,
+        target,
+        ignore=shutil.ignore_patterns("node_modules", "tests", "package.json", "package-lock.json", ".gitkeep"),
+    )
+    manifest_path = target / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["version"] = version
+    manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 def build_configurator(skip_npm: bool) -> Path:
     dist = ROOT / "configurator" / "dist" / "index.html"
     if skip_npm:
@@ -63,6 +89,8 @@ def build_configurator(skip_npm: bool) -> Path:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--skip-npm", action="store_true", help="uzyj istniejacego builda konfiguratora")
+    ap.add_argument("--uf2-c", type=Path, default=UF2_C_DEFAULT,
+                    help="UF2 produkcyjnego firmware C (domyslnie firmware-pico-sdk/build/)")
     args = ap.parse_args()
 
     version = firmware_version()
@@ -73,17 +101,30 @@ def main() -> None:
         sys.exit("BLAD: brak pliku .uf2 w hardware/downloads/")
     if ADAFRUIT_HID is None:
         sys.exit("BLAD: brak hardware/downloads/extracted/*/lib/adafruit_hid")
+    if not args.uf2_c.is_file():
+        sys.exit(
+            f"BLAD: brak produkcyjnego firmware C ({args.uf2_c}).\n"
+            "      Zbuduj go najpierw:  cmake -G Ninja -B build && ninja -C build\n"
+            "      (w firmware-pico-sdk/, z PICO_SDK_PATH) albo wskaz plik przez --uf2-c."
+        )
 
     configurator = build_configurator(args.skip_npm)
 
     stage = ROOT / "release" / f"barcode-reader-v{version}"
     if stage.exists():
         shutil.rmtree(stage)
-    (stage / "flash").mkdir(parents=True)
-    device = stage / "device"
+
+    # --- wariant PRODUKCYJNY (C): jeden plik, cala reszta jest w srodku -------
+    (stage / "firmware").mkdir(parents=True)
+    shutil.copy2(args.uf2_c, stage / "firmware" / "barcode_reader.uf2")
+
+    # --- wariant prototypowy (CircuitPython) ---------------------------------
+    proto = stage / "prototyp-circuitpython"
+    (proto / "flash").mkdir(parents=True)
+    device = proto / "device"
     (device / "lib").mkdir(parents=True)
 
-    shutil.copy2(uf2, stage / "flash" / uf2.name)
+    shutil.copy2(uf2, proto / "flash" / uf2.name)
     for name in DEVICE_FILES:
         shutil.copy2(FIRMWARE / name, device / name)
     (device / "version.py").write_text(
@@ -98,8 +139,14 @@ def main() -> None:
     shutil.copy2(FIRMWARE / "default_config.json", device / "config" / "config.json")
     (device / "docs").mkdir()
     shutil.copy2(ROOT / "tools" / "device_docs" / "INSTRUKCJA.md", device / "docs" / "INSTRUKCJA.md")
-    shutil.copy2(ROOT / "tools" / "install.ps1", stage / "install.ps1")
+    shutil.copy2(ROOT / "tools" / "install.ps1", proto / "install.ps1")
+
+    # --- wspolne: konfigurator luzem, dokumentacja, wtyczka ------------------
+    shutil.copy2(configurator, stage / "konfigurator.html")
     shutil.copy2(ROOT / "docs" / "INSTALL.md", stage / "INSTALL.md")
+    for doc in DOCS_IN_PACKAGE:
+        shutil.copy2(ROOT / "docs" / doc, stage / doc)
+    copy_extension(stage, version)
 
     sums = []
     for path in sorted(stage.rglob("*")):

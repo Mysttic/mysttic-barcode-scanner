@@ -1,0 +1,70 @@
+# Dalsze kroki (roadmapa)
+
+Stan wyjściowy (2026-08-21): produkt działa end-to-end na sprzęcie —
+firmware C z dyskiem `CZYTNIK`, konfigurator, wtyczka z nauką profili,
+komplet testów. Poniżej praca uporządkowana wg priorytetu; szczegółowe
+uzasadnienia decyzji w [decisions.md](decisions.md).
+
+## 1. Domknięcie wydania 1.0 (najbliższe)
+
+- [ ] **Przejście pełnego scenariusza „od pudełka"** przez właściciela
+  ([TESTING.md](TESTING.md), sekcja 0) + `tools/test_e2e.py` — formalne
+  kryterium akceptacji.
+- [ ] **Wersja firmware C z VERSION.md** wstrzykiwana przy buildzie
+  (dziś `0.0.0-dev` w `ping` i konfiguratorze).
+- [x] ~~**Paczka wydania**: UF2 wariantu C + `wtyczka/` + instrukcje~~ —
+  zrobione 2026-08-21: paczka ma `firmware/barcode_reader.uf2` (produkcja),
+  `wtyczka/` z wersją z VERSION.md, komplet dokumentacji i osobno
+  `prototyp-circuitpython/`; CI kompiluje firmware C przed budową paczki.
+- [ ] **Wydanie 1.0**: podbić [VERSION.md](../VERSION.md) + uzupełnić
+  [CHANGELOG.md](../CHANGELOG.md), PR `develop` → `master` (release automatyczny).
+- [ ] **Eventy trybu testowego w C** z nazwą profilu i polami (parytet z CP —
+  ostatnia znana różnica).
+
+## 2. Odporność na formaty kodów
+
+- [ ] **Rozszerzenie tabeli AI parsera GS1** o typowe dodatki spotykane na
+  opakowaniach: `11` (data produkcji), `15` (najlepiej spożyć), `30` (ilość),
+  `240`, `710–714` (numery krajowe) — w trzech implementacjach naraz
+  (CP/C/wtyczka) + wspólne wektory testowe. Efekt: obecność nieużywanego AI
+  przestaje wywracać parsowanie.
+- [ ] Zebrać **realne kody z docelowych hurtowni/aptek** i przepuścić przez
+  zakładkę Test konfiguratora (macierz zgodności przed wdrożeniem).
+- Poza zakresem do osobnej decyzji: PPN (Niemcy), kody kryptograficzne 91–93
+  (Rosja) — inne ekosystemy, dziś bezpieczny fallback
+  ([MOZLIWOSCI.md](MOZLIWOSCI.md)).
+
+## 3. Produktyzacja sprzętu (Etap 13 z instrukcji)
+
+- [ ] PCB zamiast płytki stykowej (moduł + RP2040 + złącze JST),
+- [ ] obudowa (druk 3D) z okienkiem skanera i przyciskiem serwisowym,
+- [ ] **legalny VID/PID** przed sprzedażą (dziś deweloperskie `0xCAFE`),
+- [ ] naklejka z QR do dokumentacji/wydań na spodzie urządzenia.
+
+## 4. Ergonomia i wdrożenia (wg potrzeb)
+
+- [ ] tryb prosty konfiguratora (feedback z E7: „za techniczny dla użytkownika
+  końcowego"),
+- [ ] wdrożenie wtyczki polityką (`ExtensionInstallForcelist` + profile przez
+  `storage.managed`) — dziś instalacja „Załaduj rozpakowane",
+- [ ] układ klawiatury PL/DE w HID (dziś US/ASCII — wystarcza dla kodów),
+- [ ] auto-wybór portu w konfiguratorze (ping-timeout zamiast ręcznego wyboru).
+
+## 5. Wtyczka — faza 2 (gdy wedge przestanie wystarczać)
+
+- [ ] transport CDC zamiast nasłuchu klawiatury (dane strukturalne prosto
+  z urządzenia, tryb `host` + heartbeat; wymaga zmian we firmware — świadomie
+  odłożone),
+- [ ] agregacja wielu skanów w jeden formularz, wiersze powtarzalne,
+- [ ] publikacja w Chrome Web Store (dziś świadomie pominięta — wdrożenie
+  wewnętrzne).
+
+## Zamrożone / odrzucone (żeby nie wracać bez powodu)
+
+- **Bookmarklet jako droga produkcyjna** — odrzucony (UX); zostaje jako
+  diagnostyka (`test-vectors/bookmarklet.html`).
+- **Wtyczka przez WebSerial w fazie 1** — odrzucone na rzecz wedge
+  (zero zmian we firmware, brak konfliktu o port).
+- **LittleFS w C** — odrzucone na rzecz atomowych slotów A/B.
+- **MSC zapisywalny** — dysk celowo tylko-do-odczytu (konfiguracja żyje we
+  flashu przez CDC; nie ma czego zepsuć).

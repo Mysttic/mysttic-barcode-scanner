@@ -17,6 +17,8 @@ stroną WWW otwieraną z pendrive'a czytnika.
   data ważności, partia, numer seryjny),
 - pilnuje duplikatów i tempa wpisywania (przyjazne dla wolnych aplikacji),
 - konfiguracja bez instalacji — strona `konfigurator.html` z pendrive'a czytnika,
+- wtyczka do przeglądarki wypełnia formularze **po nazwach pól** tam, gdzie
+  sekwencja TAB-ów jest zbyt krucha (obce strony, SPA),
 - aktualizacje przez przeciągnięcie pliku, paczki wydań budowane automatycznie.
 
 ## Od czego zacząć
@@ -26,13 +28,18 @@ stroną WWW otwieraną z pendrive'a czytnika.
 | zbudować / zainstalować czytnik | [docs/INSTALL.md](docs/INSTALL.md) |
 | skonfigurować skanowanie i profile | [docs/KONFIGURACJA.md](docs/KONFIGURACJA.md) |
 | wypełniać formularze (wszystkie warianty) | [docs/FORMULARZE.md](docs/FORMULARZE.md) |
-| przetestować urządzenie (testy + e2e) | [docs/TESTING.md](docs/TESTING.md) |
+| wypełniać formularze po nazwach pól na obcych stronach | [docs/WTYCZKA.md](docs/WTYCZKA.md) |
+| nauczyć wtyczkę nowego formularza (samouczek) | [docs/NAUKA-PROFILU.md](docs/NAUKA-PROFILU.md) |
+| przetestować urządzenie (scenariusz „od pudełka", testy, e2e) | [docs/TESTING.md](docs/TESTING.md) |
+| sprawdzić, co system umie, a czego nie (i jakie kody) | [docs/MOZLIWOSCI.md](docs/MOZLIWOSCI.md) |
+| zobaczyć plany rozwoju | [docs/ROADMAP.md](docs/ROADMAP.md) |
 | poznać szczegóły techniczne | [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) |
 | prześledzić decyzje projektowe | [docs/decisions.md](docs/decisions.md) |
 | zobaczyć historię zmian | [CHANGELOG.md](CHANGELOG.md) |
 
-Na pendrivie samego czytnika jest też krótka ściąga dla osoby konfigurującej
-(`docs/INSTRUKCJA.md` na urządzeniu): co wolno edytować, a czego nie ruszać.
+Na dysku samego czytnika (`CZYTNIK`) jest komplet do pracy bez repozytorium:
+konfigurator, instrukcje (`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`)
+i formularze testowe (`testy.html`).
 
 ## Schemat połączeń (minimum)
 

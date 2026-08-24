@@ -108,9 +108,9 @@ wydrukowany/wyświetlony na tej samej stronie:
 
 | Strona | Co testuje | Profil |
 |---|---|---|
-| [`forma-a-tab.html`](../test-vectors/forma-a-tab.html) | formularz wypełniany po kolei TAB-ami | **pracownik-tab** |
-| [`forma-b-nazwy.html`](../test-vectors/forma-b-nazwy.html) | pola w innej kolejności — sekwencję trzeba dopasować do układu formularza | **pracownik-tab** (ze zmienioną sekwencją) |
-| [`forma-gs1.html`](../test-vectors/forma-gs1.html) | kod apteczny GS1 DataMatrix: GTIN, data ważności, partia, numer seryjny | **gs1-datamatrix** |
+| [`forma-a-tab.html`](../test-vectors/formularze/forma-a-tab.html) | formularz wypełniany po kolei TAB-ami | **pracownik-tab** |
+| [`forma-b-nazwy.html`](../test-vectors/formularze/forma-b-nazwy.html) | pola w innej kolejności — sekwencję trzeba dopasować do układu formularza | **pracownik-tab** (ze zmienioną sekwencją) |
+| [`forma-gs1.html`](../test-vectors/formularze/forma-gs1.html) | kod apteczny GS1 DataMatrix: GTIN, data ważności, partia, numer seryjny | **gs1-datamatrix** |
 
 Każda strona zawiera swój kod QR do zeskanowania i opis oczekiwanego wyniku.
 Pełny scenariusz odbiorczy: [TESTING.md](TESTING.md).

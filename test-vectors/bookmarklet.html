@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Bookmarklet — wypełnianie pól na obcych stronach (bez wtyczki)</title>
+<style>
+  body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; }
+  .wrap { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
+  .card { background: #fff; border: 1px solid #d8dee8; border-radius: 12px; padding: 20px; }
+  h1 { font-size: 1.25rem; margin-top: 0; }
+  h2 { font-size: 1rem; margin: 18px 0 6px; }
+  .qr { text-align: center; }
+  .qr img { width: 220px; image-rendering: pixelated; }
+  .hint { font-size: .85rem; color: #556; line-height: 1.55; }
+  code { background: #eef1f6; padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+  a.bm { display: inline-block; background: #3b82f6; color: #fff; font-weight: 600;
+         padding: 10px 18px; border-radius: 10px; text-decoration: none; cursor: grab; }
+  table { border-collapse: collapse; width: 100%; font-size: .82rem; margin-top: 8px; }
+  th, td { border: 1px solid #d8dee8; padding: 5px 8px; text-align: left; vertical-align: top; }
+  th { background: #f0f3f8; }
+  ol li { margin: 6px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Czytnik → pola formularza na obcych stronach</h1>
+    <p class="hint">Bookmarklet = zakładka w przeglądarce, której adresem jest mały skrypt.
+    Kliknięta na dowolnej stronie włącza nasłuch „klawiatury": czytnik wpisuje kod
+    <code>WEB;…</code> 1:1 (żaden profil w czytniku go nie łapie), a skrypt rozpoznaje ramkę,
+    tnie ją po średnikach i wstawia wartości w pola <b>po selektorach</b> z wbudowanego
+    profilu strony — kolejność pól i fokus nie mają znaczenia.</p>
+
+    <h2>Instalacja (raz)</h2>
+    <ol class="hint">
+      <li>Pokaż pasek zakładek: <code>Ctrl+Shift+B</code>.</li>
+      <li>Przeciągnij ten przycisk na pasek zakładek: <a id="bm" class="bm" href="#">📷 Czytnik→pola</a></li>
+    </ol>
+
+    <h2>Użycie (na każdej stronie testowej)</h2>
+    <ol class="hint">
+      <li>Wejdź na stronę z tabeli obok i kliknij zakładkę <b>📷 Czytnik→pola</b> —
+          w prawym dolnym rogu pojawi się plakietka z nazwą profilu.</li>
+      <li>Zeskanuj kod QR (z tej strony albo wydrukowany) — pola wypełnią się
+          i mignął na zielono; plakietka pokaże liczbę wypełnionych pól.</li>
+      <li>Ponowne kliknięcie zakładki wyłącza nasłuch (plakietka znika).</li>
+    </ol>
+
+    <h2>Obsługiwane strony (profile wbudowane w bookmarklet)</h2>
+    <table>
+      <tr><th>Strona</th><th>Co wypełni</th></tr>
+      <tr><td>selenium.dev/…/web-form.html</td><td>tekst = imię i nazwisko, textarea = adres, data</td></tr>
+      <tr><td>parabank.parasoft.com/parabank/register.htm</td><td>imię, nazwisko, ulica, miasto, województwo, kod, telefon</td></tr>
+      <tr><td>practicesoftwaretesting.com/auth/register</td><td>pełna rejestracja: dane + adres + data ur. + kraj (select)</td></tr>
+      <tr><td>practicesoftwaretesting.com (strona główna)</td><td>pole wyszukiwarki</td></tr>
+      <tr><td>demoqa.com/automation-practice-form</td><td>imię, nazwisko, e-mail, telefon, adres (React!)</td></tr>
+      <tr><td>automationexercise.com/login</td><td>signup: imię+nazwisko, e-mail (dwa pola <code>email</code> na stronie — trafia we właściwe)</td></tr>
+      <tr><td>datatables.net (zero configuration)</td><td>filtr tabeli na żywo</td></tr>
+      <tr><td>httpbin.org/forms/post</td><td>nazwisko klienta, telefon, e-mail</td></tr>
+    </table>
+    <p class="hint">Na stronie spoza listy plakietka pokaże „brak profilu" — ramka zostanie
+    rozpoznana, ale nic się nie wypełni. Uwaga: wyszukiwana fraza w kodzie to „Tokyo" —
+    w wyszukiwarce Toolshop da pusty wynik (sklep z narzędziami), w DataTables przefiltruje tabelę.</p>
+  </div>
+  <div class="card qr">
+    <h1>Kod do zeskanowania</h1>
+    <img alt="QR WEB" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0AQAAAAAVtjufAAAB6ElEQVR4nNVYMY7jQAyjgu2pH/j/z/IPOC/ggnK2OCC44qDidpDEgApCQ1GUnDI+nfP6GAb+v3hVNboPDqpQ6Ans4dPGkdAXiFJPYA3/CyiiCQi4L/BmF1fxAVDnQh/qn3Fef8UH2n0DrRC0iQ/TJm3DsAROQFv45QL4R+gAvPfyz6FlOrnnJrbX8oeZ8sKUSRARJzfxTYogDUgerhb5h5M0KaW+T/rCXv6vlFM4hGMO6JKhPX+ARYGSk7WiUFmr/ANPCQyShPLYxUeyVqSaKizrhxxCkE/qq239cGQ/1hCWGEVt8mOlpZSDh39t4iOsBHdYSpvFLhb1KYlx/nxHTVrl37GEmLKR1ooRLfYvAquIMgPgUWdEtOgPxNVwZjB1YIi9Or+YBqAywWZ2eVc/mvke0xzvzHPVH/jTAeP/Merd/jUyXEISLYWgtMLm/EIkGvDYQ+x6F9/PRvKuQiKr+CDHlh/pPJfZ1D+BBot316kDls/ifov4gYUxhnG29MGefl4Aq2H1waWDYhXPZv45U4EsP3GHVGQx/6pqNYSrqaNUA1renzHm8yzSucPu/sk45/xmA4od7fHz9X5ePOLJm5Gn0Nv4uHENNs+1rH/P6q/siCnAuj/g2QvHhFKAyHTx/Qifzq/5f+AbYa+mk0qmocoAAAAASUVORK5CYII=">
+    <p class="hint">Zawartość:<br><code>WEB;Jan;Kowalski;jan.kowalski@example.com;5551234567;Krotka 7;Warszawa;22-100;2026-08-31;Tokyo</code></p>
+    <p class="hint">Pola ramki (po średniku):<br>
+    <code>imie · nazwisko · email · telefon · ulica · miasto · kod · data · szukaj</code></p>
+  </div>
+</div>
+
+<!-- ŹRÓDŁO BOOKMARKLETU — z tego bloku budowany jest href zakładki (jedno źródło prawdy) -->
+<script id="wedge-src" type="text/plain">
+(function(){
+if(window.__bcWedge){window.__bcWedge.off();return}
+var PREFIX='WEB;';
+var FIELDS=['imie','nazwisko','email','telefon','ulica','miasto','kod','data','szukaj'];
+var PROFILES=[
+ {host:'selenium.dev',name:'Selenium web-form',map:{'input[name=my-text]':'{imie} {nazwisko}','textarea[name=my-textarea]':'{ulica}, {kod} {miasto}','input[name=my-date]':'{data}'}},
+ {host:'parabank.parasoft.com',name:'ParaBank rejestracja',map:{'[id="customer.firstName"]':'{imie}','[id="customer.lastName"]':'{nazwisko}','[id="customer.address.street"]':'{ulica}','[id="customer.address.city"]':'{miasto}','[id="customer.address.state"]':'mazowieckie','[id="customer.address.zipCode"]':'{kod}','[id="customer.phoneNumber"]':'{telefon}'}},
+ {host:'practicesoftwaretesting.com',path:'/auth/register',name:'Toolshop rejestracja',map:{'#first_name':'{imie}','#last_name':'{nazwisko}','#dob':'{data}','#street':'{ulica}','#postal_code':'{kod}','#city':'{miasto}','#state':'mazowieckie','#phone':'{telefon}','#email':'{email}','#country':'PL'}},
+ {host:'practicesoftwaretesting.com',name:'Toolshop wyszukiwarka',map:{'#search-query':'{szukaj}'}},
+ {host:'demoqa.com',name:'DemoQA formularz',map:{'#firstName':'{imie}','#lastName':'{nazwisko}','#userEmail':'{email}','#userNumber':'{telefon}','#currentAddress':'{ulica}, {kod} {miasto}'}},
+ {host:'automationexercise.com',name:'AutomationExercise signup',map:{'form[action="/signup"] input[name=name]':'{imie} {nazwisko}','form[action="/signup"] input[name=email]':'{email}'}},
+ {host:'datatables.net',name:'DataTables filtr',map:{'#dt-search-0':'{szukaj}'}},
+ {host:'httpbin.org',name:'httpbin zamowienie',map:{'[name=custname]':'{imie} {nazwisko}','[name=custtel]':'{telefon}','[name=custemail]':'{email}'}}
+];
+function match(p){var h=location.hostname.replace(/^www\./,'');return (h===p.host||h.endsWith('.'+p.host))&&(!p.path||location.pathname===p.path)}
+var prof=null;for(var i=0;i<PROFILES.length;i++){if(match(PROFILES[i])){prof=PROFILES[i];break}}
+var buf='',last=0;
+function setVal(el,v){
+ if(el.tagName==='SELECT'){var o=null,os=el.options;
+  for(var i=0;i<os.length;i++){if(os[i].value===v){o=os[i];break}}
+  if(!o)for(var i=0;i<os.length;i++){if(os[i].text.toLowerCase().indexOf(v.toLowerCase())>=0){o=os[i];break}}
+  if(!o)return false;el.value=o.value;el.dispatchEvent(new Event('change',{bubbles:true}));return true}
+ var proto=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;
+ var d=Object.getOwnPropertyDescriptor(proto,'value');
+ if(d&&d.set){d.set.call(el,v)}else{el.value=v}
+ el.dispatchEvent(new Event('input',{bubbles:true}));
+ el.dispatchEvent(new Event('change',{bubbles:true}));
+ return true}
+function flash(el){var o=el.style.outline;el.style.outline='2px solid #22c55e';setTimeout(function(){el.style.outline=o},1500)}
+function fill(frame,retry){
+ var parts=frame.split(';'),vals={};
+ for(var i=0;i<FIELDS.length;i++){vals[FIELDS[i]]=parts[i+1]||''}
+ var n=0,miss=0;
+ Object.keys(prof.map).forEach(function(sel){
+  var el=document.querySelector(sel);if(!el){miss++;return}
+  var v=prof.map[sel].replace(/\{(\w+)\}/g,function(m,k){return k in vals?vals[k]:m});
+  if(setVal(el,v)){flash(el);n++}});
+ if(n===0&&miss>0&&!retry){note('pola jeszcze sie renderuja - ponawiam...','#78350f');
+  setTimeout(function(){fill(frame,true)},600);return}
+ note('wypelniono pol: '+n+(miss?' (nie znaleziono: '+miss+')':''),'#14532d')}
+var bar=document.createElement('div');
+bar.style.cssText='position:fixed;right:10px;bottom:10px;z-index:2147483647;background:#1a2230;color:#e6ecf5;font:13px system-ui;padding:8px 14px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.4)';
+document.body.appendChild(bar);
+function idle(){bar.textContent='📷 nasluch: '+(prof?prof.name:'BRAK PROFILU ('+location.hostname+')');bar.style.background=prof?'#1a2230':'#7f1d1d'}
+function note(t,c){bar.textContent='📷 '+t;bar.style.background=c;clearTimeout(bar._t);bar._t=setTimeout(idle,3000)}
+function onKey(e){
+ var now=Date.now();if(now-last>400)buf='';last=now;
+ if(e.key==='Enter'){
+  if(buf.indexOf(PREFIX)===0){e.preventDefault();e.stopPropagation();
+   var f=buf;buf='';
+   if(prof)fill(f);else note('brak profilu dla tej strony','#7f1d1d')}
+  else buf='';
+  return}
+ if(e.key.length===1){buf+=e.key;
+  if(PREFIX.indexOf(buf)===0||buf.indexOf(PREFIX)===0){e.preventDefault();e.stopPropagation()}}}
+window.addEventListener('keydown',onKey,true);
+window.__bcWedge={off:function(){window.removeEventListener('keydown',onKey,true);bar.remove();delete window.__bcWedge}};
+idle();
+})()
+</script>
+<script>
+  var src = document.getElementById('wedge-src').textContent;
+  document.getElementById('bm').href = 'javascript:' + encodeURIComponent(src.trim());
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+CZYTNIK KODOW 1D/2D
+===================
+
+Ten dysk jest czescia czytnika i sluzy TYLKO do konfiguracji.
+Dysk jest tylko-do-odczytu - niczego nie da sie na nim zapisac
+ani zepsuc.
+
+SZYBKI START
+------------
+1. Otworz z tego dysku plik  konfigurator.html
+   w przegladarce Chrome lub Edge.
+2. Kliknij "Polacz" i wybierz "Urzadzenie szeregowe USB".
+3. Skonfiguruj profile i kliknij "Zapisz trwale".
+
+Pelna instrukcja: INSTRUKCJA.md (otworzysz w Notatniku).
+
+TESTY: otworz  testy.html  - lista formularzy testowych
+z kodami do skanowania prosto z ekranu.
+
+Czytnik pisze jak zwykla klawiatura - do samej pracy nie trzeba
+niczego instalowac ani konfigurowac.
