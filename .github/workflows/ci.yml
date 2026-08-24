@@ -49,10 +49,14 @@ jobs:
         run: |
           npm ci --no-fund --no-audit
           npm run build
+      # Artefakt jest pomocniczy (podglad builda) - wyczerpany limit magazynu
+      # na koncie nie moze przewracac calego CI.
       - uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: konfigurator
           path: configurator/dist/index.html
+          retention-days: 7
 
   wtyczka:
     runs-on: ubuntu-latest
@@ -113,9 +117,11 @@ jobs:
           ninja -C build
           ls -la build/barcode_reader.uf2
       - uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: firmware-c-uf2
           path: firmware-pico-sdk/build/barcode_reader.uf2
+          retention-days: 7
 
   paczka-testowa:
     needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c]
@@ -142,17 +148,32 @@ jobs:
         run: |
           npm ci --no-fund --no-audit
           npm run build
-      # UF2 wariantu produkcyjnego bierzemy z joba firmware-c (juz zbudowany)
-      - uses: actions/download-artifact@v4
+      # Firmware produkcyjny budujemy tu od nowa (a nie z artefaktu joba
+      # firmware-c) - paczka nie moze zalezec od limitu magazynu artefaktow.
+      - name: Narzedzia ARM
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
+      - name: Cache Pico SDK
+        id: sdk-cache
+        uses: actions/cache@v4
         with:
-          name: firmware-c-uf2
-          path: /tmp/firmware-c
+          path: ~/pico-sdk
+          key: pico-sdk-2-tinyusb
+      - name: Pobranie Pico SDK
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
+          cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
+      - name: Kompilacja firmware produkcyjnego
+        working-directory: firmware-pico-sdk
+        run: |
+          cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
+          ninja -C build
       - name: Budowa paczki testowej (bez publikacji)
-        run: python tools/build_release.py --skip-npm --uf2-c /tmp/firmware-c/barcode_reader.uf2
+        run: python tools/build_release.py --skip-npm
       - uses: actions/upload-artifact@v4
         with:
           name: paczka-testowa
           path: |
             release/barcode-reader-v*.zip
             release/barcode-reader-v*.zip.sha256
-          retention-days: 14
+          retention-days: 7
