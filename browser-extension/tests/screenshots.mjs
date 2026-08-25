@@ -192,7 +192,12 @@ try {
   // Tu zatwierdzamy bez zmiany (profil z samouczka ma zostawiać ISO).
   await lek.click("input[name=dataWaznosci]");
   await lek.waitForTimeout(250);
+  // wpisany wlasny wzorzec pokazuje podglad na zywo
+  await lek.fill("input[data-field='format']", "dd-mm-yy");
+  await lek.waitForTimeout(200);
   await shot(lek, "format-daty");
+  await lek.fill("input[data-field='format']", ""); // samouczek zostawia ISO
+  await lek.waitForTimeout(150);
   await lek.click('button[data-act="confirm"]');
   await lek.waitForTimeout(200);
 
