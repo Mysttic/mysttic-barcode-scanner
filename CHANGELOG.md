@@ -2,6 +2,18 @@
 
 Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](VERSION.md).
 
+## Nieopublikowane
+
+- **Wtyczka: dostrajanie wartości wychodzącej do formularza.** Pole profilu
+  może być obiektem `{selector, format, transform}`: `format` przelicza datę na
+  wzorzec, którego chce formularz (`DD.MM.RRRR`, `RRRR-MM-DD`, …, na wejściu
+  także GS1 `RRMMDD` z regułą „dzień 00"), a `transform` wykonuje proste
+  operacje (`gtin13`, `digits`, `upper`, `lower`, `trim`, `prefix:`, `suffix:`,
+  `slice:`). Zwykły selektor działa jak dotąd.
+- Tryb nauki: przy wartości wyglądającej na datę panel potwierdzania dokłada
+  przyciski z podglądem formatów na realnej wartości — przepływ kreatora bez zmian.
+- Testy wtyczki: 68 asercji jednostkowych + 22 e2e.
+
 ## 1.0.0 — 2026-08-21
 
 Pierwsze wydanie produkcyjne. Firmware w C jest wariantem docelowym, a paczka

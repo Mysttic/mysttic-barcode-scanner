@@ -188,7 +188,15 @@ try {
   await lek.click('button[data-act="confirm"]');
   await lek.waitForTimeout(200);
 
-  for (const sel of ["input[name=dataWaznosci]", "input[name=partia]", "input[name=numerSeryjny]"]) {
+  // Data: panel potwierdzania dokłada rząd przycisków z podglądem formatów.
+  // Tu zatwierdzamy bez zmiany (profil z samouczka ma zostawiać ISO).
+  await lek.click("input[name=dataWaznosci]");
+  await lek.waitForTimeout(250);
+  await shot(lek, "format-daty");
+  await lek.click('button[data-act="confirm"]');
+  await lek.waitForTimeout(200);
+
+  for (const sel of ["input[name=partia]", "input[name=numerSeryjny]"]) {
     await lek.click(sel);
     await lek.waitForTimeout(200);
     await lek.click('button[data-act="confirm"]');
