@@ -2,7 +2,7 @@
 
 Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](VERSION.md).
 
-## Nieopublikowane
+## 1.0.1 — 2026-08-25
 
 - **Wtyczka: dostrajanie wartości wychodzącej do formularza.** Pole profilu
   może być obiektem `{selector, format, transform}`: `format` przelicza datę na
