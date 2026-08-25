@@ -223,12 +223,75 @@ Celowo bliźniaczy do profilu w czytniku: *gdzie* → *jak rozłożyć* → *gdz
 | `parse.prefix` | początek ramki; dopóki pasuje, znaki nie trafiają na stronę |
 | `parse.separator` | separator segmentów; **`"\t"` = ramka TAB-owa** (sekwencja z profilu urządzenia — czytnik zostaje w konfiguracji produkcyjnej) |
 | `parse.segmentPatterns` | opcjonalne wzorce per pole (np. `{"gtin": "^[0-9]{14}$"}`) — bez prefiksu odróżniają ramki różnych profili; ramka bez prefiksu wymaga też DOKŁADNEJ liczby segmentów |
-| `fields` | mapa `nazwa pola → selektor CSS` |
+| `fields` | mapa `nazwa pola → selektor CSS` albo `{selector, format, transform}` (patrz niżej) |
 | `after.action` | `none` (domyślnie), `focus` + `selector`, `submit` |
 
 Typ `regex` przyjmuje `pattern` i `fields` jako mapę `nazwa → numer grupy` —
 dokładnie tak jak `parse.regexGroups` w konfiguracji czytnika, więc profil
 można przepisać jeden do jednego.
+
+## Format wartości wychodzącej
+
+Dane w kodzie rzadko mają postać, której chce formularz: data z GS1 przychodzi
+jako `RRRR-MM-DD` (albo `RRMMDD` z surowego kodu), a system oczekuje
+`DD.MM.RRRR`; kod towaru bywa 14-cyfrowym GTIN-em, a pole przyjmuje 13-cyfrowy
+EAN. Nie trzeba przez to zmieniać kodów ani konfiguracji czytnika — wystarczy
+rozwinąć pole profilu z samego selektora do obiektu:
+
+```json
+"fields": {
+  "dataWaznosci": { "selector": "input[name=termin]", "format": "DD.MM.RRRR" },
+  "gtin":         { "selector": "#ean", "transform": ["gtin13"] },
+  "partia":       "#lot"
+}
+```
+
+Obie postacie można mieszać — zwykły selektor działa jak dotąd.
+
+### Daty
+
+`format` to wzorzec wyjściowy z tokenów **`RRRR`** (albo `YYYY`), **`RR`**/`YY`,
+**`MM`**, **`DD`**; pozostałe znaki przechodzą bez zmian.
+
+| Wzorzec | Wynik dla `2027-10-31` |
+|---|---|
+| `DD.MM.RRRR` | `31.10.2027` |
+| `RRRR-MM-DD` | `2027-10-31` |
+| `DD/MM/RRRR` | `31/10/2027` |
+| `RRRRMMDD` | `20271031` |
+| `RR/MM/DD` | `27/10/31` |
+
+Na wejściu rozpoznawane są `RRMMDD` (GS1, z regułą „dzień 00 = ostatni dzień
+miesiąca"), `RRRRMMDD`, `RRRR-MM-DD` oraz `DD.MM.RRRR` (także z `/` i `-`).
+Wartość, która datą nie jest, przechodzi nietknięta — `format` wpisany przy złym
+polu niczego nie zepsuje.
+
+Wyjątek: `input[type=date]` przyjmuje **wyłącznie** ISO, więc dla takiej
+kontrolki własny wzorzec jest pomijany (przeglądarka i tak wyświetli datę
+w formacie ustawionym w systemie).
+
+### Pozostałe przekształcenia
+
+`transform` to lista operacji wykonywanych po kolei, już po `format`:
+
+| Operacja | Działanie |
+|---|---|
+| `gtin13` | GTIN-14 z wiodącym zerem → EAN-13 |
+| `digits` | zostawia same cyfry (`A-22/B` → `22`) |
+| `upper`, `lower`, `trim` | wielkość liter, przycięcie spacji |
+| `prefix:tekst`, `suffix:tekst` | dokleja tekst z przodu / z tyłu |
+| `slice:od,do` | wycina fragment (jak w JS, liczone od zera) |
+
+Nieznana operacja jest pomijana i nie przerywa wypełniania.
+
+### W trybie nauki
+
+Nie trzeba tego wpisywać ręcznie. Jeśli wskazana wartość wygląda na datę, panel
+potwierdzania dokłada rząd przycisków z **podglądem na Twojej wartości** —
+klikasz gotowy wynik zamiast wymyślać wzorzec. Zwykłe **Zatwierdź i dalej**
+wstawia wartość bez zmian, więc reszta kreatora działa tak samo:
+
+![Przyciski formatu daty w panelu potwierdzania](img/wtyczka-format-daty.png)
 
 ## Kody GS1
 

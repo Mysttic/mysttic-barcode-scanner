@@ -100,7 +100,7 @@
     var required = (profile.match && profile.match.requiredFields) || Object.keys(profile.fields || {});
     if (!required.length) return false;
     return required.every(function (name) {
-      var selector = (profile.fields || {})[name];
+      var selector = BRFill.selectorOf((profile.fields || {})[name]);
       return selector ? !!resolve(selector) : false;
     });
   }
@@ -331,6 +331,29 @@
   // ------------------------------------------------------ tryb nauki ----
 
   var SEPARATORS = [";", "|", "\t", ","];
+  // Formaty proponowane, gdy wskazana wartosc wyglada na date ("" = bez zmian).
+  var FORMATY_DATY = ["DD.MM.RRRR", "RRRR-MM-DD", "DD/MM/RRRR", "RRRRMMDD"];
+
+  // Gdy wskazana wartosc wyglada na date, panel potwierdzania dostaje rzad
+  // przyciskow z PODGLADEM na realnej wartosci: klikniecie zatwierdza pole
+  // razem z formatem. "Zatwierdź i dalej" nadal wstawia wartosc bez zmian,
+  // wiec przeplyw kreatora zostaje taki sam.
+  function wierszFormatow(wartosc, el) {
+    if (el && el.type === "date") return ""; // kontrolka daty i tak wymaga ISO
+    if (!BRFill.looksLikeDate(wartosc)) return "";
+    return (
+      "<p style='margin:10px 0 4px'>Wygląda na datę — wstawić jako:</p>" +
+      FORMATY_DATY.map(function (wzorzec) {
+        return (
+          "<button class='ghost' data-act='format' data-format='" +
+          esc(wzorzec) +
+          "'>" +
+          esc(BRFill.formatDate(wartosc, wzorzec)) +
+          "</button>"
+        );
+      }).join(" ")
+    );
+  }
 
   function startLearn() {
     learn = { step: "scan", buf: "", lastTs: 0, frame: "", names: [], separator: ";", index: 0, fields: {}, pending: null, marked: null };
@@ -458,7 +481,8 @@
           "<button data-act='confirm'>Zatwierdź i dalej</button>" +
           "<button class='ghost' data-act='repick'>Wybierz inne pole</button>" +
           "<button class='ghost' data-act='back'>← Wstecz</button>" +
-          "<button class='ghost' data-act='cancel'>Anuluj</button>";
+          "<button class='ghost' data-act='cancel'>Anuluj</button>" +
+          wierszFormatow(value, resolve(learn.pending.selector));
       } else {
         u.panel.innerHTML =
           "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do którego ma trafić <b>" +
@@ -500,8 +524,12 @@
       learn.index = -1;
       return nextPick();
     }
-    if (action === "confirm") {
-      learn.fields[learn.names[learn.index]] = learn.pending.selector;
+    if (action === "confirm" || action === "format") {
+      // "format" to zatwierdzenie z przeliczeniem daty na wskazany wzorzec.
+      var wzorzec = action === "format" ? ev.currentTarget.getAttribute("data-format") : "";
+      learn.fields[learn.names[learn.index]] = wzorzec
+        ? { selector: learn.pending.selector, format: wzorzec }
+        : learn.pending.selector;
       unmarkLearn();
       learn.pending = null;
       return nextPick();
@@ -534,7 +562,7 @@
   // (np. po cofnieciu) pokazuje sie jako wybor do zatwierdzenia.
   function enterPick() {
     learn.step = "pick";
-    var existing = learn.fields[learn.names[learn.index]];
+    var existing = BRFill.selectorOf(learn.fields[learn.names[learn.index]]);
     learn.pending = existing ? { selector: existing } : null;
     markLearn(existing ? resolve(existing) : null);
     document.addEventListener("mousedown", onLearnMouseDown, true);
