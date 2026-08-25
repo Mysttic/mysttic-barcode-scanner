@@ -248,27 +248,55 @@ rozwinąć pole profilu z samego selektora do obiektu:
 
 Obie postacie można mieszać — zwykły selektor działa jak dotąd.
 
-### Daty
+### Daty i czas
 
-`format` to wzorzec wyjściowy z tokenów **`RRRR`** (albo `YYYY`), **`RR`**/`YY`,
-**`MM`**, **`DD`**; pozostałe znaki przechodzą bez zmian.
+`format` to **dowolny wzorzec** zbudowany z tokenów; wszystko poza nimi
+przechodzi do wyniku bez zmian. Wielkość liter nie ma znaczenia — `DD-MM-RR`
+i `dd-mm-yy` znaczą to samo.
 
-| Wzorzec | Wynik dla `2027-10-31` |
+| Token | Znaczenie | Przykład |
+|---|---|---|
+| `RRRR` / `YYYY` | rok czterocyfrowy | `2027` |
+| `RR` / `YY` | rok dwucyfrowy | `27` |
+| `MM` / `M` | miesiąc (z zerem / bez) | `03` / `3` |
+| `DD` / `D` | dzień (z zerem / bez) | `07` / `7` |
+| `HH` / `H` | godzina, 24-godzinna | `09` / `9` |
+| `MI` | minuty | `05` |
+| `SS` / `S` | sekundy | `00` / `0` |
+
+| Wzorzec | Wynik dla `2027-10-31 14:05` |
 |---|---|
+| `dd-mm-yy` | `31-10-27` |
 | `DD.MM.RRRR` | `31.10.2027` |
-| `RRRR-MM-DD` | `2027-10-31` |
-| `DD/MM/RRRR` | `31/10/2027` |
+| `RRRR-MM-DD HH:MI` | `2027-10-31 14:05` |
+| `D.M.RRRR` | `31.10.2027` (dla 7 marca: `7.3.2027`) |
 | `RRRRMMDD` | `20271031` |
-| `RR/MM/DD` | `27/10/31` |
+| `HH:MI:SS` | `14:05:00` |
 
-Na wejściu rozpoznawane są `RRMMDD` (GS1, z regułą „dzień 00 = ostatni dzień
-miesiąca"), `RRRRMMDD`, `RRRR-MM-DD` oraz `DD.MM.RRRR` (także z `/` i `-`).
-Wartość, która datą nie jest, przechodzi nietknięta — `format` wpisany przy złym
-polu niczego nie zepsuje.
+**Minuty a miesiąc.** `MM` to miesiąc — z jednym wyjątkiem: jeśli wcześniej we
+wzorcu wystąpiła godzina, najbliższe `MM` czytamy jako minuty, bo `HH:mm` znaczy
+to samo w każdym systemie. Dzięki temu `dd-mm-yy` daje dzień-miesiąc-rok,
+a `RRRR-MM-DD HH:mm` — poprawny czas. Gdy chcesz mieć pewność, użyj `MI`, które
+zawsze znaczy minuty.
 
-Wyjątek: `input[type=date]` przyjmuje **wyłącznie** ISO, więc dla takiej
-kontrolki własny wzorzec jest pomijany (przeglądarka i tak wyświetli datę
-w formacie ustawionym w systemie).
+**Tekst we wzorcu.** Litery są tokenami, więc własny tekst bierz w apostrofy:
+`DD.MM.RRRR 'godz.' HH:MI` → `31.10.2027 godz. 14:05`. Podwójny apostrof (`''`)
+daje pojedynczy znak `'`.
+
+**Co jest rozpoznawane na wejściu:** `RRRR-MM-DD`, `DD.MM.RRRR` (także z `/`
+i `-`), `RRRRMMDD`, `RRMMDD` z GS1 (z regułą „dzień 00 = ostatni dzień
+miesiąca"), te same postacie z godziną po spacji albo `T` (`14:05` lub
+`14:05:09`), ciągi `RRRRMMDDHHMM` i `RRMMDDHHMM` oraz sam czas `HH:MM[:SS]`.
+
+Dwa zabezpieczenia przed cichym psuciem danych: wartość, która nie jest datą
+ani czasem, przechodzi **nietknięta** (`format` wpisany przy złym polu niczego
+nie zepsuje), a wzorzec z datą użyty na wartości zawierającej sam czas zwraca
+wartość bez zmian, zamiast wpisywać `00-00-0000`.
+
+**Kontrolki HTML z własnym formatem** dostają to, czego wymagają, niezależnie
+od wzorca w profilu: `input[type=date]` → `RRRR-MM-DD`, `input[type=time]` →
+`HH:MM`, `input[type=datetime-local]` → `RRRR-MM-DDTHH:MM`. Przeglądarka i tak
+wyświetli je w formacie ustawionym w systemie.
 
 ### Pozostałe przekształcenia
 
@@ -288,8 +316,11 @@ Nieznana operacja jest pomijana i nie przerywa wypełniania.
 
 Nie trzeba tego wpisywać ręcznie. Jeśli wskazana wartość wygląda na datę, panel
 potwierdzania dokłada rząd przycisków z **podglądem na Twojej wartości** —
-klikasz gotowy wynik zamiast wymyślać wzorzec. Zwykłe **Zatwierdź i dalej**
-wstawia wartość bez zmian, więc reszta kreatora działa tak samo:
+klikasz gotowy wynik zamiast wymyślać wzorzec. Obok jest pole na **własny
+wzorzec** z podglądem aktualizowanym w trakcie pisania, więc widzisz efekt,
+zanim zatwierdzisz. Gdy wartość niesie też godzinę, propozycje obejmują czas.
+Zwykłe **Zatwierdź i dalej** wstawia wartość bez zmian, więc reszta kreatora
+działa tak samo:
 
 ![Przyciski formatu daty w panelu potwierdzania](img/wtyczka-format-daty.png)
 
@@ -338,7 +369,7 @@ W **Profile formularzy** → JSON, sekcja `settings`:
 ```bash
 cd browser-extension
 npm ci
-npm test         # parsowanie, dopasowanie adresów, transformacje (36 asercji)
+npm test         # parsowanie, formaty, dopasowanie adresów (96 asercji)
 npm run test:e2e # Chromium z załadowanym rozszerzeniem + formularz demo
 npm run shots    # odtworzenie zrzutów z tej strony (docs/img/wtyczka-*.png)
 ```

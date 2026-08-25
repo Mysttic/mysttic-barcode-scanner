@@ -6,13 +6,19 @@ Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](V
 
 - **Wtyczka: dostrajanie wartości wychodzącej do formularza.** Pole profilu
   może być obiektem `{selector, format, transform}`: `format` przelicza datę na
-  wzorzec, którego chce formularz (`DD.MM.RRRR`, `RRRR-MM-DD`, …, na wejściu
-  także GS1 `RRMMDD` z regułą „dzień 00"), a `transform` wykonuje proste
-  operacje (`gtin13`, `digits`, `upper`, `lower`, `trim`, `prefix:`, `suffix:`,
+  postać, której chce formularz, a `transform` wykonuje proste operacje
+  (`gtin13`, `digits`, `upper`, `lower`, `trim`, `prefix:`, `suffix:`,
   `slice:`). Zwykły selektor działa jak dotąd.
+- **Dowolny wzorzec daty i czasu:** tokeny `RRRR`/`YYYY`, `RR`/`YY`, `MM`/`M`,
+  `DD`/`D`, `HH`/`H`, `MI`, `SS`/`S` — bez rozróżniania wielkości liter
+  (`dd-mm-yy` działa), z tekstem w apostrofach (`'godz.'`) i regułą „`MM` po
+  godzinie to minuty". Na wejściu rozpoznawane także wartości z czasem
+  (`RRRR-MM-DD HH:MM`, `RRMMDDHHMM`, sam `HH:MM`). Kontrolki `date`, `time`
+  i `datetime-local` dostają format, którego wymaga przeglądarka.
 - Tryb nauki: przy wartości wyglądającej na datę panel potwierdzania dokłada
-  przyciski z podglądem formatów na realnej wartości — przepływ kreatora bez zmian.
-- Testy wtyczki: 68 asercji jednostkowych + 22 e2e.
+  przyciski z podglądem formatów oraz pole na własny wzorzec z podglądem na
+  żywo — przepływ kreatora bez zmian.
+- Testy wtyczki: 96 asercji jednostkowych + 22 e2e.
 
 ## 1.0.0 — 2026-08-21
 

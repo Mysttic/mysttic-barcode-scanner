@@ -161,7 +161,7 @@ try {
             },
             fields: {
               gtin: { selector: "input[name=gtin]", transform: ["gtin13"] },
-              dataWaznosci: { selector: "input[name=dataWaznosci]", format: "DD.MM.RRRR" },
+              dataWaznosci: { selector: "input[name=dataWaznosci]", format: "dd-mm-yy" },
               partia: "input[name=partia]",
             },
             after: { action: "none" },
@@ -175,11 +175,11 @@ try {
   await page.waitForTimeout(700);
   await skanuj(page, RAMKA_LEK);
 
-  check("formaty: data ISO -> DD.MM.RRRR", await page.inputValue("input[name=dataWaznosci]"), "31.10.2027");
+  check("formaty: wlasny wzorzec dd-mm-yy", await page.inputValue("input[name=dataWaznosci]"), "31-10-27");
   check("formaty: GTIN-14 -> EAN-13", await page.inputValue("input[name=gtin]"), "5909991055172");
   check("formaty: partia bez przeksztalcen", await page.inputValue("input[name=partia]"), "A23G05");
   const stanFormaty = await page.evaluate(() => globalThis.model);
-  check("formaty: strona widzi przeliczone wartosci", stanFormaty.dataWaznosci, "31.10.2027");
+  check("formaty: strona widzi przeliczone wartosci", stanFormaty.dataWaznosci, "31-10-27");
 } finally {
   if (context) await context.close();
   serwer.kill();
