@@ -35,6 +35,10 @@
       ".panel button.ghost{background:#e2e8f0;color:#0f172a}" +
       ".rows{max-height:200px;overflow:auto;margin-bottom:10px}" +
       ".row{display:flex;gap:6px;align-items:center;margin-bottom:4px}" +
+      ".wlasny{display:flex;gap:6px;margin-top:8px}" +
+      ".wlasny input{margin:0}" +
+      ".wlasny button{margin:0;white-space:nowrap}" +
+      ".podglad{margin-top:6px;font-family:ui-monospace,monospace;font-size:12px;color:#0f172a;min-height:16px}" +
       ".row code{flex:0 0 110px;background:#eef1f6;padding:2px 6px;border-radius:4px;overflow:hidden;text-overflow:ellipsis}" +
       "</style>" +
       "<div class='pill'><span class='dot'></span><span class='txt'></span></div>" +
@@ -100,7 +104,7 @@
     var required = (profile.match && profile.match.requiredFields) || Object.keys(profile.fields || {});
     if (!required.length) return false;
     return required.every(function (name) {
-      var selector = (profile.fields || {})[name];
+      var selector = BRFill.selectorOf((profile.fields || {})[name]);
       return selector ? !!resolve(selector) : false;
     });
   }
@@ -331,6 +335,40 @@
   // ------------------------------------------------------ tryb nauki ----
 
   var SEPARATORS = [";", "|", "\t", ","];
+  // Formaty proponowane, gdy wskazana wartosc wyglada na date ("" = bez zmian).
+  var FORMATY_DATY = ["DD.MM.RRRR", "RRRR-MM-DD", "DD-MM-RR", "RRRRMMDD"];
+  var FORMATY_CZASU = ["DD.MM.RRRR HH:MI", "RRRR-MM-DD HH:MI:SS", "HH:MI"];
+
+  // Gdy wskazana wartosc wyglada na date, panel potwierdzania dostaje rzad
+  // przyciskow z PODGLADEM na realnej wartosci: klikniecie zatwierdza pole
+  // razem z formatem. "Zatwierdź i dalej" nadal wstawia wartosc bez zmian,
+  // wiec przeplyw kreatora zostaje taki sam.
+  function wierszFormatow(wartosc, el) {
+    // Kontrolki HTML z wlasnym formatem (date/time/datetime-local) dostaja
+    // swoj niezaleznie od profilu - nie ma o co pytac.
+    if (el && (el.type === "date" || el.type === "time" || el.type === "datetime-local")) return "";
+    var t = BRFill.parseDateTime(wartosc);
+    if (!t) return "";
+    var presety = t.maCzas ? FORMATY_CZASU.concat(FORMATY_DATY) : FORMATY_DATY;
+    return (
+      "<p style='margin:10px 0 4px'>Wygląda na " +
+      (t.maCzas ? "datę z czasem" : "datę") +
+      " — wstawić jako:</p>" +
+      presety
+        .map(function (wzorzec) {
+          return (
+            "<button class='ghost' data-act='format' data-format='" +
+            esc(wzorzec) +
+            "'>" +
+            esc(BRFill.formatDate(wartosc, wzorzec)) +
+            "</button>"
+          );
+        })
+        .join(" ") +
+      "<div class='wlasny'><input data-field='format' placeholder='własny wzorzec, np. DD-MM-RR'>" +
+      "<button data-act='format-custom'>Użyj</button></div><div class='podglad'></div>"
+    );
+  }
 
   function startLearn() {
     learn = { step: "scan", buf: "", lastTs: 0, frame: "", names: [], separator: ";", index: 0, fields: {}, pending: null, marked: null };
@@ -458,7 +496,8 @@
           "<button data-act='confirm'>Zatwierdź i dalej</button>" +
           "<button class='ghost' data-act='repick'>Wybierz inne pole</button>" +
           "<button class='ghost' data-act='back'>← Wstecz</button>" +
-          "<button class='ghost' data-act='cancel'>Anuluj</button>";
+          "<button class='ghost' data-act='cancel'>Anuluj</button>" +
+          wierszFormatow(value, resolve(learn.pending.selector));
       } else {
         u.panel.innerHTML =
           "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do którego ma trafić <b>" +
@@ -487,6 +526,14 @@
     u.panel.querySelectorAll("button").forEach(function (button) {
       button.addEventListener("click", onLearnButton);
     });
+    var poleFormatu = u.panel.querySelector("input[data-field='format']");
+    if (poleFormatu) {
+      poleFormatu.addEventListener("input", function () {
+        var podglad = u.panel.querySelector(".podglad");
+        var surowa = learn.frame.split(learn.separator)[learn.index];
+        podglad.textContent = poleFormatu.value ? BRFill.formatDate(surowa, poleFormatu.value) : "";
+      });
+    }
   }
 
   function onLearnButton(ev) {
@@ -500,8 +547,17 @@
       learn.index = -1;
       return nextPick();
     }
-    if (action === "confirm") {
-      learn.fields[learn.names[learn.index]] = learn.pending.selector;
+    if (action === "confirm" || action === "format" || action === "format-custom") {
+      // "format"/"format-custom" to zatwierdzenie z przeliczeniem daty.
+      var wzorzec = "";
+      if (action === "format") wzorzec = ev.currentTarget.getAttribute("data-format");
+      if (action === "format-custom") {
+        var polePatternu = ui.panel.querySelector("input[data-field='format']");
+        wzorzec = polePatternu ? polePatternu.value.trim() : "";
+      }
+      learn.fields[learn.names[learn.index]] = wzorzec
+        ? { selector: learn.pending.selector, format: wzorzec }
+        : learn.pending.selector;
       unmarkLearn();
       learn.pending = null;
       return nextPick();
@@ -534,7 +590,7 @@
   // (np. po cofnieciu) pokazuje sie jako wybor do zatwierdzenia.
   function enterPick() {
     learn.step = "pick";
-    var existing = learn.fields[learn.names[learn.index]];
+    var existing = BRFill.selectorOf(learn.fields[learn.names[learn.index]]);
     learn.pending = existing ? { selector: existing } : null;
     markLearn(existing ? resolve(existing) : null);
     document.addEventListener("mousedown", onLearnMouseDown, true);
