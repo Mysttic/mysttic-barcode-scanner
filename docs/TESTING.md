@@ -70,6 +70,27 @@ Sprawdza, że rozpoznany formularz zostaje wypełniony **i że strona faktycznie
 widzi wartości** (nie tylko `value`), że na widoku bez profilu wtyczka milczy
 oraz że obcy kod zostaje oddany stronie. Chodzi też w CI przy każdym PR.
 
+### Testy agenta desktopowego (moduł opcjonalny)
+
+```bash
+dotnet run -c Release --project desktop-agent/tests/TestyAgenta
+```
+
+```bash
+python desktop-agent/tests/test_e2e.py
+```
+
+Jednostkowe (34 asercje) sprawdzają parser na tych samych wektorach co firmware
+i wtyczka, dopasowanie okien i przetwarzanie nagrania z trybu nauki. E2E
+(27 asercji) uruchamia **prawdziwą aplikację WinForms** i prawdziwe UI
+Automation: rozpoznanie okna, wypełnienie pól z weryfikacją stanu aplikacji,
+nietknięte pola-pułapki, odrzucenie obcego kodu, przechwycenie skanu przez
+agenta w tle (także w stylu prawdziwego czytnika, z Shiftem) oraz działanie
+nowego profilu bez restartu.
+
+Testy jednostkowe agenta chodzą w CI (job `agent-desktopowy`, Windows);
+e2e wymaga pulpitu z prawdziwymi oknami, więc uruchamia się je lokalnie.
+
 ## 2. Scenariusz e2e na sprzęcie
 
 Podłącz czytnik i uruchom:

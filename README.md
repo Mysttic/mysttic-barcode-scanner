@@ -30,6 +30,7 @@ stroną WWW otwieraną z pendrive'a czytnika.
 | wypełniać formularze (wszystkie warianty) | [docs/FORMULARZE.md](docs/FORMULARZE.md) |
 | wypełniać formularze po nazwach pól na obcych stronach | [docs/WTYCZKA.md](docs/WTYCZKA.md) |
 | nauczyć wtyczkę nowego formularza (samouczek) | [docs/NAUKA-PROFILU.md](docs/NAUKA-PROFILU.md) |
+| wypełniać formularze w aplikacjach desktopowych (moduł opcjonalny) | [docs/AGENT-DESKTOP.md](docs/AGENT-DESKTOP.md) |
 | przetestować urządzenie (scenariusz „od pudełka", testy, e2e) | [docs/TESTING.md](docs/TESTING.md) |
 | sprawdzić, co system umie, a czego nie (i jakie kody) | [docs/MOZLIWOSCI.md](docs/MOZLIWOSCI.md) |
 | zobaczyć plany rozwoju | [docs/ROADMAP.md](docs/ROADMAP.md) |

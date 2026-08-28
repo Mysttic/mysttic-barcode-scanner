@@ -19,6 +19,7 @@ i co się wtedy dzieje).
 | konfigurator WebSerial z dysku urządzenia (`file://`) i z pliku — zakładki, tryb testowy, import/eksport JSON | testy właściciela E7–E12 |
 | dysk `CZYTNIK` (MSC read-only): konfigurator + instrukcje + formularze testowe z podkatalogiem | montowanie i zgodność bajt w bajt po każdym flashu |
 | wtyczka: wypełnianie po nazwach pól na rozpoznanych stronach, w tym przechwytywanie sekwencji TAB-owej z produkcyjnego profilu czytnika | test właściciela na sprzęcie (forma C pracownika i leku) |
+| agent desktopowy: wypełnianie formularzy w aplikacjach Windows (moduł opcjonalny) | 34 asercje jednostkowe + 27 e2e na żywej aplikacji; pełny przebieg na plikach z paczki wydania |
 | watchdog 3 s, factory reset z przycisku GP2 | E11 |
 | aktualizacja firmware: `rebootBootloader` → UF2, konfiguracja nietknięta | wielokrotnie w tej sesji |
 
@@ -57,7 +58,8 @@ z ekranu i z wydruku).
 | znaki spoza ASCII (polskie diakrytyki) w wyjściu HID | układ klawiatury US, kody kreskowe są ASCII | znaki niedrukowalne/nie-ASCII filtrowane |
 | separator GS przez klawiaturę | HID przenosi tylko drukowalne | granice pól wyznacza sekwencja profilu czytnika |
 | kod z nieznanym AI / niesparsowany przez profil | parser nie zgaduje granic pól | wg konfiguracji: surowy 1:1 **albo** pomiń; wtyczka odrzuca i oddaje stronie z dymkiem „Nierozpoznany kod" — **nigdy nie wpisze w złe pola** |
-| wypełnianie po nazwach w aplikacjach desktopowych | wtyczka żyje w przeglądarce | wariant A (TAB-y) działa wszędzie |
+| wypełnianie po nazwach w aplikacjach desktopowych | wtyczka żyje w przeglądarce | **agent desktopowy** (moduł opcjonalny, [AGENT-DESKTOP.md](AGENT-DESKTOP.md)); bez niego wariant A (TAB-y) działa wszędzie |
+| aplikacje bez wsparcia dostępności (Citrix/RDP, własne rysowanie interfejsu) | brak drzewa kontrolek do adresowania | agent schodzi na współrzędne względem okna albo zostają TAB-y |
 | zamknięty Shadow DOM, pola `password` | brak dostępu selektorów / celowo | wtyczka pomija; hasła nigdy nie są wypełniane |
 | konfigurator poza Chrome/Edge | WebSerial tylko Chromium | konfiguracja z innego stanowiska; praca czytnika bez zmian |
 | stanowiska z blokadą pamięci USB (polityki firmowe) | MSC może być zablokowane | klawiatura i CDC działają; konfigurator/instrukcje z paczki wydania |

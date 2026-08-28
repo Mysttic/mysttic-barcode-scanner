@@ -13,3 +13,7 @@ release/
 # build firmware C (Pico SDK)
 firmware-pico-sdk/build/
 firmware-pico-sdk/tests/*.exe
+
+# agent desktopowy (.NET)
+desktop-agent/**/bin/
+desktop-agent/**/obj/
