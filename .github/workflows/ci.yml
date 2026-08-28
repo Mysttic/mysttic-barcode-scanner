@@ -132,23 +132,35 @@ jobs:
           dotnet-version: "9.0.x"
       - name: Testy jednostkowe agenta
         run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
-      - name: Budowa samodzielnego pliku exe
-        run: >
-          dotnet publish desktop-agent/src/CzytnikAgent -c Release -r win-x64
-          --self-contained true -p:PublishSingleFile=true
-          -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
-          -p:DebugType=none -o publish-agent --nologo
       # Testy e2e agenta wymagaja pulpitu z prawdziwymi oknami i sterowania mysza,
       # wiec uruchamiamy je lokalnie (desktop-agent/tests/test_e2e.py), nie w CI.
-      - uses: actions/upload-artifact@v4
-        continue-on-error: true
+
+  # Paczke wydania sklada Linux, wiec to on musi umiec zlozyc pliki exe agenta
+  # (EnableWindowsTargeting). Sprawdzamy to w kazdym PR, zeby wydanie nie
+  # przewrocilo sie dopiero po merge.
+  agent-exe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
         with:
-          name: agent-desktopowy
-          path: publish-agent/CzytnikAgent.exe
-          retention-days: 7
+          dotnet-version: "9.0.x"
+      - name: Agent i aplikacja testowa (samodzielne pliki exe dla Windows)
+        run: >
+          for projekt in desktop-agent/src/CzytnikAgent desktop-agent/test-app; do
+          dotnet publish "$projekt" -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -p:EnableWindowsTargeting=true
+          -p:DebugType=none -o "publish/$(basename "$projekt")" --nologo || exit 1;
+          done
+      - name: Czy powstaly pliki exe
+        run: |
+          test -s publish/CzytnikAgent/CzytnikAgent.exe
+          test -s publish/test-app/AplikacjaTestowa.exe
+          file publish/CzytnikAgent/CzytnikAgent.exe
 
   paczka-testowa:
-    needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c, agent-desktopowy]
+    needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c, agent-desktopowy, agent-exe]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -195,10 +207,10 @@ jobs:
         run: |
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
-      # Agenta desktopowego (aplikacja Windows) sprawdza osobny job na
-      # windows-latest; paczka testowa z Linuksa powstaje bez niego.
+      # Paczka jest skladana dokladnie tak, jak przy wydaniu - z agentem
+      # desktopowym i osobnym zipem aplikacji testowej.
       - name: Budowa paczki testowej (bez publikacji)
-        run: python tools/build_release.py --skip-npm --bez-agenta
+        run: python tools/build_release.py --skip-npm
       - uses: actions/upload-artifact@v4
         with:
           name: paczka-testowa
