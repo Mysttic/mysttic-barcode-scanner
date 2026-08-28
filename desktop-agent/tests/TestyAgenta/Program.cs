@@ -1,0 +1,195 @@
+// Testy jednostkowe agenta desktopowego - bez zaleznosci, w konwencji reszty
+// projektu (firmware: test_host.c, wtyczka: test_parse.mjs).
+//
+// Parser dostaje TE SAME wektory co firmware i wtyczka - to warunek tego, zeby
+// profil dzialal tak samo w kazdej warstwie produktu.
+using CzytnikAgent;
+
+namespace TestyAgenta;
+
+internal static class Program
+{
+    private static int _zaliczone;
+    private static readonly List<string> Bledy = new();
+
+    private static void Sprawdz(string nazwa, object? otrzymano, object? oczekiwano)
+    {
+        var a = System.Text.Json.JsonSerializer.Serialize(otrzymano);
+        var b = System.Text.Json.JsonSerializer.Serialize(oczekiwano);
+        if (a == b) _zaliczone++;
+        else Bledy.Add($"{nazwa}\n    oczekiwano: {b}\n    otrzymano:  {a}");
+    }
+
+    private static void SprawdzPrawda(string nazwa, bool warunek) => Sprawdz(nazwa, warunek, true);
+
+    private static int Main()
+    {
+        TestyParsera();
+        TestyWzorcow();
+        TestyDopasowania();
+        TestyNagrywarki();
+        TestyPodstawiania();
+
+        if (Bledy.Count > 0)
+        {
+            Console.Error.WriteLine($"FAIL: {Bledy.Count} z {_zaliczone + Bledy.Count} asercji");
+            foreach (var blad in Bledy) Console.Error.WriteLine("  - " + blad);
+            return 1;
+        }
+        Console.WriteLine($"OK: {_zaliczone} asercji");
+        return 0;
+    }
+
+    private static void TestyParsera()
+    {
+        var delimited = new Parsowanie
+        {
+            Typ = "delimited",
+            Prefiks = "PRC;",
+            Separator = ";",
+            Pola = new List<string> { "_", "imie", "nazwisko", "numer", "dzial" },
+        };
+        Sprawdz("delimited: rozklada na pola",
+            ParserSkanu.Parsuj("PRC;JAN;KOWALSKI;12345;IT", delimited).Pola,
+            new Dictionary<string, string>
+            {
+                ["imie"] = "JAN", ["nazwisko"] = "KOWALSKI", ["numer"] = "12345", ["dzial"] = "IT",
+            });
+        SprawdzPrawda("delimited: zly prefiks odrzucony",
+            ParserSkanu.Parsuj("EMP;ANNA;NOWAK;1;HR", delimited).Pola == null);
+        SprawdzPrawda("delimited: za malo segmentow odrzucone",
+            ParserSkanu.Parsuj("PRC;JAN;KOWALSKI", delimited).Pola == null);
+
+        // ramka TAB-owa z profilu urzadzenia (bez prefiksu) - jak we wtyczce
+        var tabowa = new Parsowanie
+        {
+            Typ = "delimited",
+            Separator = "\t",
+            Pola = new List<string> { "imie", "nazwisko", "numer", "dzial" },
+        };
+        Sprawdz("tab-frame: sekwencja urzadzenia na pola",
+            ParserSkanu.Parsuj("JAN\tKOWALSKI\t12345\tIT", tabowa).Pola,
+            new Dictionary<string, string>
+            {
+                ["imie"] = "JAN", ["nazwisko"] = "KOWALSKI", ["numer"] = "12345", ["dzial"] = "IT",
+            });
+        SprawdzPrawda("tab-frame: bez prefiksu wymagana dokladna liczba segmentow",
+            ParserSkanu.Parsuj("JAN\tKOWALSKI\t12345\tIT\tNADMIAR", tabowa).Pola == null);
+
+        var regexem = new Parsowanie
+        {
+            Typ = "regex",
+            Wzorzec = "^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$",
+            Grupy = new Dictionary<string, int> { ["imie"] = 1, ["nazwisko"] = 2, ["numer"] = 3, ["dzial"] = 4 },
+        };
+        Sprawdz("regex: grupy przechwytujace",
+            ParserSkanu.Parsuj("PRC;ANNA;NOWAK;67890;HR", regexem).Pola,
+            new Dictionary<string, string>
+            {
+                ["imie"] = "ANNA", ["nazwisko"] = "NOWAK", ["numer"] = "67890", ["dzial"] = "HR",
+            });
+
+        // GS1 - te same wektory co firmware i wtyczka
+        var gs1 = new Parsowanie { Typ = "gs1" };
+        var kod = "01059099910551721727100010A23G0521K7L9XW24MQ1R";
+        var wynikGs1 = ParserSkanu.Parsuj(kod, gs1).Pola;
+        Sprawdz("gs1: gtin", wynikGs1?["gtin"], "05909991055172");
+        Sprawdz("gs1: data 271000 -> koniec miesiaca", wynikGs1?["dataWaznosciISO"], "2027-10-31");
+        Sprawdz("gs1: partia", wynikGs1?["partia"], "A23G05");
+        Sprawdz("gs1: numer seryjny", wynikGs1?["numerSeryjny"], "K7L9XW24MQ1R");
+        Sprawdz("gs1: AIM zdejmowany", ParserSkanu.ZdejmijAim("]d201059099910551729").aim, "]d2");
+        Sprawdz("gs1: data zwykla", ParserSkanu.DataNaIso("271015"), "2027-10-15");
+        Sprawdz("gs1: luty roku przestepnego", ParserSkanu.DataNaIso("280200"), "2028-02-29");
+        SprawdzPrawda("gs1: nieznany AI odrzucony",
+            ParserSkanu.Parsuj("30012345", gs1).Pola == null);
+    }
+
+    private static void TestyWzorcow()
+    {
+        SprawdzPrawda("wzorzec: gwiazdki po obu stronach", Wzorce.Pasuje("*Karta*", "Aplikacja - Karta pracownika"));
+        SprawdzPrawda("wzorzec: bez gwiazdki to rownosc", Wzorce.Pasuje("Notatnik", "Notatnik"));
+        SprawdzPrawda("wzorzec: niepasujacy", !Wzorce.Pasuje("*Faktura*", "Aplikacja - Karta pracownika"));
+        SprawdzPrawda("wzorzec: pusty pasuje do wszystkiego", Wzorce.Pasuje("", "cokolwiek"));
+    }
+
+    private static void TestyDopasowania()
+    {
+        var dopasowanie = new Dopasowanie { Proces = "AplikacjaTestowa", TytulWzorzec = "*Karta pracownika*" };
+        SprawdzPrawda("okno: proces i tytul pasuja",
+            dopasowanie.Pasuje("AplikacjaTestowa", "Aplikacja testowa - Karta pracownika"));
+        SprawdzPrawda("okno: inny widok tej samej aplikacji nie pasuje",
+            !dopasowanie.Pasuje("AplikacjaTestowa", "Aplikacja testowa - Logowanie"));
+        SprawdzPrawda("okno: inny proces nie pasuje",
+            !dopasowanie.Pasuje("notepad", "Aplikacja testowa - Karta pracownika"));
+    }
+
+    private static void TestyNagrywarki()
+    {
+        var pola = new Dictionary<string, string>
+        {
+            ["imie"] = "JAN", ["nazwisko"] = "KOWALSKI", ["numer"] = "12345", ["dzial"] = "IT",
+        };
+
+        // nagranie: klik w pole + wpisanie wartosci ze skanu -> jeden krok "pole"
+        var wynik = Nagrywarka.Przetworz(new List<Krok>
+        {
+            new() { Akcja = "klik", Cel = new Cel { AutomationId = "txtImie", Typ = "Edit" } },
+            new() { Akcja = "tekst", Wartosc = "JAN" },
+            new() { Akcja = "klawisz", Klawisz = "TAB" },
+            new() { Akcja = "tekst", Wartosc = "recznie dopisane" },
+        }, pola);
+
+        Sprawdz("nagrywarka: klik + wpisanie scalone w krok pole",
+            new[] { wynik[0].Akcja, wynik[0].Cel?.AutomationId, wynik[0].Wartosc },
+            new[] { "pole", "txtImie", "{imie}" });
+        Sprawdz("nagrywarka: klawisz zachowany", wynik[1].Klawisz, "TAB");
+        Sprawdz("nagrywarka: obcy tekst zostaje tekstem",
+            new[] { wynik[2].Akcja, wynik[2].Wartosc },
+            new[] { "tekst", "recznie dopisane" });
+
+        // operator uczy wygodnie ("jan"), kod ma "JAN" - to musi sie dopasowac
+        var maleLitery = Nagrywarka.Przetworz(new List<Krok>
+        {
+            new() { Akcja = "klik", Cel = new Cel { AutomationId = "txtImie", Typ = "Edit" } },
+            new() { Akcja = "tekst", Wartosc = "jan" },
+        }, pola);
+        Sprawdz("nagrywarka: wielkosc liter nie psuje dopasowania",
+            new[] { maleLitery[0].Akcja, maleLitery[0].Wartosc }, new[] { "pole", "{imie}" });
+
+        // wybor z listy = klik w liste + klik w pozycje; profil nie moze na stale
+        // zapamietac wybranej pozycji, tylko odwolanie do pola
+        var lista = Nagrywarka.Przetworz(new List<Krok>
+        {
+            new() { Akcja = "klik", Cel = new Cel { AutomationId = "cmbDzial", Typ = "ComboBox" } },
+            new() { Akcja = "klik", Cel = new Cel { Nazwa = "IT", Typ = "ListItem" } },
+        }, pola);
+        Sprawdz("nagrywarka: wybor z listy scalony w krok pole",
+            new object?[] { lista.Count, lista[0].Akcja, lista[0].Cel?.AutomationId, lista[0].Wartosc },
+            new object?[] { 1, "pole", "cmbDzial", "{dzial}" });
+
+        // tryb zapisany przy nauce decyduje, co agent zrobi z kontrolka
+        Sprawdz("nagrywarka: wpisanie tekstu daje tryb \"wpisz\"", wynik[0].Tryb, "wpisz");
+        Sprawdz("nagrywarka: wybor z listy daje tryb \"wybierz\"", lista[0].Tryb, "wybierz");
+
+        // pozycja listy spoza skanu (np. staly wybor) zostaje zwyklym klikiem
+        var obcaPozycja = Nagrywarka.Przetworz(new List<Krok>
+        {
+            new() { Akcja = "klik", Cel = new Cel { AutomationId = "cmbDzial", Typ = "ComboBox" } },
+            new() { Akcja = "klik", Cel = new Cel { Nazwa = "Centrala", Typ = "ListItem" } },
+        }, pola);
+        Sprawdz("nagrywarka: pozycja spoza skanu zostaje klikiem",
+            new object?[] { obcaPozycja.Count, obcaPozycja[1].Akcja }, new object?[] { 2, "klik" });
+    }
+
+    private static void TestyPodstawiania()
+    {
+        var pola = new Dictionary<string, string> { ["imie"] = "JAN", ["nazwisko"] = "KOWALSKI" };
+        Sprawdz("podstawianie: dwa pola i tekst",
+            ParserSkanu.Podstaw("{imie} {nazwisko} (kadry)", pola), "JAN KOWALSKI (kadry)");
+        Sprawdz("podstawianie: nieznane pole zostaje",
+            ParserSkanu.Podstaw("{imie}/{brak}", pola), "JAN/{brak}");
+        SprawdzPrawda("klawisze: TAB znany", Makro.ZnanyKlawisz("TAB"));
+        SprawdzPrawda("klawisze: F7 znany", Makro.ZnanyKlawisz("F7"));
+        SprawdzPrawda("klawisze: bzdura nieznana", !Makro.ZnanyKlawisz("KLAWISZ"));
+    }
+}

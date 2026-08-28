@@ -13,7 +13,34 @@ env:
   BUNDLE_URL: https://github.com/adafruit/Adafruit_CircuitPython_Bundle/releases/download/20260818/adafruit-circuitpython-bundle-10.x-mpy-20260818.zip
 
 jobs:
+  # Agent desktopowy to aplikacja Windows - budujemy ja na Windowsie i podajemy
+  # dalej jako artefakt, bo paczke sklada Linux.
+  agent-windows:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Testy jednostkowe agenta
+        run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
+      - name: Agent i aplikacja testowa (samodzielne pliki exe)
+        run: |
+          dotnet publish desktop-agent/src/CzytnikAgent -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish/agent --nologo
+          dotnet publish desktop-agent/test-app -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish/app --nologo
+      - uses: actions/upload-artifact@v4
+        with:
+          name: agent-windows
+          path: |
+            publish/agent/CzytnikAgent.exe
+            publish/app/AplikacjaTestowa.exe
+          retention-days: 1
+
   build:
+    needs: agent-windows
     if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
     runs-on: ubuntu-latest
     permissions:
@@ -96,9 +123,18 @@ jobs:
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
 
+      - uses: actions/download-artifact@v4
+        if: steps.ver.outputs.release == 'true'
+        with:
+          name: agent-windows
+          path: agent-windows
+
       - name: Budowa paczki wydania
         if: steps.ver.outputs.release == 'true'
-        run: python tools/build_release.py --skip-npm
+        run: >
+          python tools/build_release.py --skip-npm
+          --agent-exe agent-windows/agent/CzytnikAgent.exe
+          --app-testowa-exe agent-windows/app/AplikacjaTestowa.exe
 
       - name: Publikacja wydania (tworzy tag automatycznie)
         if: steps.ver.outputs.release == 'true'
@@ -110,4 +146,6 @@ jobs:
           files: |
             release/barcode-reader-v*.zip
             release/barcode-reader-v*.zip.sha256
+            release/aplikacja-testowa-v*.zip
+            release/aplikacja-testowa-v*.zip.sha256
           body_path: CHANGELOG.md

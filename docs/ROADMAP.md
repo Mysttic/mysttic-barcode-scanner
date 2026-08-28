@@ -52,11 +52,35 @@ uzasadnienia decyzji w [decisions.md](decisions.md).
 - [ ] układ klawiatury PL/DE w HID (dziś US/ASCII — wystarcza dla kodów),
 - [ ] auto-wybór portu w konfiguratorze (ping-timeout zamiast ręcznego wyboru).
 
+## 4b. Agent desktopowy (nowy moduł, prototyp gotowy)
+
+Stan: moduł działa i jest wydawany razem z resztą produktu (34 asercje
+jednostkowe + 27 e2e na żywej aplikacji, instalator, przenośna aplikacja
+testowa, zrzuty w instrukcji). Szczegóły: [AGENT-DESKTOP.md](AGENT-DESKTOP.md).
+
+- [ ] **Test z fizycznym czytnikiem** (dotąd tylko symulowany strumień klawiszy)
+  oraz **przejście trybu nauki ręcznie** przez operatora.
+- [ ] Test w prawdziwej aplikacji kioskowej (skrót Ctrl+Alt+F9, okno kreatora
+  nad pełnym ekranem).
+- [x] ~~Edytor profili w interfejsie~~ — zrobione: okno „Profile (zarządzaj)"
+  (włącz/wyłącz, nazwa, proces, wzorzec tytułu, podgląd kroków, usuwanie).
+- [ ] Import/eksport profili do pliku jednym kliknięciem (jak we wtyczce).
+- [ ] Podniesienie uprawnień, gdy aplikacja docelowa działa jako administrator
+  (manifest z `requireAdministrator` albo restart na żądanie).
+- [x] ~~Instalator/autostart + wpięcie modułu w paczkę wydania~~ — zrobione
+  2026-08-28: `agent-desktopowy/` w paczce (samodzielny exe + `zainstaluj-agenta.ps1`
+  + przykładowy profil), przenośna aplikacja testowa jako osobny plik wydania,
+  job `agent-desktopowy` w CI i `agent-windows` w release.
+- [ ] Rozważyć wspólne źródło parserów (dziś logika GS1 jest w trzech
+  implementacjach: C, JS, C# — te same wektory testowe pilnują zgodności).
+
 ## 5. Wtyczka — faza 2 (gdy wedge przestanie wystarczać)
 
 - [ ] transport CDC zamiast nasłuchu klawiatury (dane strukturalne prosto
   z urządzenia, tryb `host` + heartbeat; wymaga zmian we firmware — świadomie
-  odłożone),
+  odłożone). Dotyczy też agenta desktopowego: zniósłby potrzebę hooka
+  klawiatury, który bywa blokowany politykami firmowymi, i przeniósłby
+  separator GS bez obchodzenia,
 - [ ] agregacja wielu skanów w jeden formularz, wiersze powtarzalne,
 - [ ] publikacja w Chrome Web Store (dziś świadomie pominięta — wdrożenie
   wewnętrzne).

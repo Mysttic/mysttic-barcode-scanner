@@ -1,5 +1,46 @@
 # Decyzje projektowe
 
+## 2026-08-28 — agent desktopowy wchodzi do wydania (modul opcjonalny)
+
+- **Decyzja wlasciciela:** agent ma byc wydawany tak samo jak wtyczka, ale pozostaje **opcjonalny** — klient decyduje, czy z niego korzysta. Bez niego czytnik dziala jak dotad (wariant A).
+- **Dystrybucja:** w paczce wydania katalog `agent-desktopowy/` (samodzielny `CzytnikAgent.exe`, `zainstaluj-agenta.ps1`, przykladowy profil, instrukcja, `CZYTAJ-MNIE.txt`), a **obok paczki** osobny plik `aplikacja-testowa-v<wersja>-win-x64.zip` — przenosna aplikacja do prob. Oba pliki budowane jako **self-contained single-file**, wiec u klienta nie trzeba instalowac .NET (cena: paczka urosla z 0,8 MB do 68 MB, aplikacja testowa 44 MB — swiadomy wybor na rzecz „dziala od razu").
+- **Instalator bez uprawnien administratora:** kopiuje agenta do `%LOCALAPPDATA%`, dodaje skrot w menu Start i autostart; `-BezAutostartu` i `-Odinstaluj` (profile zostaja). Przykladowy profil trafia do konfiguracji tylko wtedy, gdy jej jeszcze nie ma.
+- **CI/CD:** agent to aplikacja Windows, a paczke sklada Linux — wiec w `release.yml` doszedl job `agent-windows` (testy jednostkowe + publish obu plikow exe → artefakt), a `build_release.py` przyjmuje gotowe pliki przez `--agent-exe` / `--app-testowa-exe`. W `ci.yml` job `agent-desktopowy` (windows-latest) uruchamia testy jednostkowe i publish; paczka testowa z Linuksa powstaje z `--bez-agenta`. Testy e2e agenta wymagaja pulpitu z prawdziwymi oknami, wiec zostaja lokalne — odnotowane w TESTING.md.
+- **Zrzuty do instrukcji generowane automatycznie** (`CzytnikAgent.exe --zrzuty`): scenariusz przechodzi kreator na zywo i zapisuje `docs/img/agent-nauka-1..4` oraz `agent-profile` — ta sama zasada co `npm run shots` we wtyczce, wiec obrazki nie rozjezdzaja sie z kodem.
+- **Weryfikacja przed opisaniem:** komplet testow (52 py + 87 C + 41/18 wtyczka + 34/27 agent) oraz **pelny przebieg na plikach z gotowej paczki**: rozpakowana przenosna aplikacja testowa + agent z `agent-desktopowy/` przechwycil skan w stylu czytnika i wypelnil formularz (potwierdzone panelem stanu aplikacji, nie samymi polami).
+
+
+## 2026-08-28 — agent: tryb kroku zamiast zgadywania typu kontrolki
+
+- **Zgłoszenie z testu na żywo (Spotify):** pole wyszukiwania z podpowiedziami jest w UI Automation zwyklym `ComboBox` bez pozycji listy i bez wewnetrznego pola edycyjnego, wiec agent probowal „wybrac pozycje JAN z listy" zamiast wpisac tekst. Kolejne proby heurystyk (brak pozycji → pole tekstowe; obecnosc kontrolki `Edit` w srodku) laly wode: po pierwszym wyszukaniu kontrolka DOSTAJE pozycje (podpowiedzi), wiec heurystyka znow by zawiodla.
+- **Rozwiazanie: `Krok.Tryb` (`wpisz` / `wybierz` / `auto`).** Nagrywarka zapisuje intencje operatora: wpisywales tekst → `wpisz`, klikales pozycje listy → `wybierz`. Agent nie zgaduje, tylko powtarza sposob nauki. `auto` zostaje dla profili pisanych recznie. Przy trybie `wpisz` pomijamy tez weryfikacje odczytem co do znaku, bo pola z podpowiedziami dopisuja wlasne sugestie.
+- **Kreator nauki:** krok zapisu pokazuje i pozwala poprawic **nazwe profilu, proces i wzorzec tytulu** (wczesniej tylko nazwe, a wzorzec brany byl sztywno z chwilowego tytulu okna — dla aplikacji typu odtwarzacz oznaczalo to profil dzialajacy tylko przy jednym utworze). Okno kreatora ustawia sie w **prawym dolnym rogu ekranu uczonej aplikacji** (wczesniej: prawy gorny rog ekranu glownego, liczony przed przeskalowaniem DPI, przez co ladowal na srodku).
+- Testy: 34 jednostkowe (w tym asercje trybu) + 27 e2e; w aplikacji testowej doszlo pole „Stanowisko" bedace lista edytowalna z pozycjami, a scenariusz sprawdza wypelnienie go trybem `wpisz` wartoscia, ktora ISTNIEJE takze na liscie.
+
+## 2026-08-28 — agent desktopowy: trzy błędy z pierwszego testu na żywo
+
+Właściciel przeszedł naukę profilu ręcznie i skan nie zadziałał. Diagnoza z logu i zapisanego profilu wykazała trzy niezależne usterki, wszystkie naprawione i pokryte testami:
+
+- **Shift przerywał ramkę (powtórka błędu z wtyczki).** Czytnik wysyła osobne zdarzenie Shift przed każdą wielką literą; dekoder nie widział w tym znaku i traktował je jako koniec skanu, więc bufor kasował się przy każdej literze — agent nie zobaczył ani jednej ramki. Dodatkowo `GetKeyboardState` w wątku hooka nie zna stanu Shift, więc litery i tak zdekodowałyby się jako małe. Naprawa: modyfikatory nie przerywają ramki, a stan Shift jest śledzony samodzielnie (osobno w nasłuchu i w nagrywarce). **Wniosek: ten sam błąd popełniliśmy drugi raz w innej warstwie — przy nowym „wedge" sprawdzać modyfikatory jako pierwszą rzecz.**
+- **Nauka gubiła dopasowanie wielkości liter i wybór z listy.** Operator wpisał „jan", w kodzie było „JAN" — porównanie było wrażliwe na wielkość liter, więc zamiast `{imie}` zapisała się stała „jan". Wybór działu myszą nagrywał się jako dwa kliknięcia (lista + pozycja „IT"), czyli profil na zawsze wybierałby IT niezależnie od kodu. Naprawa: dopasowanie ignoruje wielkość liter i spacje; klik w pozycję listy, której nazwa odpowiada wartości ze skanu, scala się w krok `pole` z odwołaniem `{pole}` (wybór spoza kodu nadal zostaje zwykłym klikiem — to może być celowe ustawienie stałe).
+- **Profil nie działał do restartu agenta.** Zapis z kreatora szedł zawsze do domyślnej ścieżki (ignorował `--profile`), a odświeżenie konfiguracji zależało od zdarzenia zamknięcia okna. Naprawa: zapis do tego samego pliku, z którego czyta agent, jawne przeładowanie zaraz po zapisie (z potwierdzeniem w dymku) oraz **obserwator pliku profili** — zmiana z zewnątrz (ręczna edycja, prowizjonowanie) też działa od razu.
+
+- **Luka metodologiczna:** test jednostkowy nagrywarki **powielał** logikę produkcyjną zamiast ją wywoływać — dlatego przepuścił dwa z tych błędów. Logika wydzielona do metody statycznej, test woła teraz prawdziwy kod. Dołożony też tryb `--wyslij --hid`, który symuluje czytnik kodami klawiszy z Shiftem, więc błąd modyfikatorów jest odtąd wykrywany automatycznie. Testy: 32 jednostkowe + 25 e2e.
+
+
+## 2026-08-24 — agent desktopowy: wariant C poza przeglądarką (nowy moduł)
+
+- **Wymaganie właściciela:** przenieść funkcjonalność wtyczki do aplikacji desktopowych (także kioskowych), makro z klikaniem myszą i klawiszami, rozpoznawanie aplikacji po nazwie, moduł niezależny od wtyczki. Uprawnienia administratora uznane za akceptowalne.
+- **Kluczowa decyzja techniczna: UI Automation zamiast makra współrzędnych.** Kliknięcia w zapamiętane punkty są kruche (przesunięte okno, inna rozdzielczość, DPI = dane w złym polu). Agent celuje w kontrolki po `AutomationId`/nazwie, a współrzędne zapisuje jako fallback — nauka zapisuje oba naraz. Trzeci fallback: wpisanie w aktywne pole. Każde wypełnienie weryfikowane odczytem zwrotnym.
+- **Tryb nauki = nagrywarka**, zgodnie z prośbą („jak zwykły program do makr"): agent obserwuje ręczne wypełnianie (hook myszy + klawiatury), a przy zapisie zamienia wpisane wartości na `{pole}` i **scala „klik w kontrolkę + wpisanie" w jeden krok `pole` z celem UIA** — czyli automatycznie podnosi nagranie do trwalszej formy. Wejście w naukę globalnym skrótem Ctrl+Alt+F9 (wymóg kiosku), okno kreatora zawsze na wierzchu.
+- **Stos:** C# / .NET 9 WinForms (UIA natywnie, tray, jednoplikowy exe). Profil bliźniaczy do wtyczki: `Match` (proces + wzorzec tytułu) → `Parse` (delimited/regex/gs1, ten sam algorytm i te same wektory co firmware i wtyczka) → `Kroki` (pole/tekst/klawisz/klik/pauza).
+- **Aplikacja testowa** (`desktop-agent/test-app`): WinForms z dwoma ekranami, polami w pomieszanej kolejności, pułapkami (e-mail, telefon), polem hasła i panelem „stan aplikacji" pokazującym, co naprawdę trafiłoby do bazy — desktopowy odpowiednik `forma-c-wtyczka.html`.
+- **Dwa realne błędy złapane w testach (oba warte zapamiętania):**
+  1. `ValuePattern.SetValue` na liście rozwijanej ustawia sam tekst — kontrolka pokazuje wartość, ale aplikacja **nie dostaje zdarzenia zmiany** i zapisałaby puste pole (bliźniak pułapki z React we wtyczce). Naprawa: listy obsługujemy wyborem pozycji (`SelectionItemPattern` po rozwinięciu), a odczyt zwrotny pyta o wybraną pozycję, nie o tekst.
+  2. Zdarzenia klawiatury wstrzykiwane przez `KEYEVENTF_UNICODE` przychodzą do hooka z `vkCode = VK_PACKET (0xE7)` i znakiem w `scanCode`; dekoder oparty wyłącznie na `ToUnicodeEx` je gubił. Naprawa poprawia też zgodność z emulatorami klawiatur.
+- **Testy:** 29 jednostkowych + 21 e2e na żywej aplikacji (rozpoznanie okna, widoczność kontrolek w UIA, wypełnienie z weryfikacją stanu aplikacji, nietknięte pułapki, odrzucenie obcego kodu, brak dopasowania na obcym oknie oraz **pełna ścieżka z hookiem**: agent w tle przechwytuje skan, znaki nie wyciekają do aplikacji). Tryby diagnostyczne: `--okno`, `--drzewo`, `--symuluj`, `--wyslij`, `--hook-test`.
+- **Nie sprawdzone jeszcze:** fizyczny czytnik, ręczne przejście kreatora nauki, prawdziwy kiosk, aplikacje bez UIA. Zapisane w ROADMAP jako punkt 4b.
+
 ## 2026-08-24 — wydanie 1.0.0 opublikowane i zweryfikowane
 
 - **Proces:** PR #7 `develop` → `master`, CI zielone, merge → `release.yml` zbudował i opublikował tag `v1.0.0` (1 min 44 s; cache Pico SDK z joba CI). Wersja firmware C po raz pierwszy wstrzykiwana z VERSION.md (`#ifndef` + `target_compile_definitions`), więc `ping` i konfigurator pokazują 1.0.0 zamiast `0.0.0-dev`.

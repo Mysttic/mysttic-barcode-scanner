@@ -36,11 +36,15 @@ Zawartość paczki wydania:
 ```
 firmware/barcode_reader.uf2   FIRMWARE PRODUKCYJNY — to wgrywasz
 wtyczka/                      rozszerzenie przeglądarki (wariant C formularzy)
+agent-desktopowy/             agent do aplikacji Windows (wariant D, opcjonalny)
 konfigurator.html             kopia konfiguratora (ten sam jest w urządzeniu)
-INSTALL.md, WTYCZKA.md, NAUKA-PROFILU.md
+INSTALL.md, WTYCZKA.md, NAUKA-PROFILU.md, AGENT-DESKTOP.md
 prototyp-circuitpython/       wariant deweloperski (opcjonalny)
 SHA256SUMS.txt                sumy kontrolne
 ```
+
+Obok paczki publikowany jest plik `aplikacja-testowa-v<wersja>-win-x64.zip`
+— przenośna aplikacja do prób z agentem desktopowym.
 
 **Instalacja produkcyjna (dowolny system) — jeden krok:**
 
@@ -64,6 +68,10 @@ instrukcje (`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`) i testy
 **Wtyczka do przeglądarki** (potrzebna tylko do wypełniania po nazwach pól):
 `chrome://extensions` → *Tryb dewelopera* → *Załaduj rozpakowane* → katalog
 `wtyczka/`. Szczegóły: [WTYCZKA.md](WTYCZKA.md).
+
+**Agent desktopowy** (to samo, ale w aplikacjach Windows — moduł opcjonalny):
+katalog `agent-desktopowy/`, kliknij prawym na `zainstaluj-agenta.ps1` →
+*Uruchom w programie PowerShell*. Szczegóły: [AGENT-DESKTOP.md](AGENT-DESKTOP.md).
 
 ## 3. Konfiguracja skanera (jednorazowo, nowy moduł)
 
