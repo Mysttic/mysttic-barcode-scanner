@@ -2,6 +2,48 @@
 
 Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](VERSION.md).
 
+## 1.1.0 — 2026-08-28
+
+Nowy, **opcjonalny** moduł: agent desktopowy. Wypełnia formularze w zwykłych
+aplikacjach Windows, tak jak wtyczka robi to w przeglądarce. Bez niego czytnik
+i firmware działają dokładnie jak dotąd.
+
+### Agent desktopowy (`agent-desktopowy/` w paczce)
+
+- Rozpoznaje okno aplikacji (proces + wzorzec tytułu), przechwytuje skan
+  i odtwarza **nauczone makro**: wypełnianie pól, kliknięcia, klawisze.
+  Poza nauczonymi aplikacjami nie robi nic — czytnik pisze jak klawiatura.
+- Trafianie w pola przez **UI Automation** (identyfikatory kontrolek), więc
+  profil przeżywa przesunięcie okna, inną rozdzielczość i skalowanie DPI;
+  współrzędne względem okna to zapas, gdy kontrolki nie da się znaleźć.
+  Każde wypełnienie jest weryfikowane odczytem zwrotnym.
+- **Nauka przez nagrywanie**: operator raz wypełnia formularz ręcznie, agent
+  zapisuje czynności i zamienia wpisane wartości na odwołania `{pole}`.
+  Sposób nauki decyduje o sposobie wypełniania — wpisywanie tekstu kontra
+  wybór z listy (istotne dla pól wyszukiwania z podpowiedziami).
+- Tryb nauki pod globalnym skrótem **Ctrl+Alt+F9** (działa nad aplikacjami
+  kioskowymi), kreator w rogu ekranu z edytowalnymi parametrami okna.
+- Okno **zarządzania profilami**: włączanie, zmiana nazwy, procesu i wzorca
+  tytułu, podgląd kroków, usuwanie. Profile działają natychmiast po zapisie,
+  bez restartu agenta; zmiana pliku `profile.json` też jest wychwytywana.
+- Instalator `zainstaluj-agenta.ps1` (bez uprawnień administratora): kopiuje
+  agenta do profilu użytkownika, skrót w menu Start, autostart;
+  `-BezAutostartu` i `-Odinstaluj`.
+- Parser skanu (`delimited` / `regex` / `gs1`) na tych samych wektorach
+  testowych co firmware i wtyczka.
+
+### Wydanie i testy
+
+- Do paczki dołączony katalog `agent-desktopowy/` (samodzielny plik `.exe` —
+  nie trzeba instalować .NET), a **obok paczki** nowy plik
+  `aplikacja-testowa-v<wersja>-win-x64.zip`: przenośna aplikacja do prób
+  z dwoma ekranami, polami-pułapkami i podglądem stanu aplikacji.
+- CI buduje i testuje agenta na Windowsie (`agent-desktopowy` w `ci.yml`,
+  `agent-windows` w `release.yml`).
+- Testy: 34 asercje jednostkowe + 27 e2e na żywej aplikacji WinForms
+  (rozpoznanie okna, wypełnianie z weryfikacją stanu aplikacji, przechwycenie
+  skanu w stylu prawdziwego czytnika, praca profilu bez restartu).
+- Zrzuty ekranu do instrukcji generowane automatycznie (`--zrzuty`).
 ## 1.0.1 — 2026-08-25
 
 - **Wtyczka: dostrajanie wartości wychodzącej do formularza.** Pole profilu

@@ -1,6 +1,6 @@
 # Wersja
 
-1.0.1
+1.1.0
 
 Jedyne źródło prawdy o wersji wydania. Podbij ją w PR `develop` → `master`,
 żeby po merge CI zbudowało i opublikowało release (bez podbicia — release

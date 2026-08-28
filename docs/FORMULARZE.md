@@ -1,6 +1,6 @@
 # Wypełnianie formularzy — wszystkie warianty
 
-Czytnik jest klawiaturą, więc „wypełnianie formularza" to zawsze jedna z czterech
+Czytnik jest klawiaturą, więc „wypełnianie formularza" to zawsze jedna z pięciu
 strategii. Gotowe formularze demonstracyjne do każdego wariantu są w
 [test-vectors](../test-vectors/README.md) (z kodami QR do skanowania z ekranu).
 
@@ -77,6 +77,29 @@ mogą wymagać ręcznego zatwierdzenia wyboru.
 bookmarklet — [`test-vectors/bookmarklet.html`](../test-vectors/bookmarklet.html)
 (przeciągnij link na pasek zakładek; klik po każdym przeładowaniu strony,
 profile selektorowe zaszyte w linku — do diagnostyki, nie do produkcji).
+
+## Wariant D — aplikacje desktopowe (agent w zasobniku)
+
+**Kiedy:** aplikacja okienkowa (nie przeglądarka), w której sekwencja TAB-ów
+jest zbyt krucha albo pola trzeba wypełniać w dowolnej kolejności — także
+aplikacje pracujące w trybie kiosku.
+
+**Jak:** agent siedzi w zasobniku, rozpoznaje okno (proces + tytuł), przechwytuje
+skan i odtwarza **nauczone makro**: wpisanie pól po identyfikatorach kontrolek
+(UI Automation), kliknięcia i klawisze. Nauka polega na nagraniu tego, co
+operator robi ręcznie. Poza nauczonymi aplikacjami agent nie robi nic.
+
+**Moduł:** [`desktop-agent/`](../desktop-agent/README.md) — niezależny od
+wtyczki i firmware, **opcjonalny**: w paczce wydania jest katalog
+`agent-desktopowy/` z instalatorem, a obok paczki przenośna aplikacja testowa.
+Instrukcja: [AGENT-DESKTOP.md](AGENT-DESKTOP.md).
+
+**Demo:** `desktop-agent/test-app` (WinForms: logowanie + karta pracownika
+z polami-pułapkami), profil w `desktop-agent/test-app/profile/`.
+
+**Ograniczenia:** aplikacje działające jako administrator wymagają podniesionego
+agenta; Citrix/RDP i interfejsy rysowane własnoręcznie nie wystawiają kontrolek
+(zostają współrzędne albo TAB-y); pól haseł agent nie wypełnia.
 
 ## Poligon: obce strony do testów wariantu C
 

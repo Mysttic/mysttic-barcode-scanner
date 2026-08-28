@@ -123,8 +123,32 @@ jobs:
           path: firmware-pico-sdk/build/barcode_reader.uf2
           retention-days: 7
 
+  agent-desktopowy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      - name: Testy jednostkowe agenta
+        run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
+      - name: Budowa samodzielnego pliku exe
+        run: >
+          dotnet publish desktop-agent/src/CzytnikAgent -c Release -r win-x64
+          --self-contained true -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+          -p:DebugType=none -o publish-agent --nologo
+      # Testy e2e agenta wymagaja pulpitu z prawdziwymi oknami i sterowania mysza,
+      # wiec uruchamiamy je lokalnie (desktop-agent/tests/test_e2e.py), nie w CI.
+      - uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: agent-desktopowy
+          path: publish-agent/CzytnikAgent.exe
+          retention-days: 7
+
   paczka-testowa:
-    needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c]
+    needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c, agent-desktopowy]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -137,6 +161,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
       - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
         run: |
           mkdir -p hardware/downloads/extracted
@@ -168,8 +195,10 @@ jobs:
         run: |
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
+      # Agenta desktopowego (aplikacja Windows) sprawdza osobny job na
+      # windows-latest; paczka testowa z Linuksa powstaje bez niego.
       - name: Budowa paczki testowej (bez publikacji)
-        run: python tools/build_release.py --skip-npm
+        run: python tools/build_release.py --skip-npm --bez-agenta
       - uses: actions/upload-artifact@v4
         with:
           name: paczka-testowa

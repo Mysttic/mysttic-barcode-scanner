@@ -102,6 +102,7 @@ boot.py, *.py, lib/  firmware — NIE RUSZAĆ
 | `firmware-pico-sdk/` | firmware C (CMake + TinyUSB) + `tests/test_host.c` |
 | `configurator/` | źródła konfiguratora (vite + TS + zod → single-file HTML) |
 | `browser-extension/` | wtyczka MV3 (bez bundlera) + testy jednostkowe i e2e |
+| `desktop-agent/` | agent do aplikacji Windows (C#/.NET, opcjonalny) + aplikacja testowa + testy |
 | `tools/` | `build_release.py`, `install.ps1`, `test_e2e.py`, `device_docs/` |
 | `test-vectors/` | formularze demonstracyjne + kody QR |
 | `hardware/` | schematy (Wokwi), przypięte pliki instalacyjne |
@@ -129,6 +130,8 @@ boot.py, *.py, lib/  firmware — NIE RUSZAĆ
 | hostowe C | te same wektory + mini_regex, config_parse, sloty, matcher (`firmware-pico-sdk/tests`) | 87 asercji |
 | wtyczka unit | parsowanie delimited/regex/GS1, dopasowanie adresów, transformacje | 41 asercji |
 | wtyczka e2e | prawdziwy Chromium z rozszerzeniem: ramki TAB-owe, milczenie bez profilu, odrzut krzyżowy | 18 asercji |
+| agent desktopowy unit | parser, dopasowanie okien, przetwarzanie nagrania (`desktop-agent/tests/TestyAgenta`) | 34 asercje |
+| agent desktopowy e2e | prawdziwa aplikacja WinForms + UI Automation (`desktop-agent/tests/test_e2e.py`) | 27 asercji |
 | sprzętowe | `tools/test_e2e.py` (CDC/persystencja/HID) + scenariusz „od pudełka" ([TESTING.md](TESTING.md), 7 testów z dysku) | — |
 
 Wszystkie automatyczne poziomy chodzą w CI przy PR do `master`. Zasada: każda

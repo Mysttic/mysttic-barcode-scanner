@@ -1,0 +1,72 @@
+{
+  "Wersja": 1,
+  "Wlaczony": true,
+  "Ustawienia": {
+    "OdstepSkanuMs": 60,
+    "MinDlugoscRamki": 3,
+    "PauzaKrokuMs": 40,
+    "WeryfikujOdczytem": true
+  },
+  "Profile": [
+    {
+      "Id": "karta-pracownika",
+      "Nazwa": "Karta pracownika (test)",
+      "Wlaczony": true,
+      "Match": {
+        "Proces": "AplikacjaTestowa",
+        "TytulWzorzec": "*Karta pracownika*"
+      },
+      "Parse": {
+        "Typ": "delimited",
+        "Prefiks": "PRC;",
+        "Separator": ";",
+        "Pola": [
+          "_",
+          "imie",
+          "nazwisko",
+          "numer",
+          "dzial",
+          "stanowisko"
+        ]
+      },
+      "Kroki": [
+        {
+          "Akcja": "pole",
+          "Cel": {
+            "AutomationId": "txtImie"
+          },
+          "Wartosc": "{imie}"
+        },
+        {
+          "Akcja": "pole",
+          "Cel": {
+            "AutomationId": "txtNazwisko"
+          },
+          "Wartosc": "{nazwisko}"
+        },
+        {
+          "Akcja": "pole",
+          "Cel": {
+            "AutomationId": "txtNumer"
+          },
+          "Wartosc": "{numer}"
+        },
+        {
+          "Akcja": "pole",
+          "Cel": {
+            "AutomationId": "cmbDzial"
+          },
+          "Wartosc": "{dzial}"
+        },
+        {
+          "Akcja": "pole",
+          "Cel": {
+            "AutomationId": "cmbStanowisko"
+          },
+          "Wartosc": "{stanowisko}",
+          "Tryb": "wpisz"
+        }
+      ]
+    }
+  ]
+}
