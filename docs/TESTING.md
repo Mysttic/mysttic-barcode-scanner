@@ -113,6 +113,31 @@ CI przejdzie testy i zbuduje kompletny zip wydania jako artifact (bez
 publikacji). Zainstaluj go na urządzeniu testowym (`install.ps1`) i przejdź
 scenariusz e2e, zanim zrobisz PR wydaniowy.
 
+## 3a. Weryfikacja opublikowanego wydania
+
+Testy z punktu 1 można puścić na plikach z **pobranej paczki**, nie na buildach
+z repo — wtedy sprawdzasz dokładnie to, co dostanie klient. Po rozpakowaniu
+`barcode-reader-v<wersja>.zip` i `aplikacja-testowa-v<wersja>-win-x64.zip`:
+
+```bash
+# suma kontrolna paczki i plików w środku
+sha256sum -c barcode-reader-v<wersja>.zip.sha256
+cd barcode-reader-v<wersja> && sha256sum -c SHA256SUMS.txt
+```
+
+```bash
+# agent desktopowy z paczki (27 asercji)
+AGENT_EXE=.../agent-desktopowy/CzytnikAgent.exe \
+APLIKACJA_EXE=.../aplikacja-testowa-v<wersja>/AplikacjaTestowa.exe \
+PROFIL_TESTOWY=.../agent-desktopowy/profil-przykladowy.json \
+python desktop-agent/tests/test_e2e.py
+```
+
+```bash
+# wtyczka z paczki (22 asercje)
+cd browser-extension && EXT_DIR=.../wtyczka node tests/test_e2e.mjs
+```
+
 ## 4. Plan testów akceptacyjnych (przed wdrożeniem produkcyjnym)
 
 Sprzęt:

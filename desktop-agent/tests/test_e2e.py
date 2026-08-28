@@ -5,6 +5,12 @@ Uruchamia aplikacje testowa, odtwarza makro dla zeskanowanej ramki i sprawdza,
 czy aplikacja FAKTYCZNIE zobaczyla wartosci (panel stanu, nie same pola).
 
 Uzycie:  python desktop-agent/tests/test_e2e.py
+
+Domyslnie bierze lokalne buildy Release. Zeby sprawdzic pliki z GOTOWEJ paczki
+wydania, wskaz je zmiennymi srodowiskowymi:
+  AGENT_EXE=...\\agent-desktopowy\\CzytnikAgent.exe
+  APLIKACJA_EXE=...\\aplikacja-testowa-v1.1.0\\AplikacjaTestowa.exe
+  PROFIL_TESTOWY=...\\agent-desktopowy\\profil-przykladowy.json
 """
 import json
 import os
@@ -15,9 +21,12 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-APLIKACJA = ROOT / "test-app" / "bin" / "Release" / "net9.0-windows" / "AplikacjaTestowa.exe"
-AGENT = ROOT / "src" / "CzytnikAgent" / "bin" / "Release" / "net9.0-windows" / "CzytnikAgent.exe"
-PROFILE = ROOT / "test-app" / "profile" / "profile-testowe.json"
+APLIKACJA = Path(os.environ.get("APLIKACJA_EXE")
+                 or ROOT / "test-app" / "bin" / "Release" / "net9.0-windows" / "AplikacjaTestowa.exe")
+AGENT = Path(os.environ.get("AGENT_EXE")
+             or ROOT / "src" / "CzytnikAgent" / "bin" / "Release" / "net9.0-windows" / "CzytnikAgent.exe")
+PROFILE = Path(os.environ.get("PROFIL_TESTOWY")
+               or ROOT / "test-app" / "profile" / "profile-testowe.json")
 
 zaliczone = 0
 bledy = []

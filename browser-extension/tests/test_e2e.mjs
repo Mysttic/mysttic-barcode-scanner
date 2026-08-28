@@ -18,7 +18,8 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(fileURLToPath(new URL("../..", import.meta.url)));
-const EXT = join(ROOT, "browser-extension");
+// EXT_DIR pozwala sprawdzic wtyczke z GOTOWEJ paczki wydania, nie z repo.
+const EXT = process.env.EXT_DIR || join(ROOT, "browser-extension");
 const PYTHON = process.platform === "win32" ? "python" : "python3";
 const PORT = 8137;
 const KOD = "PRC;JAN;KOWALSKI;12345;IT";
