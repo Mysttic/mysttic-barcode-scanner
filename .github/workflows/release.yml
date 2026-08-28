@@ -1,22 +1,29 @@
 # Buduje i publikuje wydanie po zmergowaniu PR z develop do master.
 # Wersja wydania = VERSION.md (jedyne zrodlo prawdy; CI tworzy tag v<wersja>).
 # Bez PODNIESIENIA wersji w VERSION.md release sie NIE wykonuje (czysty skip).
+# Reczne odpalenie (workflow_dispatch) wydaje wersje z VERSION.md na masterze,
+# o ile nie ma jeszcze jej tagu - tak powtarza sie wydanie przewrocone przez
+# awarie infrastruktury.
 name: release
 
 on:
   pull_request:
     types: [closed]
     branches: [master]
+  workflow_dispatch:
 
 env:
   CIRCUITPYTHON_URL: https://downloads.circuitpython.org/bin/raspberry_pi_pico/en_US/adafruit-circuitpython-raspberry_pi_pico-en_US-10.2.1.uf2
   BUNDLE_URL: https://github.com/adafruit/Adafruit_CircuitPython_Bundle/releases/download/20260818/adafruit-circuitpython-bundle-10.x-mpy-20260818.zip
 
 jobs:
-  # Agent desktopowy to aplikacja Windows - budujemy ja na Windowsie i podajemy
-  # dalej jako artefakt, bo paczke sklada Linux.
-  agent-windows:
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
+  # Testy agenta wymagaja Windowsa (UI Automation, WinForms). Same pliki exe
+  # sklada juz job "build" - przekazywanie ich miedzy jobami przez artefakty
+  # potrafi przewrocic wydanie, gdy skonczy sie magazyn artefaktow.
+  testy-agenta:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop')
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,21 +34,12 @@ jobs:
           dotnet-version: "9.0.x"
       - name: Testy jednostkowe agenta
         run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
-      - name: Agent i aplikacja testowa (samodzielne pliki exe)
-        run: |
-          dotnet publish desktop-agent/src/CzytnikAgent -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish/agent --nologo
-          dotnet publish desktop-agent/test-app -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o publish/app --nologo
-      - uses: actions/upload-artifact@v4
-        with:
-          name: agent-windows
-          path: |
-            publish/agent/CzytnikAgent.exe
-            publish/app/AplikacjaTestowa.exe
-          retention-days: 1
 
   build:
-    needs: agent-windows
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
+    needs: testy-agenta
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -57,9 +55,10 @@ jobs:
           VERSION=$(grep -oP '\b\d+\.\d+\.\d+\b' VERSION.md | head -1)
           test -n "$VERSION" || { echo "::error::Brak wersji X.Y.Z w VERSION.md"; exit 1; }
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           PREV=$(git show 'HEAD^1:VERSION.md' 2>/dev/null | grep -oP '\b\d+\.\d+\.\d+\b' | head -1 || true)
-          echo "poprzednia=$PREV nowa=$VERSION"
-          if [ "$PREV" = "$VERSION" ]; then
+          echo "poprzednia=$PREV nowa=$VERSION zdarzenie=${{ github.event_name }}"
+          if [ "$PREV" = "$VERSION" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
             echo "release=false" >> "$GITHUB_OUTPUT"
             echo "Wersja niezmieniona — pomijam wydanie."
           elif git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
@@ -80,6 +79,13 @@ jobs:
         if: steps.ver.outputs.release == 'true'
         with:
           python-version: "3.12"
+
+      # Agent desktopowy jest aplikacja Windows, ale .NET potrafi zlozyc dla niej
+      # samodzielny plik exe takze z Linuksa (EnableWindowsTargeting).
+      - uses: actions/setup-dotnet@v4
+        if: steps.ver.outputs.release == 'true'
+        with:
+          dotnet-version: "9.0.x"
 
       - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
         if: steps.ver.outputs.release == 'true'
@@ -123,25 +129,16 @@ jobs:
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
 
-      - uses: actions/download-artifact@v4
+      - name: Budowa paczki wydania (z agentem i aplikacja testowa)
         if: steps.ver.outputs.release == 'true'
-        with:
-          name: agent-windows
-          path: agent-windows
-
-      - name: Budowa paczki wydania
-        if: steps.ver.outputs.release == 'true'
-        run: >
-          python tools/build_release.py --skip-npm
-          --agent-exe agent-windows/agent/CzytnikAgent.exe
-          --app-testowa-exe agent-windows/app/AplikacjaTestowa.exe
+        run: python tools/build_release.py --skip-npm
 
       - name: Publikacja wydania (tworzy tag automatycznie)
         if: steps.ver.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
-          target_commitish: ${{ github.sha }}
+          target_commitish: ${{ steps.ver.outputs.sha }}
           name: v${{ steps.ver.outputs.version }}
           files: |
             release/barcode-reader-v*.zip

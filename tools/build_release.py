@@ -84,7 +84,10 @@ def copy_extension(stage: Path, version: str) -> None:
 
 
 def publikuj_dotnet(projekt: Path, cel: Path) -> None:
-    """Buduje samodzielny plik .exe - u klienta nie trzeba instalowac .NET."""
+    """Buduje samodzielny plik .exe - u klienta nie trzeba instalowac .NET.
+
+    EnableWindowsTargeting pozwala zlozyc aplikacje WinForms/WPF takze na
+    Linuksie (tam powstaje paczka wydania w CI); na Windowsie nic nie zmienia."""
     subprocess.run(
         [
             "dotnet", "publish", str(projekt),
@@ -93,6 +96,7 @@ def publikuj_dotnet(projekt: Path, cel: Path) -> None:
             "-p:PublishSingleFile=true",
             "-p:IncludeNativeLibrariesForSelfExtract=true",
             "-p:EnableCompressionInSingleFile=true",
+            "-p:EnableWindowsTargeting=true",
             "-p:DebugType=none",
             "-o", str(cel), "--nologo", "-v", "q",
         ],
