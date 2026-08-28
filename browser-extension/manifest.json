@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Czytnik kodów — wypełnianie formularzy",
-  "version": "0.10.0",
+  "version": "0.0.0",
   "description": "Rozpoznaje formularz, przechwytuje skan z czytnika i rozkłada dane po polach. Poza rozpoznanymi formularzami nie robi nic.",
   "permissions": ["storage"],
   "background": { "service_worker": "src/background.js" },

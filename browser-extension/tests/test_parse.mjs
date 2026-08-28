@@ -11,7 +11,8 @@ for (const file of ["parse.js", "fill.js", "store.js"]) {
 
 const { parseFrame, dateToIso, stripAim, matchesPrefix } = globalThis.BRParse;
 const { urlMatches, candidatesForUrl, defaults, normalize } = globalThis.BRStore;
-const { toIsoDate, normalizeText } = globalThis.BRFill;
+const { toIsoDate, toIsoDateTime, toTime, normalizeText, formatDate, applyTransforms, looksLikeDate, selectorOf, specOf } =
+  globalThis.BRFill;
 
 const GS = String.fromCharCode(0x1d);
 let passed = 0;
@@ -121,6 +122,73 @@ state.profiles[0].enabled = false;
 check("profile: wylaczony pomijany", candidatesForUrl(state, "http://localhost:8124/forma-c-wtyczka.html").length, 0);
 check("stan: normalizacja pustego wejscia", normalize(null).profiles.length, 2);
 check("stan: nieznane pola nie kasuja ustawien", normalize({ settings: { burstGapMs: 90 } }).settings.minFrameLength, 3);
+
+// ------------------------------------------------- format wartosci wyjsciowej ---
+check("format: GS1 RRMMDD -> DD.MM.RRRR", formatDate("271231", "DD.MM.RRRR"), "31.12.2027");
+check("format: ISO -> DD.MM.RRRR", formatDate("2027-12-31", "DD.MM.RRRR"), "31.12.2027");
+check("format: PL -> ISO", formatDate("31.12.2027", "RRRR-MM-DD"), "2027-12-31");
+check("format: rok dwucyfrowy", formatDate("271231", "RR/MM/DD"), "27/12/31");
+check("format: bez separatorow", formatDate("271231", "RRRRMMDD"), "20271231");
+check("format: tokeny angielskie", formatDate("271231", "DD/MM/YYYY"), "31/12/2027");
+check("format: RRRRMMDD na wejsciu", formatDate("20271231", "DD.MM.RRRR"), "31.12.2027");
+check("format: dzien 00 = koniec miesiaca", formatDate("270200", "DD.MM.RRRR"), "28.02.2027");
+check("format: nie-data zostaje bez zmian", formatDate("KOWALSKI", "DD.MM.RRRR"), "KOWALSKI");
+check("format: bledny miesiac to nie data", formatDate("271331", "DD.MM.RRRR"), "271331");
+check("format: brak wzorca nic nie zmienia", formatDate("271231", ""), "271231");
+
+// --- wzorce dowolne: wielkosc liter, tokeny bez zera wiodacego, literaly ---
+check("wzorzec: male litery (dd-mm-yy)", formatDate("2027-10-31", "dd-mm-yy"), "31-10-27");
+check("wzorzec: male litery z yyyy", formatDate("271231", "dd/mm/yyyy"), "31/12/2027");
+check("wzorzec: bez zera wiodacego", formatDate("2027-02-01", "D.M.RRRR"), "1.2.2027");
+check("wzorzec: mieszana wielkosc liter", formatDate("2027-10-31", "Dd.mM.rRrR"), "31.10.2027");
+check("wzorzec: tekst w apostrofach", formatDate("2027-10-31", "DD.MM.RRRR 'r.'"), "31.10.2027 r.");
+check("wzorzec: apostrof w tekscie", formatDate("2027-10-31", "''RRRR"), "'2027");
+check("wzorzec: niedomkniety apostrof nie wywala", formatDate("2027-10-31", "DD 'reszta"), "31 reszta");
+check("wzorzec: same separatory", formatDate("2027-10-31", "RRRRMMDD"), "20271031");
+
+// --- czas ------------------------------------------------------------------
+check("czas: ISO z godzina", formatDate("2027-10-31 14:05", "RRRR-MM-DD HH:MI"), "2027-10-31 14:05");
+check("czas: ISO z literka T", formatDate("2027-10-31T14:05:09", "HH:MI:SS"), "14:05:09");
+check("czas: sekundy dopelniane zerem", formatDate("2027-10-31 14:05", "HH:MI:SS"), "14:05:00");
+check("czas: data PL z godzina", formatDate("31.10.2027 09:30", "RRRR-MM-DD HH:MI"), "2027-10-31 09:30");
+check("czas: 12 cyfr RRRRMMDDHHMM", formatDate("202710311405", "DD.MM.RRRR HH:MI"), "31.10.2027 14:05");
+check("czas: 10 cyfr RRMMDDHHMM (GS1)", formatDate("2710311405", "DD.MM.RRRR HH:MI"), "31.10.2027 14:05");
+check("czas: sam czas", formatDate("14:05", "HH:MI"), "14:05");
+check("czas: godzina bez zera wiodacego", formatDate("2027-10-31 09:05", "H:MI"), "9:05");
+check("czas: bledna godzina to nie data", formatDate("2027-10-31 25:00", "HH:MI"), "2027-10-31 25:00");
+check("czas: sam czas nie udaje daty", formatDate("14:05", "DD.MM.RRRR"), "14:05");
+check("czas: data bez czasu daje zera", formatDate("2027-10-31", "HH:MI"), "00:00");
+
+// Regula minut: MM to miesiac, chyba ze wczesniej we wzorcu byla godzina.
+check("minuty: mm po godzinie", formatDate("2027-10-31 14:05", "HH:mm"), "14:05");
+check("minuty: MM bez godziny to miesiac", formatDate("2027-10-31 14:05", "DD-MM-RRRR"), "31-10-2027");
+check("minuty: data po czasie wraca do miesiaca", formatDate("2027-10-31 14:05", "HH:mm DD.MM.RRRR"), "14:05 31.10.2027");
+check("minuty: MI jest jednoznaczne", formatDate("2027-10-31 14:05", "MI"), "05");
+
+check("kontrolka datetime-local", toIsoDateTime("31.10.2027 14:05"), "2027-10-31T14:05");
+check("kontrolka time", toTime("2027-10-31 14:05"), "14:05");
+check("kontrolka time z samego czasu", toTime("9:07"), "09:07");
+check("kontrolka date z datetime", toIsoDate("2027-10-31 14:05"), "2027-10-31");
+
+check("data wyglada na date", looksLikeDate("271231"), true);
+check("czas wyglada na wartosc czasowa", looksLikeDate("14:05"), true);
+check("numer pracownika to nie data", looksLikeDate("12345"), false);
+check("szescocyfrowy numer bez sensownej daty", looksLikeDate("123456"), false);
+
+check("transform: GTIN-14 -> EAN-13", applyTransforms("05901234567890", { transform: ["gtin13"] }), "5901234567890");
+check("transform: GTIN-13 bez zmian", applyTransforms("5901234567890", { transform: ["gtin13"] }), "5901234567890");
+check("transform: wielkie litery", applyTransforms("kowalski", { transform: ["upper"] }), "KOWALSKI");
+check("transform: same cyfry", applyTransforms("A-22/B", { transform: ["digits"] }), "22");
+check("transform: prefiks i sufiks", applyTransforms("7", { transform: ["prefix:LOT-", "suffix:/2027"] }), "LOT-7/2027");
+check("transform: wyciecie fragmentu", applyTransforms("05901234567890", { transform: ["slice:1,6"] }), "59012");
+check("transform: format i lancuch razem", applyTransforms("271231", { format: "DD.MM.RRRR", transform: ["digits"] }), "31122027");
+check("transform: brak specyfikacji nic nie robi", applyTransforms("A22", {}), "A22");
+check("transform: nieznana operacja pomijana", applyTransforms("A22", { transform: ["bzdura"] }), "A22");
+
+check("pole jako selektor", selectorOf("input[name=x]"), "input[name=x]");
+check("pole jako obiekt", selectorOf({ selector: "#x", format: "DD.MM.RRRR" }), "#x");
+check("spec z selektora tekstowego jest pusta", specOf("input[name=x]"), {});
+check("spec z obiektu zachowana", specOf({ selector: "#x", format: "RRRR-MM-DD" }).format, "RRRR-MM-DD");
 
 // ------------------------------------------------------------ wypelnianie ---
 check("data PL -> ISO", toIsoDate("31.12.2027"), "2027-12-31");
