@@ -135,6 +135,51 @@ try {
   const stanLek = await page.evaluate(() => globalThis.model);
   check("lek: stan strony po skanie", stanLek,
     { gtin: "05909991055172", dataWaznosci: "2027-10-31", partia: "A23G05", numerSeryjny: "K7L9XW24MQ1R" });
+
+  // --- 5. wartosc wychodzaca w formacie formularza -------------------------
+  // Ten sam skan, ale profil dostraja wartosci: data ma trafic jako
+  // DD.MM.RRRR, a GTIN-14 jako 13-cyfrowy EAN. Profil wstrzykujemy do
+  // magazynu wtyczki, zeby nie ruszac profili demonstracyjnych.
+  let worker = context.serviceWorkers()[0];
+  if (!worker) worker = await context.waitForEvent("serviceworker");
+  await worker.evaluate(async () => {
+    await chrome.storage.local.set({
+      state: {
+        version: 1,
+        enabled: true,
+        profiles: [
+          {
+            id: "e2e-formaty",
+            name: "Formaty (e2e)",
+            enabled: true,
+            match: { urlPattern: "*forma-c-lek.html*", requiredFields: ["gtin", "dataWaznosci"] },
+            parse: {
+              type: "delimited",
+              separator: "\t",
+              fields: ["gtin", "dataWaznosci", "partia", "numerSeryjny"],
+              segmentPatterns: { gtin: "^[0-9]{14}$" },
+            },
+            fields: {
+              gtin: { selector: "input[name=gtin]", transform: ["gtin13"] },
+              dataWaznosci: { selector: "input[name=dataWaznosci]", format: "dd-mm-yy" },
+              partia: "input[name=partia]",
+            },
+            after: { action: "none" },
+          },
+        ],
+      },
+    });
+  });
+  await page.reload();
+  await page.waitForSelector("input[name=gtin]");
+  await page.waitForTimeout(700);
+  await skanuj(page, RAMKA_LEK);
+
+  check("formaty: wlasny wzorzec dd-mm-yy", await page.inputValue("input[name=dataWaznosci]"), "31-10-27");
+  check("formaty: GTIN-14 -> EAN-13", await page.inputValue("input[name=gtin]"), "5909991055172");
+  check("formaty: partia bez przeksztalcen", await page.inputValue("input[name=partia]"), "A23G05");
+  const stanFormaty = await page.evaluate(() => globalThis.model);
+  check("formaty: strona widzi przeliczone wartosci", stanFormaty.dataWaznosci, "31-10-27");
 } finally {
   if (context) await context.close();
   serwer.kill();

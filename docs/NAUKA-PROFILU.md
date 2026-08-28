@@ -57,6 +57,13 @@ przechodzi dalej samo — panel pokazuje wybór i czeka na decyzję:
 
 ![Krok 3: pole wybrane, panel czeka na potwierdzenie](img/wtyczka-nauka-lek-3-pola.png)
 
+Przy wartości, która wygląda na datę, panel dokłada rząd przycisków z podglądem
+formatów — jeśli Twój formularz chce daty w innej postaci niż kod, kliknij
+gotowy wynik zamiast **Zatwierdź i dalej**. Szczegóły:
+[WTYCZKA.md → Format wartości wychodzącej](WTYCZKA.md#format-wartości-wychodzącej).
+
+![Przyciski formatu daty](img/wtyczka-format-daty.png)
+
 ## Krok 4 — zapisz profil
 
 Nadaj profilowi nazwę (np. „Zamówienie leku — mój profil") i sprawdź
