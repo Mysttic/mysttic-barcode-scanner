@@ -82,10 +82,9 @@ in the extension's details. Simpler still: run a local server
 
 ## First test
 
-1. Open `test-vectors/forms/form-c-extension.html` (the *Employee card*,
-   employee card, view).
-2. The badge should show `ON` and a toast should flash in the corner: "Czytnik:
-   Karta pracownika (demo)".
+1. Open `test-vectors/forms/form-c-extension.html` (the *Employee card* view).
+2. The badge should show `ON` and a toast should flash in the corner:
+   "Scanner: Employee card (demo)".
 
 ![The demo form before a scan](img/extension-form-before.png)
 
