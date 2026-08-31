@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="brand/logo.svg" alt="Mysttic Barcode Scanner" width="420">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/logo-dark.svg">
+    <img src="brand/logo.svg" alt="Mysttic Barcode Scanner" width="420">
+  </picture>
 </p>
 
 <p align="center">

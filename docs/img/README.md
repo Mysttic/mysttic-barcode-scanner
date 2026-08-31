@@ -29,7 +29,8 @@ The logo and the icons are not here. Their sources live in
 | File | What it is |
 |---|---|
 | `brand/icon.svg` | the mark alone (the source for every icon) |
-| `brand/logo.svg` | the mark plus the product name, used in the main README |
+| `brand/logo.svg` | the mark plus the product name, for a light background |
+| `brand/logo-dark.svg` | the same for a dark background; the README picks between them with `prefers-color-scheme`, because GitHub renders SVG as an image and `currentColor` would come out black on both themes |
 | `brand/make_icons.mjs` | rasterises the mark into the extension icons and the configurator's favicon |
 | `brand/make_ico.py` | builds the `.ico` used by the agent and the demo application |
 

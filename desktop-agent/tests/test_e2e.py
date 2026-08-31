@@ -42,7 +42,7 @@ def sprawdz(nazwa, warunek, szczegoly=""):
         print(f"  [FAIL] {nazwa} {szczegoly}")
 
 
-def czekaj_na_log(log, fragment, sekundy=12):
+def czekaj_na_log(log, fragment, sekundy=25):
     """Czeka, az agent dopisze do logu oczekiwany fragment (makro bywa wolne)."""
     koniec = time.time() + sekundy
     while time.time() < koniec:
@@ -160,8 +160,10 @@ def main():
             subprocess.run(["taskkill", "/F", "/IM", "MystticDemoApp.exe"], capture_output=True, check=False)
             time.sleep(1)
             proces = subprocess.Popen([str(APLIKACJA)])
-            time.sleep(2.5)
+            time.sleep(3.5)
             log.unlink(missing_ok=True)
+            # okno musi byc gotowe (UIA je widzi), zanim zaczniemy wysylac klawisze
+            agent("--okno", "--proces", "MystticDemoApp")
 
             agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--hid", "--proces", "MystticDemoApp")
             tresc = czekaj_na_log(log, "cmbStanowisko")
