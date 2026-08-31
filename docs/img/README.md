@@ -1,8 +1,10 @@
 # Images in the documentation
 
-Nothing in this directory is edited by hand. Every image is generated from the
-real thing, so it cannot drift away from the product. This file says which
-command produces what, and where each source lives.
+Every screenshot and the wiring diagram are generated from the real thing, so
+they cannot drift away from the product. This file says which command produces
+what, and where each source lives. The only exception is `device.jpg`, a photo of
+the assembled unit used at the top of the main README — replace it by hand when
+the hardware changes (keep it around 1600 px wide and under 250 KB).
 
 | Images | Source | How to regenerate |
 |---|---|---|
@@ -10,6 +12,7 @@ command produces what, and where each source lives.
 | `configurator-*.png` | the built configurator, driven against a **stub device** (no hardware needed) | `node configurator/tests/screenshots.mjs` |
 | `agent-*.png` | the desktop agent and the demo application, both running | `MystticBarcodeAgent.exe --zrzuty docs/img --proces MystticDemoApp` |
 | `wiring-minimal.png` | the saved Wokwi project, rendered headless | `node hardware/wokwi/render-diagram.mjs` |
+| `device.jpg` | a photo of the assembled unit (README header) | taken by hand, then scaled to 1600 px |
 
 The configurator normally talks to the scanner over Web Serial, so its
 screenshots used to require a device on the desk. The generator now substitutes

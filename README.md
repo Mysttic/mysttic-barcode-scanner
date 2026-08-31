@@ -19,6 +19,10 @@
 
 ---
 
+<p align="center">
+  <img src="docs/img/device.jpg" alt="The assembled scanner: an RP2040 board with a 1D/2D scanner module on top" width="760">
+</p>
+
 Plug the scanner in, hold a barcode or QR code in front of it, and the decoded
 value is typed into the active window as if someone had entered it on a keyboard.
 Works on any operating system that accepts a USB keyboard.
@@ -28,8 +32,6 @@ recognises the kind of code it just read, splits it into fields and types them i
 a defined order with TAB and ENTER in between, straight into the matching boxes of
 a form. Everything is configured from a web page served by the scanner itself, off
 a small read-only disk it exposes over USB.
-
-![Wiring: the RP2040 board and the scanner module](docs/img/wiring-minimal.png)
 
 ## What it does
 
