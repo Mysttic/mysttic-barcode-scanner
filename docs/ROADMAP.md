@@ -1,96 +1,122 @@
-# Dalsze kroki (roadmapa)
+# Roadmap
 
-Stan wyjściowy (2026-08-21): produkt działa end-to-end na sprzęcie —
-firmware C z dyskiem `CZYTNIK`, konfigurator, wtyczka z nauką profili,
-komplet testów. Poniżej praca uporządkowana wg priorytetu; szczegółowe
-uzasadnienia decyzji w [decisions.md](decisions.md).
+Starting point (2026-08-21): the product works end to end on hardware — the C
+firmware with the `MYSTTIC` disk, the configurator, the extension with profile
+learning, and a full test suite. The work below is ordered by priority; the
+reasoning behind individual decisions is in [DECISIONS.md](DECISIONS.md).
 
-## 1. Domknięcie wydania 1.0 (najbliższe)
+## 1. Closing out release 1.0 (immediate)
 
-- [ ] **Przejście pełnego scenariusza „od pudełka"** przez właściciela
-  ([TESTING.md](TESTING.md), sekcja 0) + `tools/test_e2e.py` — formalne
-  kryterium akceptacji.
-- [ ] **Wersja firmware C z VERSION.md** wstrzykiwana przy buildzie
-  (dziś `0.0.0-dev` w `ping` i konfiguratorze).
-- [x] ~~**Paczka wydania**: UF2 wariantu C + `wtyczka/` + instrukcje~~ —
-  zrobione 2026-08-21: paczka ma `firmware/barcode_reader.uf2` (produkcja),
-  `wtyczka/` z wersją z VERSION.md, komplet dokumentacji i osobno
-  `prototyp-circuitpython/`; CI kompiluje firmware C przed budową paczki.
-- [x] ~~**Wydanie 1.0**~~ — opublikowane 2026-08-24 (tag `v1.0.0`, PR #7).
-  Paczka pobrana i zweryfikowana: suma SHA-256 zgodna, 40/40 plików zgodnych
-  z `SHA256SUMS.txt`, wersja 1.0.0 w firmware i manifeście wtyczki, dysk
-  `CZYTNIK` wewnątrz UF2 zawiera komplet 11 plików zgodnych z repo.
-- [ ] **Eventy trybu testowego w C** z nazwą profilu i polami (parytet z CP —
-  ostatnia znana różnica).
+- [ ] **Go through the full out-of-the-box scenario** as the owner
+  ([TESTING.md](TESTING.md), section 0) plus `tools/test_e2e.py`. That is the
+  formal acceptance criterion.
+- [ ] **The C firmware version taken from VERSION.md** at build time (today
+  `ping` and the configurator report `0.0.0-dev`).
+- [x] ~~**Release package**: the variant C UF2 plus the extension and the
+  manuals~~ — done on 2026-08-21: the package carries the production firmware,
+  the extension with its version from VERSION.md, the full documentation and,
+  separately, the CircuitPython prototype; CI compiles the C firmware before
+  building the package.
+- [x] ~~**Release 1.0**~~ — published on 2026-08-24 (tag `v1.0.0`, PR #7). The
+  package was downloaded and verified: the SHA-256 sum matched, 40 of 40 files
+  agreed with `SHA256SUMS.txt`, version 1.0.0 appeared in the firmware and in the
+  extension manifest, and the disk inside the UF2 contained all 11 files matching
+  the repository.
+- [ ] **Test-mode events in C** carrying the profile name and the fields (parity
+  with CircuitPython, the last known difference).
 
-## 2. Odporność na formaty kodów
+## 2. Robustness across code formats
 
-- [ ] **Rozszerzenie tabeli AI parsera GS1** o typowe dodatki spotykane na
-  opakowaniach: `11` (data produkcji), `15` (najlepiej spożyć), `30` (ilość),
-  `240`, `710–714` (numery krajowe) — w trzech implementacjach naraz
-  (CP/C/wtyczka) + wspólne wektory testowe. Efekt: obecność nieużywanego AI
-  przestaje wywracać parsowanie.
-- [ ] Zebrać **realne kody z docelowych hurtowni/aptek** i przepuścić przez
-  zakładkę Test konfiguratora (macierz zgodności przed wdrożeniem).
-- Poza zakresem do osobnej decyzji: PPN (Niemcy), kody kryptograficzne 91–93
-  (Rosja) — inne ekosystemy, dziś bezpieczny fallback
-  ([MOZLIWOSCI.md](MOZLIWOSCI.md)).
+- [ ] **Extend the GS1 parser's AI table** with the extras commonly found on
+  packaging: `11` (production date), `15` (best before), `30` (quantity), `240`,
+  `710-714` (national numbers), in all three implementations at once
+  (CircuitPython, C, extension) plus shared test vectors. The effect: an unused
+  AI stops breaking the parse.
+- [ ] Collect **real codes from the target wholesalers and pharmacies** and run
+  them through the configurator's Test tab (a compatibility matrix before
+  deployment).
+- Out of scope, pending a separate decision: PPN (Germany) and the cryptographic
+  codes 91-93 (Russia). Different ecosystems, and today they have a safe fallback
+  ([CAPABILITIES.md](CAPABILITIES.md)).
 
-## 3. Produktyzacja sprzętu (Etap 13 z instrukcji)
+## 3. Productising the hardware
 
-- [ ] PCB zamiast płytki stykowej (moduł + RP2040 + złącze JST),
-- [ ] obudowa (druk 3D) z okienkiem skanera i przyciskiem serwisowym,
-- [ ] **legalny VID/PID** przed sprzedażą (dziś deweloperskie `0xCAFE`),
-- [ ] naklejka z QR do dokumentacji/wydań na spodzie urządzenia.
+- [ ] a PCB instead of a breadboard (module, RP2040, JST connector),
+- [ ] a 3D-printed enclosure with a scanner window and a service button,
+- [ ] **a USB PID of our own** before selling anything (today the pid.codes test
+  identifier `1209:0001` is used),
+- [ ] a sticker on the underside with a QR code pointing at the documentation and
+  releases.
 
-## 4. Ergonomia i wdrożenia (wg potrzeb)
+## 4. Ergonomics and rollouts (as needed)
 
-- [ ] tryb prosty konfiguratora (feedback z E7: „za techniczny dla użytkownika
-  końcowego"),
-- [ ] wdrożenie wtyczki polityką (`ExtensionInstallForcelist` + profile przez
-  `storage.managed`) — dziś instalacja „Załaduj rozpakowane",
-- [ ] układ klawiatury PL/DE w HID (dziś US/ASCII — wystarcza dla kodów),
-- [ ] auto-wybór portu w konfiguratorze (ping-timeout zamiast ręcznego wyboru).
+- [ ] a simple mode for the configurator (feedback from E7: "too technical for an
+  end user"),
+- [ ] deploying the extension by policy (`ExtensionInstallForcelist` plus
+  profiles through `storage.managed`); today it is "Load unpacked",
+- [ ] Polish and German keyboard layouts in HID (today US/ASCII, which is enough
+  for codes),
+- [ ] automatic port selection in the configurator (a ping timeout instead of
+  picking by hand).
 
-## 4b. Agent desktopowy (nowy moduł, prototyp gotowy)
+## 4b. The desktop agent (a new module, prototype ready)
 
-Stan: moduł działa i jest wydawany razem z resztą produktu (34 asercje
-jednostkowe + 27 e2e na żywej aplikacji, instalator, przenośna aplikacja
-testowa, zrzuty w instrukcji). Szczegóły: [AGENT-DESKTOP.md](AGENT-DESKTOP.md).
+Status: the module works and is released together with the rest of the product
+(34 unit assertions, 27 e2e ones against a live application, an installer, a
+portable demo application and screenshots in the manual). Details:
+[DESKTOP-AGENT.md](DESKTOP-AGENT.md).
 
-- [ ] **Test z fizycznym czytnikiem** (dotąd tylko symulowany strumień klawiszy)
-  oraz **przejście trybu nauki ręcznie** przez operatora.
-- [ ] Test w prawdziwej aplikacji kioskowej (skrót Ctrl+Alt+F9, okno kreatora
-  nad pełnym ekranem).
-- [x] ~~Edytor profili w interfejsie~~ — zrobione: okno „Profile (zarządzaj)"
-  (włącz/wyłącz, nazwa, proces, wzorzec tytułu, podgląd kroków, usuwanie).
-- [ ] Import/eksport profili do pliku jednym kliknięciem (jak we wtyczce).
-- [ ] Podniesienie uprawnień, gdy aplikacja docelowa działa jako administrator
-  (manifest z `requireAdministrator` albo restart na żądanie).
-- [x] ~~Instalator/autostart + wpięcie modułu w paczkę wydania~~ — zrobione
-  2026-08-28: `agent-desktopowy/` w paczce (samodzielny exe + `zainstaluj-agenta.ps1`
-  + przykładowy profil), przenośna aplikacja testowa jako osobny plik wydania,
-  job `agent-desktopowy` w CI i `agent-windows` w release.
-- [ ] Rozważyć wspólne źródło parserów (dziś logika GS1 jest w trzech
-  implementacjach: C, JS, C# — te same wektory testowe pilnują zgodności).
+- [ ] **A test with a physical scanner** (so far only a simulated key stream) and
+  **a manual run through learning mode** by an operator.
+- [ ] A test in a real kiosk application (the Ctrl+Alt+F9 shortcut, the wizard
+  window over a full screen).
+- [x] ~~A profile editor in the interface~~ — done: the "Profile (zarządzaj)"
+  window (enable and disable, name, process, title pattern, step preview,
+  deletion).
+- [ ] One-click profile import and export to a file (as in the extension).
+- [ ] Elevation when the target application runs as administrator (a manifest
+  with `requireAdministrator`, or a restart on demand).
+- [x] ~~Installer and autostart, plus wiring the module into the release
+  package~~ — done on 2026-08-28: `desktop-agent/` in the package (a standalone
+  executable, `install-agent.ps1` and an example profile), the portable demo
+  application as a separate release asset, an `agent-desktopowy` job in CI and
+  the agent built as part of the release.
+- [ ] Consider a single source for the parsers (today the GS1 logic exists in
+  three implementations: C, JavaScript, C#, kept in step by shared test vectors).
 
-## 5. Wtyczka — faza 2 (gdy wedge przestanie wystarczać)
+## 4c. Open source and internationalisation
 
-- [ ] transport CDC zamiast nasłuchu klawiatury (dane strukturalne prosto
-  z urządzenia, tryb `host` + heartbeat; wymaga zmian we firmware — świadomie
-  odłożone). Dotyczy też agenta desktopowego: zniósłby potrzebę hooka
-  klawiatury, który bywa blokowany politykami firmowymi, i przeniósłby
-  separator GS bez obchodzenia,
-- [ ] agregacja wielu skanów w jeden formularz, wiersze powtarzalne,
-- [ ] publikacja w Chrome Web Store (dziś świadomie pominięta — wdrożenie
-  wewnętrzne).
+- [x] ~~Licence, notices and community files~~ — done: Apache-2.0, `NOTICE`,
+  `THIRD-PARTY-NOTICES.md`, `CONTRIBUTING.md`, `SECURITY.md`, a code of conduct
+  and issue templates.
+- [x] ~~Product identity~~ — done: the name Mysttic Barcode Scanner across the
+  USB descriptors, the device disk, the extension, the agent and the packages,
+  with a logo and icons generated from `brand/icon.svg`.
+- [ ] **Translate the user interfaces** (configurator, extension, desktop agent,
+  demo forms) to English. The documentation is already in English; the interfaces
+  are still Polish, which is the biggest remaining barrier for contributors from
+  outside Poland. It should be one coordinated change, including the test
+  assertions that check on-screen text.
+- [ ] A live demo on GitHub Pages (the configurator and the test forms are static
+  files, so they can be published as they are).
+- [ ] Publish the extension in the Chrome Web Store (deliberately skipped so far,
+  the deployment was internal).
 
-## Zamrożone / odrzucone (żeby nie wracać bez powodu)
+## 5. The extension — phase 2 (when the wedge stops being enough)
 
-- **Bookmarklet jako droga produkcyjna** — odrzucony (UX); zostaje jako
-  diagnostyka (`test-vectors/bookmarklet.html`).
-- **Wtyczka przez WebSerial w fazie 1** — odrzucone na rzecz wedge
-  (zero zmian we firmware, brak konfliktu o port).
-- **LittleFS w C** — odrzucone na rzecz atomowych slotów A/B.
-- **MSC zapisywalny** — dysk celowo tylko-do-odczytu (konfiguracja żyje we
-  flashu przez CDC; nie ma czego zepsuć).
+- [ ] a CDC transport instead of listening to the keyboard (structured data
+  straight from the device, `host` mode plus a heartbeat; it needs firmware
+  changes and has been deliberately postponed). This also concerns the desktop
+  agent: it would remove the need for a keyboard hook, which corporate policies
+  sometimes block, and would carry the GS separator without workarounds,
+- [ ] aggregating several scans into one form, and repeatable rows.
+
+## Frozen or rejected (so we do not revisit them without a reason)
+
+- **The bookmarklet as a production route** — rejected on user experience
+  grounds; it stays as a diagnostic tool (`test-vectors/bookmarklet.html`).
+- **The extension over Web Serial in phase 1** — rejected in favour of the wedge
+  (no firmware changes, no fight over the port).
+- **LittleFS in C** — rejected in favour of atomic A/B slots.
+- **A writable MSC disk** — the disk is deliberately read-only (the configuration
+  lives in flash and is reached over CDC, so there is nothing to break).

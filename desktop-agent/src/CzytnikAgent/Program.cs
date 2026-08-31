@@ -2,11 +2,11 @@
 // okno aplikacji na wierzchu, przechwytuje skan i odtwarza nauczone makro.
 //
 // Tryby uruchomienia:
-//   CzytnikAgent.exe                     - normalny (ikona w zasobniku)
-//   CzytnikAgent.exe --okno              - wypisuje dane okna na wierzchu (diagnostyka)
-//   CzytnikAgent.exe --drzewo            - wypisuje kontrolki okna na wierzchu (UIA)
-//   CzytnikAgent.exe --symuluj "RAMKA"   - odtwarza makro bez czytnika (testy)
-//   CzytnikAgent.exe --profile PLIK      - uzywa wskazanego pliku profili
+//   MystticBarcodeAgent.exe                     - normalny (ikona w zasobniku)
+//   MystticBarcodeAgent.exe --okno              - wypisuje dane okna na wierzchu (diagnostyka)
+//   MystticBarcodeAgent.exe --drzewo            - wypisuje kontrolki okna na wierzchu (UIA)
+//   MystticBarcodeAgent.exe --symuluj "RAMKA"   - odtwarza makro bez czytnika (testy)
+//   MystticBarcodeAgent.exe --profile PLIK      - uzywa wskazanego pliku profili
 using System.Text;
 using System.Windows.Automation;
 

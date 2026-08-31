@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="Mysttic Barcode Scanner">
+  <defs>
+    <linearGradient id="tlo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#F43F5E"/>
+      <stop offset="1" stop-color="#9F1239"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#tlo)"/>
+  <!-- kod kreskowy: to, co czytnik widzi -->
+  <g fill="#FFFFFF">
+    <rect x="26" y="34" width="8" height="60" rx="4"/>
+    <rect x="40" y="34" width="5" height="60" rx="2.5"/>
+    <rect x="51" y="34" width="8" height="60" rx="4"/>
+  </g>
+  <!-- pola formularza: to, co z niego powstaje -->
+  <g fill="#FFFFFF" opacity="0.92">
+    <rect x="74" y="38" width="28" height="9" rx="4.5"/>
+    <rect x="74" y="59" width="28" height="9" rx="4.5"/>
+    <rect x="74" y="80" width="18" height="9" rx="4.5"/>
+  </g>
+</svg>

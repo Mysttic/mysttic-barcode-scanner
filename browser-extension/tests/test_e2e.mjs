@@ -74,7 +74,7 @@ try {
   // --- 1. rozpoznany formularz: przechwycenie SEKWENCJI TAB-OWEJ ----------
   // Czytnik zostaje w produkcyjnej konfiguracji (profil pracownik-tab wlaczony)
   // - wtyczka przechwytuje TAB-y i rozklada pola po nazwach.
-  await page.goto(`http://127.0.0.1:${PORT}/formularze/forma-c-wtyczka.html#/pracownik`);
+  await page.goto(`http://127.0.0.1:${PORT}/forms/form-c-extension.html#/pracownik`);
   await page.waitForSelector("input[name=imie]");
   await page.waitForTimeout(600); // content script wstaje i dopasowuje profil
   await skanuj(page, RAMKA_PRAC);
@@ -115,7 +115,7 @@ try {
   // Produkcyjny profil gs1-datamatrix w czytniku wypisuje sekwencje TAB-owa -
   // tu wpisujemy dokladnie to, co wyszloby z czytnika.
   const RAMKA_LEK = "05909991055172\t2027-10-31\tA23G05\tK7L9XW24MQ1R";
-  await page.goto(`http://127.0.0.1:${PORT}/formularze/forma-c-lek.html`);
+  await page.goto(`http://127.0.0.1:${PORT}/forms/form-c-medicine.html`);
   await page.waitForSelector("input[name=gtin]");
   await page.waitForTimeout(600);
 
@@ -153,7 +153,7 @@ try {
             id: "e2e-formaty",
             name: "Formaty (e2e)",
             enabled: true,
-            match: { urlPattern: "*forma-c-lek.html*", requiredFields: ["gtin", "dataWaznosci"] },
+            match: { urlPattern: "*form-c-medicine.html*", requiredFields: ["gtin", "dataWaznosci"] },
             parse: {
               type: "delimited",
               separator: "\t",

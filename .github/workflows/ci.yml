@@ -14,7 +14,7 @@ env:
   BUNDLE_URL: https://github.com/adafruit/Adafruit_CircuitPython_Bundle/releases/download/20260818/adafruit-circuitpython-bundle-10.x-mpy-20260818.zip
 
 jobs:
-  testy-python:
+  tests-python:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +25,7 @@ jobs:
         working-directory: firmware-circuitpython
         run: python tests/test_firmware.py
 
-  testy-c:
+  tests-c:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
           gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c src/config_parse.c src/profile_matcher.c -o test_host
           ./test_host
 
-  konfigurator:
+  configurator:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -54,11 +54,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
-          name: konfigurator
+          name: configurator
           path: configurator/dist/index.html
           retention-days: 7
 
-  wtyczka:
+  extension:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -88,9 +88,9 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: configurator/package-lock.json
-      # Konfigurator jest wbudowywany w obraz dysku CZYTNIK wewnatrz UF2,
+      # Konfigurator jest wbudowywany w obraz dysku MYSTTIC wewnatrz UF2,
       # wiec musi powstac PRZED kompilacja firmware.
-      - name: Build konfiguratora (trafia na dysk CZYTNIK)
+      - name: Build konfiguratora (trafia na dysk MYSTTIC)
         working-directory: configurator
         run: |
           npm ci --no-fund --no-audit
@@ -115,15 +115,15 @@ jobs:
         run: |
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
-          ls -la build/barcode_reader.uf2
+          ls -la build/mysttic_barcode_scanner.uf2
       - uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
           name: firmware-c-uf2
-          path: firmware-pico-sdk/build/barcode_reader.uf2
+          path: firmware-pico-sdk/build/mysttic_barcode_scanner.uf2
           retention-days: 7
 
-  agent-desktopowy:
+  desktop-agent-tests:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -155,12 +155,12 @@ jobs:
           done
       - name: Czy powstaly pliki exe
         run: |
-          test -s publish/CzytnikAgent/CzytnikAgent.exe
-          test -s publish/test-app/AplikacjaTestowa.exe
-          file publish/CzytnikAgent/CzytnikAgent.exe
+          test -s publish/CzytnikAgent/MystticBarcodeAgent.exe
+          test -s publish/test-app/MystticDemoApp.exe
+          file publish/CzytnikAgent/MystticBarcodeAgent.exe
 
-  paczka-testowa:
-    needs: [testy-python, testy-c, konfigurator, wtyczka, firmware-c, agent-desktopowy, agent-exe]
+  test-package:
+    needs: [tests-python, tests-c, configurator, extension, firmware-c, desktop-agent-tests, agent-exe]
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
@@ -213,8 +213,8 @@ jobs:
         run: python tools/build_release.py --skip-npm
       - uses: actions/upload-artifact@v4
         with:
-          name: paczka-testowa
+          name: test-package
           path: |
-            release/barcode-reader-v*.zip
-            release/barcode-reader-v*.zip.sha256
+            release/mysttic-barcode-scanner-v*.zip
+            release/mysttic-barcode-scanner-v*.zip.sha256
           retention-days: 7

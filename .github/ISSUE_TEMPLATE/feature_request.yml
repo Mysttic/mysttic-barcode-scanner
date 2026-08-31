@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest a capability, a code format or a workflow to support
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: >
+        Describe the real workflow, not only the feature. Where the codes come
+        from, what has to be filled in, and what makes it hard today.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked [docs/CAPABILITIES.md](../blob/master/docs/CAPABILITIES.md) and this is not already supported
+        - label: I checked [docs/ROADMAP.md](../blob/master/docs/ROADMAP.md) and it is not already planned

@@ -1,154 +1,221 @@
 # Changelog
 
-Wszystkie istotne zmiany projektu. Wersję wydania definiuje plik [VERSION.md](VERSION.md).
+Every notable change to the project. The release version is defined by
+[VERSION.md](VERSION.md).
+
+## 1.2.0 — unreleased
+
+Open-source release preparation, so most of the change is in identity and
+paperwork rather than behaviour.
+
+### Product identity
+
+- The project is now **Mysttic Barcode Scanner**, consistently across the USB
+  descriptors (manufacturer `Mysttic`, product `Mysttic Barcode Scanner`), the
+  device disk (**`MYSTTIC`**), the browser extension, the desktop agent and the
+  npm packages.
+- **USB VID/PID changed from the TinyUSB development `0xCAFE:0x4010` to
+  `1209:0001`**, the test identifier of the [pid.codes](https://pid.codes/)
+  registry for open-source hardware. A product placed on the market still needs
+  its own PID.
+- A logo and icons generated from `brand/icon.svg`: the extension finally has its
+  own icon in Chrome, the agent and the demo application have one in the tray, on
+  the taskbar and in the executable, and the configurator has a favicon and a
+  header mark.
+- Release artefacts renamed: `mysttic-barcode-scanner-v<version>.zip`,
+  `demo-app-v<version>-win-x64.zip`, `firmware/mysttic_barcode_scanner.uf2`,
+  `MystticBarcodeAgent.exe`, `MystticDemoApp.exe`, `install-agent.ps1`. Package
+  directories are now `browser-extension/`, `desktop-agent/` and
+  `circuitpython-prototype/`.
+- The agent stores profiles and its log in `%APPDATA%\MystticBarcodeScanner`
+  (previously `%APPDATA%\CzytnikAgent`); an existing installation should be
+  reinstalled with `install-agent.ps1` and its `profile.json` copied over.
+
+### Licence and open-source paperwork
+
+- **Apache License 2.0** with `NOTICE` and `THIRD-PARTY-NOTICES.md` listing every
+  component that ships in the release package (jsmn, Pico SDK, TinyUSB,
+  CircuitPython, Adafruit HID, the .NET runtime).
+- `CONTRIBUTING.md` (building from source, running the tests, the pull request
+  process), `SECURITY.md` (what is in scope, and what is intended behaviour
+  rather than a vulnerability), a code of conduct, issue and pull request
+  templates.
+
+### Documentation
+
+- **All documentation translated to English** and renamed accordingly
+  (`CONFIGURATION.md`, `FORMS.md`, `BROWSER-EXTENSION.md`,
+  `LEARNING-PROFILES.md`, `DESKTOP-AGENT.md`, `ARCHITECTURE.md`,
+  `CAPABILITIES.md`, `DECISIONS.md`). The user interfaces remain in Polish, and
+  Polish labels are given in brackets where a document refers to them.
+- New `docs/HARDWARE.md`: bill of materials, wiring, USB identity, and where to
+  obtain the scanner module's manual. The manufacturer's manual PDF is no longer
+  described as part of this repository.
+- The test forms moved to `test-vectors/forms/` with English file names, and the
+  menu is now `tests.html`.
+
+### Build
+
+- The e2e tests can run against **the files from a downloaded release package**
+  (`AGENT_EXE`, `APLIKACJA_EXE`, `PROFIL_TESTOWY`, `EXT_DIR`), which is how a
+  published release is now verified.
+- The release package carries `LICENSE`, `NOTICE` and `THIRD-PARTY-NOTICES.md`.
 
 ## 1.1.0 — 2026-08-28
 
-Nowy, **opcjonalny** moduł: agent desktopowy. Wypełnia formularze w zwykłych
-aplikacjach Windows, tak jak wtyczka robi to w przeglądarce. Bez niego czytnik
-i firmware działają dokładnie jak dotąd.
+A new **optional** module: the desktop agent. It fills forms in ordinary Windows
+applications, the way the extension does it in a browser. Without it the scanner
+and the firmware behave exactly as before.
 
-### Agent desktopowy (`agent-desktopowy/` w paczce)
+### Desktop agent
 
-- Rozpoznaje okno aplikacji (proces + wzorzec tytułu), przechwytuje skan
-  i odtwarza **nauczone makro**: wypełnianie pól, kliknięcia, klawisze.
-  Poza nauczonymi aplikacjami nie robi nic — czytnik pisze jak klawiatura.
-- Trafianie w pola przez **UI Automation** (identyfikatory kontrolek), więc
-  profil przeżywa przesunięcie okna, inną rozdzielczość i skalowanie DPI;
-  współrzędne względem okna to zapas, gdy kontrolki nie da się znaleźć.
-  Każde wypełnienie jest weryfikowane odczytem zwrotnym.
-- **Nauka przez nagrywanie**: operator raz wypełnia formularz ręcznie, agent
-  zapisuje czynności i zamienia wpisane wartości na odwołania `{pole}`.
-  Sposób nauki decyduje o sposobie wypełniania — wpisywanie tekstu kontra
-  wybór z listy (istotne dla pól wyszukiwania z podpowiedziami).
-- Tryb nauki pod globalnym skrótem **Ctrl+Alt+F9** (działa nad aplikacjami
-  kioskowymi), kreator w rogu ekranu z edytowalnymi parametrami okna.
-- Okno **zarządzania profilami**: włączanie, zmiana nazwy, procesu i wzorca
-  tytułu, podgląd kroków, usuwanie. Profile działają natychmiast po zapisie,
-  bez restartu agenta; zmiana pliku `profile.json` też jest wychwytywana.
-- Instalator `zainstaluj-agenta.ps1` (bez uprawnień administratora): kopiuje
-  agenta do profilu użytkownika, skrót w menu Start, autostart;
-  `-BezAutostartu` i `-Odinstaluj`.
-- Parser skanu (`delimited` / `regex` / `gs1`) na tych samych wektorach
-  testowych co firmware i wtyczka.
+- Recognises an application window (process plus title pattern), captures the
+  scan and replays a **macro it was taught**: filling fields, clicks, keystrokes.
+  Outside the applications it was taught it does nothing, and the scanner types
+  like a keyboard.
+- Hits fields through **UI Automation** (control identifiers), so a profile
+  survives moving the window, a different resolution and DPI scaling;
+  window-relative coordinates are the fallback when a control cannot be found.
+  Every fill is verified by reading the value back.
+- **Learning by recording**: the operator fills the form by hand once, and the
+  agent records the actions and turns the typed values into `{field}` references.
+  The way it was taught decides the way it fills, typing text versus picking from
+  a list, which matters for search fields with suggestions.
+- Learning mode on the global shortcut **Ctrl+Alt+F9** (it works over kiosk
+  applications), with the wizard in the corner of the screen and editable window
+  matching parameters.
+- A **profile management** window: enabling, renaming, changing the process and
+  the title pattern, previewing the steps, deleting. Profiles work immediately
+  after saving with no agent restart, and changes to `profile.json` are picked up
+  too.
+- An installer that needs no administrator rights: it copies the agent into the
+  user profile, adds a Start menu shortcut and enables autostart.
+- The scan parser (`delimited`, `regex`, `gs1`) runs on the same test vectors as
+  the firmware and the extension.
 
-### Wydanie i testy
+### Release and tests
 
-- Do paczki dołączony katalog `agent-desktopowy/` (samodzielny plik `.exe` —
-  nie trzeba instalować .NET), a **obok paczki** nowy plik
-  `aplikacja-testowa-v<wersja>-win-x64.zip`: przenośna aplikacja do prób
-  z dwoma ekranami, polami-pułapkami i podglądem stanu aplikacji.
-- CI buduje i testuje agenta na Windowsie (`agent-desktopowy` w `ci.yml`,
-  `agent-windows` w `release.yml`).
-- Testy: 34 asercje jednostkowe + 27 e2e na żywej aplikacji WinForms
-  (rozpoznanie okna, wypełnianie z weryfikacją stanu aplikacji, przechwycenie
-  skanu w stylu prawdziwego czytnika, praca profilu bez restartu).
-- Zrzuty ekranu do instrukcji generowane automatycznie (`--zrzuty`).
+- The package gained a desktop agent directory (a standalone `.exe`, so there is
+  no need to install .NET), and **next to the package** a new portable demo
+  application with two screens, decoy fields and a live view of what the
+  application really received.
+- CI builds and tests the agent on Windows.
+- Tests: 34 unit assertions and 27 e2e ones against a live WinForms application
+  (window recognition, filling with verification against the application's state,
+  capturing a scan in the style of a real reader, a profile working without a
+  restart).
+- The manual's screenshots are generated automatically (`--zrzuty`).
+
 ## 1.0.1 — 2026-08-25
 
-- **Wtyczka: dostrajanie wartości wychodzącej do formularza.** Pole profilu
-  może być obiektem `{selector, format, transform}`: `format` przelicza datę na
-  postać, której chce formularz, a `transform` wykonuje proste operacje
-  (`gtin13`, `digits`, `upper`, `lower`, `trim`, `prefix:`, `suffix:`,
-  `slice:`). Zwykły selektor działa jak dotąd.
-- **Dowolny wzorzec daty i czasu:** tokeny `RRRR`/`YYYY`, `RR`/`YY`, `MM`/`M`,
-  `DD`/`D`, `HH`/`H`, `MI`, `SS`/`S` — bez rozróżniania wielkości liter
-  (`dd-mm-yy` działa), z tekstem w apostrofach (`'godz.'`) i regułą „`MM` po
-  godzinie to minuty". Na wejściu rozpoznawane także wartości z czasem
-  (`RRRR-MM-DD HH:MM`, `RRMMDDHHMM`, sam `HH:MM`). Kontrolki `date`, `time`
-  i `datetime-local` dostają format, którego wymaga przeglądarka.
-- Tryb nauki: przy wartości wyglądającej na datę panel potwierdzania dokłada
-  przyciski z podglądem formatów oraz pole na własny wzorzec z podglądem na
-  żywo — przepływ kreatora bez zmian.
-- Testy wtyczki: 96 asercji jednostkowych + 22 e2e.
+- **Extension: tuning the outgoing value to the form.** A profile field can be an
+  object `{selector, format, transform}`: `format` converts a date into the shape
+  the form wants, and `transform` performs simple operations (`gtin13`, `digits`,
+  `upper`, `lower`, `trim`, `prefix:`, `suffix:`, `slice:`). A plain selector
+  keeps working as before.
+- **Any date and time pattern:** the tokens `RRRR`/`YYYY`, `RR`/`YY`, `MM`/`M`,
+  `DD`/`D`, `HH`/`H`, `MI`, `SS`/`S`, case-insensitive (`dd-mm-yy` works), with
+  literal text in apostrophes (`'godz.'`) and the rule that `MM` after an hour
+  means minutes. On input, values with a time are recognised too
+  (`YYYY-MM-DD HH:MM`, `YYMMDDHHMM`, a bare `HH:MM`). The `date`, `time` and
+  `datetime-local` controls get the format the browser requires.
+- Learning mode: for a value that looks like a date, the confirmation panel adds
+  buttons previewing formats plus a field for a custom pattern with a live
+  preview. The wizard's flow is unchanged.
+- Extension tests: 96 unit assertions and 22 e2e ones.
 
 ## 1.0.0 — 2026-08-21
 
-Pierwsze wydanie produkcyjne. Firmware w C jest wariantem docelowym, a paczka
-zawiera go jako gotowy plik do wgrania — konfigurator, instrukcje i formularze
-testowe są **w środku urządzenia**.
+The first production release. The C firmware is the target variant, and the
+package carries it as a ready file to flash; the configurator, the manuals and
+the test forms live **inside the device**.
 
-### Firmware produkcyjny (C / Pico SDK)
+### Production firmware (C / Pico SDK)
 
-- Pełny pipeline: UART → ramkowanie → blokada duplikatów → profile
-  (regex z grupami / parser GS1) → sekwencje klawiszy → USB HID.
-- **Dysk `CZYTNIK`** (USB MSC, tylko-do-odczytu, obraz FAT12 budowany z repo):
-  `konfigurator.html`, `testy.html` + `formularze/`, `INSTRUKCJA.md`,
-  `WTYCZKA.md`, `NAUKA-PROFILU.md`. Podłączasz czytnik i masz wszystko —
-  bez internetu, bez instalowania czegokolwiek.
-- Atomowy zapis konfiguracji (sloty A/B z CRC), watchdog 3 s, factory reset
-  z przycisku, tryb testowy po CDC, restart do bootloadera komendą.
-- Wersja firmware wstrzykiwana przy buildzie z `VERSION.md` (widoczna w `ping`
-  i w konfiguratorze).
+- The full pipeline: UART → framing → duplicate blocking → profiles (group regex
+  or the GS1 parser) → key sequences → USB HID.
+- **A device disk** (USB MSC, read-only, a FAT12 image built from the
+  repository): the configurator, the test menu with the forms, and the manuals.
+  Plug the scanner in and everything is there, with no internet and nothing to
+  install.
+- Atomic configuration storage (A/B slots with a CRC), a 3 s watchdog, factory
+  reset from a button, test mode over CDC, and a reboot-to-bootloader command.
+- The firmware version is injected at build time from `VERSION.md` (visible in
+  `ping` and in the configurator).
 
-### Wypełnianie formularzy
+### Form filling
 
-- Wtyczka przechwytuje także **sekwencje TAB-owe z profilu urządzenia**:
-  czytnik zostaje na stałe w jednej, produkcyjnej konfiguracji, a na
-  rozpoznanych stronach wtyczka sama rozkłada dane po nazwach pól.
-  Poza nimi TAB-y działają jak dotąd (brak regresji).
-- Kreator nauki profilu: potwierdzanie wyboru pola, cofanie do poprzedniego
-  kroku, duplikowanie i porządkowanie profili, import/eksport JSON.
-- Drugie demo: zamówienie leku z prawdziwym DataMatrix GS1 (GTIN, data „00"
-  = koniec miesiąca, seria, numer seryjny) i automatyczne przełączanie profili.
+- The extension also captures **TAB sequences from a device profile**: the
+  scanner stays permanently in one production configuration, and on recognised
+  pages the extension spreads the data across fields by name. Elsewhere the TABs
+  work as before (no regression).
+- The profile learning wizard: confirming the chosen field, going back a step,
+  duplicating and reordering profiles, JSON import and export.
+- A second demo: a medicine order with a real GS1 DataMatrix (GTIN, day "00"
+  meaning the end of the month, batch, serial number) and automatic profile
+  switching.
 
-### Paczka wydania
+### Release package
 
-- `firmware/barcode_reader.uf2` (produkcja — instalacja to jeden krok),
-  `wtyczka/`, `konfigurator.html`, `INSTALL.md`, `WTYCZKA.md`,
-  `NAUKA-PROFILU.md`, `prototyp-circuitpython/` (wariant deweloperski).
-- CI kompiluje firmware C po zbudowaniu konfiguratora (trafia do obrazu dysku)
-  i publikuje paczkę automatycznie po merge `develop` → `master`.
+- The production firmware (installation is one step), the extension, the
+  configurator, the manuals and the CircuitPython prototype.
+- CI compiles the C firmware after building the configurator (which goes into the
+  disk image) and publishes the package automatically after a `develop` →
+  `master` merge.
 
-### Dokumentacja i testy
+### Documentation and tests
 
-- Nowe: `MOZLIWOSCI.md` (co działa, co zweryfikowane, jakie kody i gdzie są
-  granice), `ROADMAP.md`, `NAUKA-PROFILU.md`, scenariusz „od pudełka”
-  w `TESTING.md`.
-- Testy: 52 asercje (Python) + 87 (C) + 41 (wtyczka, jednostkowe)
-  + 18 (wtyczka, e2e w Chromium) — wszystkie w CI.
+- New: the capability matrix (what works, what has been verified, which codes,
+  and where the limits are), the roadmap, the profile learning tutorial and the
+  out-of-the-box scenario in the testing document.
+- Tests: 52 assertions (Python), 87 (C), 41 (extension unit) and 18 (extension
+  e2e in Chromium), all in CI.
 
 ## 0.10.0 — 2026-08-21
 
-- **Wtyczka do przeglądarki (Etap 12, faza 1)** — rozpoznaje formularz po adresie
-  i obecności pól (działa w SPA), przechwytuje skan i wypełnia pola **po nazwach**.
-  Poza rozpoznanym formularzem nie robi nic: czytnik zachowuje się jak zwykła
-  klawiatura, warianty A i B działają bez zmian. Firmware nietknięty.
-- Tryb **Ucz formularza**: zeskanuj kod → nazwij segmenty → klikaj pola;
-  profile można eksportować i rozsyłać na inne stanowiska.
-- Parsowanie `delimited` / `regex` / `gs1` (port parsera GS1 z firmware'u),
-  wstawianie wartości odporne na React/Vue/Angular z weryfikacją odczytem zwrotnym.
-- Formularz demonstracyjny `test-vectors/forma-c-wtyczka.html` (SPA, pola
-  w pomieszanej kolejności, pola-pułapki, podgląd stanu strony).
-- Testy: 36 asercji jednostkowych + 10 asercji e2e w Chromium z załadowanym
-  rozszerzeniem; nowy job `wtyczka` w CI.
-- Paczka wydania zawiera katalog `wtyczka/` (wersja manifestu z VERSION.md)
-  oraz `WTYCZKA.md`.
+- **The browser extension (stage 12, phase 1):** it recognises a form by its
+  address and the presence of fields (it works in single-page apps), captures the
+  scan and fills the fields **by name**. Outside a recognised form it does
+  nothing: the scanner behaves like an ordinary keyboard and variants A and B
+  work unchanged. The firmware was untouched.
+- A **Teach a form** mode: scan a code, name the segments, click the fields.
+  Profiles can be exported and distributed to other workstations.
+- `delimited`, `regex` and `gs1` parsing (the GS1 parser ported from the
+  firmware), and value insertion that React, Vue and Angular accept, verified by
+  reading the value back.
+- A demo form (a single-page app with shuffled fields, decoy fields and a page
+  state view).
+- Tests: 36 unit assertions and 10 e2e ones in Chromium with the extension
+  loaded; a new `wtyczka` job in CI.
+- The release package gained the extension directory (its manifest version taken
+  from VERSION.md) and the extension manual.
 
 ## 0.9.2 — 2026-08-20
 
-- Wersjonowanie przeniesione do `VERSION.md` (jedyne źródło prawdy); `device/version.py`
-  generowany przy budowaniu paczki.
-- `CHANGELOG.md` przeniesiony do korzenia repozytorium.
-- Release wykonuje się tylko, gdy wersja w `VERSION.md` została podniesiona
-  (merge bez podbicia = brak wydania, bez błędu CI).
+- Versioning moved into `VERSION.md` (the single source of truth);
+  `device/version.py` is generated when the package is built.
+- `CHANGELOG.md` moved to the repository root.
+- A release only happens when the version in `VERSION.md` has been raised (a
+  merge without a bump means no release, and no CI error).
 
 ## 0.9.1 — 2026-08-20
 
-- README z opisem projektu i minimalnym schematem połączeń (render Wokwi,
-  kolory zgodne z wiązką urządzenia referencyjnego).
-- Źródło schematu: `hardware/wokwi/diagram-minimal.json`.
-- Poprawka CI: `unzip -o` przy rozpakowywaniu biblioteki (kolizja z plikami z repo).
+- A README describing the project, with the minimal wiring diagram (a Wokwi
+  render, with the colours of the reference unit's harness).
+- The diagram source: `hardware/wokwi/diagram-minimal.json`.
+- CI fix: `unzip -o` when unpacking the library (it collided with files from the
+  repository).
 
 ## 0.9.0 — 2026-08-20
 
-Pierwsze wydanie paczkowane.
+The first packaged release.
 
-- Firmware CircuitPython: UART→USB HID, profile (regex z grupami + parser GS1
-  z AI 01/17/10/21 i datą ISO), blokada duplikatów, pauzy po klawiszach,
-  prefiks/sufiks, onError raw/skip.
-- Kanał konfiguracyjny USB CDC (NDJSON): getConfig/setConfig/save/setMode/
-  factoryReset/reboot/rebootBootloader; tryb testowy z eventami skanów.
-- Trwały zapis konfiguracji w NVM (CRC + weryfikacja, fallback do pliku).
-- Konfigurator WWW (single-file, WebSerial) na dysku urządzenia.
-- Instalator Windows (install.ps1) i paczka wydania budowana w CI.
+- CircuitPython firmware: UART to USB HID, profiles (group regex plus a GS1
+  parser with AI 01/17/10/21 and an ISO date), duplicate blocking, pauses after
+  keystrokes, prefix and suffix, `onError` raw or skip.
+- A USB CDC configuration channel (NDJSON): getConfig, setConfig, save, setMode,
+  factoryReset, reboot, rebootBootloader; test mode with scan events.
+- Permanent configuration storage in NVM (CRC plus verification, falling back to
+  the file).
+- A single-file Web Serial configurator on the device disk.
+- A Windows installer and a release package built in CI.

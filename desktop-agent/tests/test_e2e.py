@@ -8,8 +8,8 @@ Uzycie:  python desktop-agent/tests/test_e2e.py
 
 Domyslnie bierze lokalne buildy Release. Zeby sprawdzic pliki z GOTOWEJ paczki
 wydania, wskaz je zmiennymi srodowiskowymi:
-  AGENT_EXE=...\\agent-desktopowy\\CzytnikAgent.exe
-  APLIKACJA_EXE=...\\aplikacja-testowa-v1.1.0\\AplikacjaTestowa.exe
+  AGENT_EXE=...\\agent-desktopowy\\MystticBarcodeAgent.exe
+  APLIKACJA_EXE=...\\demo-app-v1.2.0\\MystticDemoApp.exe
   PROFIL_TESTOWY=...\\agent-desktopowy\\profil-przykladowy.json
 """
 import json
@@ -22,9 +22,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 APLIKACJA = Path(os.environ.get("APLIKACJA_EXE")
-                 or ROOT / "test-app" / "bin" / "Release" / "net9.0-windows" / "AplikacjaTestowa.exe")
+                 or ROOT / "test-app" / "bin" / "Release" / "net9.0-windows" / "MystticDemoApp.exe")
 AGENT = Path(os.environ.get("AGENT_EXE")
-             or ROOT / "src" / "CzytnikAgent" / "bin" / "Release" / "net9.0-windows" / "CzytnikAgent.exe")
+             or ROOT / "src" / "CzytnikAgent" / "bin" / "Release" / "net9.0-windows" / "MystticBarcodeAgent.exe")
 PROFILE = Path(os.environ.get("PROFIL_TESTOWY")
                or ROOT / "test-app" / "profile" / "profile-testowe.json")
 
@@ -67,7 +67,7 @@ def main():
                  "  dotnet build -c Release desktop-agent/test-app\n"
                  "  dotnet build -c Release desktop-agent/src/CzytnikAgent")
 
-    subprocess.run(["taskkill", "/F", "/IM", "AplikacjaTestowa.exe"],
+    subprocess.run(["taskkill", "/F", "/IM", "MystticDemoApp.exe"],
                    capture_output=True, check=False)
     time.sleep(0.5)
     proces = subprocess.Popen([str(APLIKACJA)])
@@ -75,18 +75,18 @@ def main():
 
     try:
         print("\n1. Rozpoznanie okna")
-        wyjscie = agent("--okno", "--proces", "AplikacjaTestowa")
-        sprawdz("agent widzi proces aplikacji", "AplikacjaTestowa" in wyjscie)
+        wyjscie = agent("--okno", "--proces", "MystticDemoApp")
+        sprawdz("agent widzi proces aplikacji", "MystticDemoApp" in wyjscie)
         sprawdz("agent czyta tytul okna", "Karta pracownika" in wyjscie, wyjscie.strip()[:120])
 
         print("\n2. UI Automation widzi pola po identyfikatorach")
-        drzewo = agent("--drzewo", "--proces", "AplikacjaTestowa")
+        drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
         for pole in ["txtImie", "txtNazwisko", "txtNumer", "cmbDzial", "cmbStanowisko"]:
             sprawdz(f"kontrolka {pole} widoczna", f'id="{pole}"' in drzewo)
 
         print("\n3. Skan wypelnia formularz (makro z profilu)")
         wynik = agent("--symuluj", "PRC;JAN;KOWALSKI;12345;IT;Specjalista",
-                      "--proces", "AplikacjaTestowa",
+                      "--proces", "MystticDemoApp",
                       "--profile", str(PROFILE),
                       "--sprawdz", "podgladStanu")
         sprawdz("profil dopasowany", "profil: Karta pracownika" in wynik)
@@ -107,14 +107,14 @@ def main():
                 next((w for w in wynik.splitlines() if "stanowisko" in w), ""))
 
         print("\n4. Pola-pulapki pozostaly puste")
-        drzewo = agent("--drzewo", "--proces", "AplikacjaTestowa")
+        drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
         for pole in ["txtEmail", "txtTelefon"]:
             wiersz = next((w for w in drzewo.splitlines() if f'id="{pole}"' in w), "")
             sprawdz(f"{pole} nietkniete", 'wartosc=""' in wiersz, wiersz.strip())
 
         print("\n5. Obcy kod nie jest wykonywany")
         wynik = agent("--symuluj", "EMP;ANNA;NOWAK;67890;HR",
-                      "--proces", "AplikacjaTestowa",
+                      "--proces", "MystticDemoApp",
                       "--profile", str(PROFILE))
         sprawdz("ramka spoza profilu odrzucona", "NIE SPARSOWANO" in wynik,
                 wynik.strip().splitlines()[-1] if wynik.strip() else "")
@@ -130,24 +130,24 @@ def main():
         print("\n7. Pelna sciezka: agent w tle przechwytuje skan z klawiatury")
         # restart aplikacji, zeby pola byly puste
         proces.terminate()
-        subprocess.run(["taskkill", "/F", "/IM", "AplikacjaTestowa.exe"], capture_output=True, check=False)
+        subprocess.run(["taskkill", "/F", "/IM", "MystticDemoApp.exe"], capture_output=True, check=False)
         time.sleep(1)
         proces = subprocess.Popen([str(APLIKACJA)])
         time.sleep(2.5)
 
-        log = Path(os.environ["APPDATA"]) / "CzytnikAgent" / "agent.log"
+        log = Path(os.environ["APPDATA"]) / "MystticBarcodeScanner" / "agent.log"
         log.unlink(missing_ok=True)
         tray = subprocess.Popen([str(AGENT), "--profile", str(PROFILE)])
         time.sleep(3.5)
         try:
-            agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--proces", "AplikacjaTestowa")
+            agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--proces", "MystticDemoApp")
             tresc = czekaj_na_log(log, "cmbStanowisko")
             sprawdz("agent zobaczyl ramke ze skanu", 'ramka "PRC;JAN;KOWALSKI;12345;IT;Specjalista"' in tresc,
                     tresc.strip().splitlines()[-1] if tresc.strip() else "log pusty")
             sprawdz("agent wykonal makro", tresc.count("[OK]") >= 4,
                     f"[OK] w logu: {tresc.count('[OK]')}")
 
-            drzewo = agent("--drzewo", "--proces", "AplikacjaTestowa")
+            drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
             sprawdz("aplikacja wypelniona po przechwyconym skanie",
                     "zobaczyla wszystkie 4 wartosci" in drzewo)
             wiersz = next((w for w in drzewo.splitlines() if 'id="txtEmail"' in w), "")
@@ -157,23 +157,23 @@ def main():
             # czytnik HID wysyla Shift przed kazda wielka litera - modyfikatory
             # nie moga przerywac ramki ani gubic wielkosci liter
             proces.terminate()
-            subprocess.run(["taskkill", "/F", "/IM", "AplikacjaTestowa.exe"], capture_output=True, check=False)
+            subprocess.run(["taskkill", "/F", "/IM", "MystticDemoApp.exe"], capture_output=True, check=False)
             time.sleep(1)
             proces = subprocess.Popen([str(APLIKACJA)])
             time.sleep(2.5)
             log.unlink(missing_ok=True)
 
-            agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--hid", "--proces", "AplikacjaTestowa")
+            agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--hid", "--proces", "MystticDemoApp")
             tresc = czekaj_na_log(log, "cmbStanowisko")
             sprawdz("ramka HID odczytana z zachowaniem wielkich liter",
                     'ramka "PRC;JAN;KOWALSKI;12345;IT;Specjalista"' in tresc,
                     tresc.strip().splitlines()[-1] if tresc.strip() else "log pusty")
-            drzewo = agent("--drzewo", "--proces", "AplikacjaTestowa")
+            drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
             sprawdz("formularz wypelniony po skanie HID",
                     "zobaczyla wszystkie 4 wartosci" in drzewo)
         finally:
             tray.terminate()
-            subprocess.run(["taskkill", "/F", "/IM", "CzytnikAgent.exe"], capture_output=True, check=False)
+            subprocess.run(["taskkill", "/F", "/IM", "MystticBarcodeAgent.exe"], capture_output=True, check=False)
 
         print("\n9. Nowy profil dziala bez restartu agenta")
         # agent startuje bez profili, plik zmienia sie w trakcie pracy
@@ -186,7 +186,7 @@ def main():
         }), encoding="utf-8")
 
         proces.terminate()
-        subprocess.run(["taskkill", "/F", "/IM", "AplikacjaTestowa.exe"], capture_output=True, check=False)
+        subprocess.run(["taskkill", "/F", "/IM", "MystticDemoApp.exe"], capture_output=True, check=False)
         time.sleep(1)
         proces = subprocess.Popen([str(APLIKACJA)])
         time.sleep(2.5)
@@ -203,21 +203,21 @@ def main():
             sprawdz("agent zauwazyl zmiane pliku profili", "przeladowano profile" in tresc,
                     tresc.strip().splitlines()[-1] if tresc.strip() else "log pusty")
 
-            agent("--wyslij", "PRC;ANNA;NOWAK;67890;HR;Kierownik", "--hid", "--proces", "AplikacjaTestowa")
+            agent("--wyslij", "PRC;ANNA;NOWAK;67890;HR;Kierownik", "--hid", "--proces", "MystticDemoApp")
             czekaj_na_log(log, "cmbStanowisko")
-            drzewo = agent("--drzewo", "--proces", "AplikacjaTestowa")
+            drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
             sprawdz("skan dziala nowym profilem bez restartu",
                     'imie     = "ANNA"' in drzewo and 'dzial    = "HR"' in drzewo,
                     "\n".join(w for w in drzewo.splitlines() if "=" in w and '"' in w)[:200])
         finally:
             tray.terminate()
-            subprocess.run(["taskkill", "/F", "/IM", "CzytnikAgent.exe"], capture_output=True, check=False)
+            subprocess.run(["taskkill", "/F", "/IM", "MystticBarcodeAgent.exe"], capture_output=True, check=False)
             goracy.unlink(missing_ok=True)
     finally:
         proces.terminate()
-        subprocess.run(["taskkill", "/F", "/IM", "AplikacjaTestowa.exe"],
+        subprocess.run(["taskkill", "/F", "/IM", "MystticDemoApp.exe"],
                        capture_output=True, check=False)
-        subprocess.run(["taskkill", "/F", "/IM", "CzytnikAgent.exe"],
+        subprocess.run(["taskkill", "/F", "/IM", "MystticBarcodeAgent.exe"],
                        capture_output=True, check=False)
 
     print()

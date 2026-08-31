@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Buduje paczke wydania czytnika kodow.
+"""Buduje paczke wydania Mysttic Barcode Scanner.
 
 Uzycie:  python tools/build_release.py [--skip-npm]
-Wynik:   release/barcode-reader-v<wersja>.zip + SHA256SUMS.txt
+Wynik:   release/mysttic-barcode-scanner-v<wersja>.zip + SHA256SUMS.txt
 
 Zawartosc paczki:
-  INSTALL.md              instrukcja instalacji i konfiguracji
-  WTYCZKA.md              instrukcja wtyczki
-  NAUKA-PROFILU.md        samouczek nauki profilu
-  AGENT-DESKTOP.md        instrukcja agenta desktopowego
-  firmware/*.uf2          PRODUKCJA (wariant C): przeciagnij na RPI-RP2 i gotowe
-                          - konfigurator, instrukcje i formularze testowe sa
-                            w srodku, na dysku CZYTNIK
-  wtyczka/                rozszerzenie przegladarki (ladowane "bez pakowania")
-  agent-desktopowy/       agent do aplikacji Windows + instalator (opcjonalny)
-  prototyp-circuitpython/ wariant deweloperski: install.ps1 + flash/ + device/
-  SHA256SUMS.txt          sumy kontrolne
+  INSTALL.md               instrukcja instalacji i konfiguracji
+  BROWSER-EXTENSION.md     instrukcja wtyczki
+  LEARNING-PROFILES.md     samouczek nauki profilu
+  DESKTOP-AGENT.md         instrukcja agenta desktopowego
+  firmware/*.uf2           PRODUKCJA (wariant C): przeciagnij na RPI-RP2 i gotowe
+                           - konfigurator, instrukcje i formularze testowe sa
+                             w srodku, na dysku MYSTTIC
+  browser-extension/       rozszerzenie przegladarki (ladowane "bez pakowania")
+  desktop-agent/           agent do aplikacji Windows + instalator (opcjonalny)
+  circuitpython-prototype/ wariant deweloperski: install.ps1 + flash/ + device/
+  SHA256SUMS.txt           sumy kontrolne
 
 Dodatkowy artefakt (osobny plik obok paczki):
-  aplikacja-testowa-v<wersja>-win-x64.zip  przenosna aplikacja do prob z agentem
+  demo-app-v<wersja>-win-x64.zip  przenosna aplikacja do prob z agentem
 """
 import argparse
 import hashlib
@@ -37,12 +37,15 @@ EXTENSION = ROOT / "browser-extension"
 UF2_DIR = ROOT / "hardware" / "downloads"
 ADAFRUIT_HID = next((UF2_DIR / "extracted").glob("*/lib/adafruit_hid"), None)
 # Produkcyjny firmware (wariant C) - budowany przez CMake/Ninja przed paczka.
-UF2_C_DEFAULT = ROOT / "firmware-pico-sdk" / "build" / "barcode_reader.uf2"
+UF2_C_NAZWA = "mysttic_barcode_scanner.uf2"
+UF2_C_DEFAULT = ROOT / "firmware-pico-sdk" / "build" / UF2_C_NAZWA
 # Dokumenty kopiowane do korzenia paczki (obok INSTALL.md).
-DOCS_IN_PACKAGE = ["WTYCZKA.md", "NAUKA-PROFILU.md", "AGENT-DESKTOP.md"]
+DOCS_IN_PACKAGE = ["BROWSER-EXTENSION.md", "LEARNING-PROFILES.md", "DESKTOP-AGENT.md"]
 # Agent desktopowy (opcjonalny modul dla aplikacji Windows).
 AGENT_PROJEKT = ROOT / "desktop-agent" / "src" / "CzytnikAgent" / "CzytnikAgent.csproj"
 APLIKACJA_TESTOWA = ROOT / "desktop-agent" / "test-app" / "AplikacjaTestowa.csproj"
+AGENT_EXE_NAZWA = "MystticBarcodeAgent.exe"
+DEMO_EXE_NAZWA = "MystticDemoApp.exe"
 
 DEVICE_FILES = [
     "boot.py",
@@ -71,7 +74,7 @@ def copy_extension(stage: Path, version: str) -> None:
     """Rozszerzenie przegladarki + wersja manifestu z VERSION.md.
 
     Do paczki ida tylko pliki uruchomieniowe - bez testow i zaleznosci dev."""
-    target = stage / "wtyczka"
+    target = stage / "browser-extension"
     shutil.copytree(
         EXTENSION,
         target,
@@ -109,71 +112,75 @@ def copy_agent(stage: Path, version: str, gotowy_exe: Path | None = None) -> Non
 
     W CI paczke sklada Linux, a agent jest aplikacja Windows - wtedy exe
     przychodzi gotowy z osobnego joba (--agent-exe)."""
-    target = stage / "agent-desktopowy"
+    target = stage / "desktop-agent"
     target.mkdir(parents=True)
     if gotowy_exe is not None:
-        shutil.copy2(gotowy_exe, target / "CzytnikAgent.exe")
+        shutil.copy2(gotowy_exe, target / AGENT_EXE_NAZWA)
     else:
         with tempfile.TemporaryDirectory() as tmp:
             publikuj_dotnet(AGENT_PROJEKT, Path(tmp))
-            shutil.copy2(Path(tmp) / "CzytnikAgent.exe", target / "CzytnikAgent.exe")
+            shutil.copy2(Path(tmp) / AGENT_EXE_NAZWA, target / AGENT_EXE_NAZWA)
 
-    shutil.copy2(ROOT / "desktop-agent" / "zainstaluj-agenta.ps1", target / "zainstaluj-agenta.ps1")
-    shutil.copy2(ROOT / "docs" / "AGENT-DESKTOP.md", target / "AGENT-DESKTOP.md")
+    shutil.copy2(ROOT / "desktop-agent" / "install-agent.ps1", target / "install-agent.ps1")
+    shutil.copy2(ROOT / "docs" / "DESKTOP-AGENT.md", target / "DESKTOP-AGENT.md")
 
     # profil przykladowy: ten sam, ktorym testujemy agenta
     profil = json.loads((ROOT / "desktop-agent" / "test-app" / "profile" / "profile-testowe.json")
                         .read_text(encoding="utf-8"))
     profil["Profile"][0]["Nazwa"] = "Karta pracownika (przyklad)"
-    (target / "profil-przykladowy.json").write_text(
+    (target / "example-profile.json").write_text(
         json.dumps(profil, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    (target / "CZYTAJ-MNIE.txt").write_text(
-        "Agent desktopowy czytnika kodow (modul opcjonalny)\r\n"
-        f"wersja {version}\r\n\r\n"
-        "Wypelnia formularze w aplikacjach Windows danymi ze skanu.\r\n"
-        "Bez niego czytnik dziala normalnie jako klawiatura.\r\n\r\n"
-        "INSTALACJA\r\n"
-        "  Kliknij prawym na zainstaluj-agenta.ps1 -> Uruchom w programie PowerShell\r\n"
-        "  (agent trafi do profilu uzytkownika i bedzie startowal z systemem)\r\n\r\n"
-        "URUCHOMIENIE BEZ INSTALACJI\r\n"
-        "  Uruchom CzytnikAgent.exe - ikona pojawi sie w zasobniku.\r\n\r\n"
-        "NAUKA FORMULARZA\r\n"
-        "  Otworz okno aplikacji i nacisnij Ctrl+Alt+F9.\r\n\r\n"
-        "Pelna instrukcja: AGENT-DESKTOP.md\r\n",
+    (target / "README.txt").write_text(
+        "Mysttic Barcode Scanner - desktop agent (optional module)\r\n"
+        f"version {version}\r\n\r\n"
+        "Fills forms in Windows applications with data from a scan.\r\n"
+        "Without it the scanner still works as a plain keyboard.\r\n\r\n"
+        "INSTALL\r\n"
+        "  Right-click install-agent.ps1 -> Run with PowerShell\r\n"
+        "  (installs into your user profile and starts with Windows)\r\n\r\n"
+        "RUN WITHOUT INSTALLING\r\n"
+        f"  Run {AGENT_EXE_NAZWA} - an icon appears in the system tray.\r\n\r\n"
+        "TEACH A FORM\r\n"
+        "  Open the application window and press Ctrl+Alt+F9.\r\n\r\n"
+        "Full manual: DESKTOP-AGENT.md\r\n"
+        "Note: the agent's user interface is in Polish.\r\n",
         encoding="utf-8")
 
 
 def buduj_aplikacje_testowa(version: str, gotowy_exe: Path | None = None) -> Path:
-    """Przenosna aplikacja testowa - osobny plik zip obok paczki."""
-    katalog = ROOT / "release" / f"aplikacja-testowa-v{version}"
+    """Przenosna aplikacja demonstracyjna - osobny plik zip obok paczki."""
+    katalog = ROOT / "release" / f"demo-app-v{version}"
     if katalog.exists():
         shutil.rmtree(katalog)
     katalog.mkdir(parents=True)
 
     if gotowy_exe is not None:
-        shutil.copy2(gotowy_exe, katalog / "AplikacjaTestowa.exe")
+        shutil.copy2(gotowy_exe, katalog / DEMO_EXE_NAZWA)
     else:
         with tempfile.TemporaryDirectory() as tmp:
             publikuj_dotnet(APLIKACJA_TESTOWA, Path(tmp))
-            shutil.copy2(Path(tmp) / "AplikacjaTestowa.exe", katalog / "AplikacjaTestowa.exe")
+            shutil.copy2(Path(tmp) / DEMO_EXE_NAZWA, katalog / DEMO_EXE_NAZWA)
 
     shutil.copy2(ROOT / "desktop-agent" / "test-app" / "profile" / "profile-testowe.json",
-                 katalog / "profil-do-agenta.json")
-    (katalog / "CZYTAJ-MNIE.txt").write_text(
-        "Aplikacja testowa do prob z agentem desktopowym\r\n"
-        f"wersja {version}\r\n\r\n"
-        "Przenosna (nie wymaga instalacji ani .NET). Uruchom AplikacjaTestowa.exe.\r\n\r\n"
-        "Dwa ekrany: Logowanie i Karta pracownika. Pola sa celowo w innej\r\n"
-        "kolejnosci niz dane w kodzie, sa tez pola-pulapki i pole z podpowiedziami.\r\n"
-        "Panel na dole pokazuje, co aplikacja NAPRAWDE przyjela.\r\n\r\n"
-        "Przykladowy kod do zeskanowania:  PRC;JAN;KOWALSKI;12345;IT;Specjalista\r\n\r\n"
-        "Gotowy profil dla agenta: profil-do-agenta.json\r\n"
-        "  (skopiuj do %APPDATA%\\CzytnikAgent\\profile.json albo naucz wlasny: Ctrl+Alt+F9)\r\n"
-        "Tryb kiosku do prob:  AplikacjaTestowa.exe --kiosk\r\n",
+                 katalog / "agent-profile.json")
+    (katalog / "README.txt").write_text(
+        "Mysttic Barcode Scanner - demo application for the desktop agent\r\n"
+        f"version {version}\r\n\r\n"
+        f"Portable: needs neither an installer nor .NET. Run {DEMO_EXE_NAZWA}.\r\n\r\n"
+        "Two screens: a login form and an employee card. The fields are\r\n"
+        "deliberately in a different order than the data in the code, and there\r\n"
+        "are decoy fields plus a combo box with suggestions. The panel at the\r\n"
+        "bottom shows what the application REALLY received.\r\n\r\n"
+        "Sample code to scan:  PRC;JAN;KOWALSKI;12345;IT;Specjalista\r\n\r\n"
+        "Ready-made profile for the agent: agent-profile.json\r\n"
+        "  (copy it to %APPDATA%\\MystticBarcodeScanner\\profile.json, or teach\r\n"
+        "   your own with Ctrl+Alt+F9)\r\n"
+        f"Kiosk mode for experiments:  {DEMO_EXE_NAZWA} --kiosk\r\n\r\n"
+        "Note: the application's user interface is in Polish.\r\n",
         encoding="utf-8")
 
-    zip_path = ROOT / "release" / f"aplikacja-testowa-v{version}-win-x64.zip"
+    zip_path = ROOT / "release" / f"demo-app-v{version}-win-x64.zip"
     if zip_path.exists():
         zip_path.unlink()
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -201,11 +208,11 @@ def main() -> None:
     ap.add_argument("--uf2-c", type=Path, default=UF2_C_DEFAULT,
                     help="UF2 produkcyjnego firmware C (domyslnie firmware-pico-sdk/build/)")
     ap.add_argument("--bez-agenta", action="store_true",
-                    help="pomin agenta desktopowego i aplikacje testowa (szybszy build lokalny)")
+                    help="pomin agenta desktopowego i aplikacje demo (szybszy build lokalny)")
     ap.add_argument("--agent-exe", type=Path,
-                    help="gotowy CzytnikAgent.exe (gdy paczke sklada inny system niz Windows)")
+                    help=f"gotowy {AGENT_EXE_NAZWA} (gdy paczke sklada inny system niz Windows)")
     ap.add_argument("--app-testowa-exe", type=Path,
-                    help="gotowy AplikacjaTestowa.exe")
+                    help=f"gotowy {DEMO_EXE_NAZWA}")
     args = ap.parse_args()
 
     version = firmware_version()
@@ -225,16 +232,16 @@ def main() -> None:
 
     configurator = build_configurator(args.skip_npm)
 
-    stage = ROOT / "release" / f"barcode-reader-v{version}"
+    stage = ROOT / "release" / f"mysttic-barcode-scanner-v{version}"
     if stage.exists():
         shutil.rmtree(stage)
 
     # --- wariant PRODUKCYJNY (C): jeden plik, cala reszta jest w srodku -------
     (stage / "firmware").mkdir(parents=True)
-    shutil.copy2(args.uf2_c, stage / "firmware" / "barcode_reader.uf2")
+    shutil.copy2(args.uf2_c, stage / "firmware" / UF2_C_NAZWA)
 
     # --- wariant prototypowy (CircuitPython) ---------------------------------
-    proto = stage / "prototyp-circuitpython"
+    proto = stage / "circuitpython-prototype"
     (proto / "flash").mkdir(parents=True)
     device = proto / "device"
     (device / "lib").mkdir(parents=True)
@@ -248,19 +255,22 @@ def main() -> None:
         encoding="utf-8",
     )
     shutil.copytree(ADAFRUIT_HID, device / "lib" / "adafruit_hid")
-    shutil.copy2(configurator, device / "konfigurator.html")
+    shutil.copy2(configurator, device / "configurator.html")
     # struktura na urzadzeniu: config/ (edytowalne) + docs/ (dla inzyniera)
     (device / "config").mkdir()
     shutil.copy2(FIRMWARE / "default_config.json", device / "config" / "config.json")
     (device / "docs").mkdir()
-    shutil.copy2(ROOT / "tools" / "device_docs" / "INSTRUKCJA.md", device / "docs" / "INSTRUKCJA.md")
+    shutil.copy2(ROOT / "tools" / "device_docs" / "MANUAL.md", device / "docs" / "MANUAL.md")
     shutil.copy2(ROOT / "tools" / "install.ps1", proto / "install.ps1")
 
     # --- wspolne: konfigurator luzem, dokumentacja, wtyczka ------------------
-    shutil.copy2(configurator, stage / "konfigurator.html")
+    shutil.copy2(configurator, stage / "configurator.html")
     shutil.copy2(ROOT / "docs" / "INSTALL.md", stage / "INSTALL.md")
     for doc in DOCS_IN_PACKAGE:
         shutil.copy2(ROOT / "docs" / doc, stage / doc)
+    shutil.copy2(ROOT / "LICENSE", stage / "LICENSE")
+    shutil.copy2(ROOT / "NOTICE", stage / "NOTICE")
+    shutil.copy2(ROOT / "THIRD-PARTY-NOTICES.md", stage / "THIRD-PARTY-NOTICES.md")
     copy_extension(stage, version)
 
     zip_aplikacji = None
@@ -269,7 +279,7 @@ def main() -> None:
     else:
         print("Agent desktopowy...")
         copy_agent(stage, version, args.agent_exe)
-        print("Przenosna aplikacja testowa...")
+        print("Przenosna aplikacja demo...")
         zip_aplikacji = buduj_aplikacje_testowa(version, args.app_testowa_exe)
 
     sums = []
@@ -279,7 +289,7 @@ def main() -> None:
             sums.append(f"{digest}  {path.relative_to(stage).as_posix()}")
     (stage / "SHA256SUMS.txt").write_text("\n".join(sums) + "\n", encoding="utf-8")
 
-    zip_path = ROOT / "release" / f"barcode-reader-v{version}.zip"
+    zip_path = ROOT / "release" / f"mysttic-barcode-scanner-v{version}.zip"
     if zip_path.exists():
         zip_path.unlink()
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -288,7 +298,7 @@ def main() -> None:
                 zf.write(path, path.relative_to(stage.parent).as_posix())
 
     zip_digest = hashlib.sha256(zip_path.read_bytes()).hexdigest()
-    (ROOT / "release" / f"barcode-reader-v{version}.zip.sha256").write_text(
+    (ROOT / "release" / f"mysttic-barcode-scanner-v{version}.zip.sha256").write_text(
         f"{zip_digest}  {zip_path.name}\n", encoding="utf-8"
     )
     print(f"OK: {zip_path} ({zip_path.stat().st_size // 1024} KB)")

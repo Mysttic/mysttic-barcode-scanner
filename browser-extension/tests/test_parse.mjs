@@ -91,7 +91,7 @@ check("aim: brak", stripAim("0105901234567890").aim, null);
 checkTrue("prefiks: brak prefiksu = zawsze pasuje", matchesPrefix("cokolwiek", { type: "delimited" }));
 
 // ------------------------------------------------------- dopasowanie URL ---
-checkTrue("url: gwiazdka w srodku", urlMatches("*forma-c-wtyczka.html*", "file:///C:/repo/test-vectors/forma-c-wtyczka.html#/pracownik"));
+checkTrue("url: gwiazdka w srodku", urlMatches("*form-c-extension.html*", "file:///C:/repo/test-vectors/forms/form-c-extension.html#/pracownik"));
 checkTrue("url: pelna sciezka", urlMatches("https://erp.firma.pl/magazyn/*", "https://erp.firma.pl/magazyn/przyjecie"));
 checkTrue("url: inna domena odrzucona", !urlMatches("https://erp.firma.pl/*", "https://zla.firma.pl/magazyn"));
 checkTrue("url: kropka nie jest metaznakiem", !urlMatches("https://a.b/*", "https://axb/c"));
@@ -115,11 +115,11 @@ checkTrue("tab-frame: wzorzec segmentu odsiewa cudza ramke (lek na pracowniku)",
   !!parseFrame("05909991055172\t2027-10-31\tA23G05\tK7L9XW24MQ1R", TABSPEC).error);
 
 const state = defaults();
-check("profile: demo pasuje do strony testowej", candidatesForUrl(state, "http://localhost:8124/forma-c-wtyczka.html").length, 1);
-check("profile: demo leku pasuje do swojej strony", candidatesForUrl(state, "http://localhost:8124/forma-c-lek.html").length, 1);
+check("profile: demo pasuje do strony testowej", candidatesForUrl(state, "http://localhost:8124/form-c-extension.html").length, 1);
+check("profile: demo leku pasuje do swojej strony", candidatesForUrl(state, "http://localhost:8124/form-c-medicine.html").length, 1);
 check("profile: obca strona bez profilu", candidatesForUrl(state, "https://example.com/").length, 0);
 state.profiles[0].enabled = false;
-check("profile: wylaczony pomijany", candidatesForUrl(state, "http://localhost:8124/forma-c-wtyczka.html").length, 0);
+check("profile: wylaczony pomijany", candidatesForUrl(state, "http://localhost:8124/form-c-extension.html").length, 0);
 check("stan: normalizacja pustego wejscia", normalize(null).profiles.length, 2);
 check("stan: nieznane pola nie kasuja ustawien", normalize({ settings: { burstGapMs: 90 } }).settings.minFrameLength, 3);
 

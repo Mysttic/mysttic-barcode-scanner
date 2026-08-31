@@ -32,7 +32,7 @@ public class OknoProfili : Form
         _sciezka = sciezka;
         _poZmianie = poZmianie;
 
-        Text = "Profile agenta";
+        Text = "Profile - Mysttic Barcode Scanner";
         Width = 610;
         Height = 405;
         FormBorderStyle = FormBorderStyle.FixedDialog;

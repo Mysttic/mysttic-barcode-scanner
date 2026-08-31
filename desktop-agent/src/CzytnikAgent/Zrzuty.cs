@@ -14,7 +14,7 @@ public static class Zrzuty
     {
         Directory.CreateDirectory(katalogWyjsciowy);
 
-        var oknoAplikacji = ZnajdzOkno(nazwaProcesu ?? "AplikacjaTestowa");
+        var oknoAplikacji = ZnajdzOkno(nazwaProcesu ?? "MystticDemoApp");
         if (oknoAplikacji == IntPtr.Zero)
         {
             Console.WriteLine("BLAD: nie znaleziono okna aplikacji testowej - uruchom ja najpierw");
@@ -31,7 +31,7 @@ public static class Zrzuty
         Thread.Sleep(400);
 
         // Krok 1: kreator czeka na skan
-        Zapisz(kreator, katalogWyjsciowy, "agent-nauka-1-skan");
+        Zapisz(kreator, katalogWyjsciowy, "agent-learn-1-scan");
 
         // Krok 2: ramka pocieta na segmenty (wpisujemy ja tak, jak zrobilby czytnik)
         kreator.UstawRamkeTestowa("PRC;JAN;KOWALSKI;12345;IT");
@@ -40,7 +40,7 @@ public static class Zrzuty
         kreator.NazwijSegmenty(new[] { "_", "imie", "nazwisko", "numer", "dzial" });
         Application.DoEvents();
         Thread.Sleep(300);
-        Zapisz(kreator, katalogWyjsciowy, "agent-nauka-2-segmenty");
+        Zapisz(kreator, katalogWyjsciowy, "agent-learn-2-segments");
 
         // Krok 3: lista nagranych czynnosci
         kreator.PokazNagranie(new List<Krok>
@@ -52,13 +52,13 @@ public static class Zrzuty
         });
         Application.DoEvents();
         Thread.Sleep(300);
-        Zapisz(kreator, katalogWyjsciowy, "agent-nauka-3-nagranie");
+        Zapisz(kreator, katalogWyjsciowy, "agent-learn-3-recording");
 
         // Krok 4: parametry rozpoznawania okna przed zapisem
         kreator.PokazZapis();
         Application.DoEvents();
         Thread.Sleep(300);
-        Zapisz(kreator, katalogWyjsciowy, "agent-nauka-4-zapis");
+        Zapisz(kreator, katalogWyjsciowy, "agent-learn-4-save");
 
         kreator.Close();
         Application.DoEvents();
@@ -71,7 +71,7 @@ public static class Zrzuty
                 new()
                 {
                     Nazwa = "Karta pracownika (demo)",
-                    Match = new Dopasowanie { Proces = "AplikacjaTestowa", TytulWzorzec = "*Karta pracownika*" },
+                    Match = new Dopasowanie { Proces = "MystticDemoApp", TytulWzorzec = "*Karta pracownika*" },
                     Parse = new Parsowanie
                     {
                         Typ = "delimited", Prefiks = "PRC;", Separator = ";",
@@ -91,7 +91,7 @@ public static class Zrzuty
         okno.Show();
         Application.DoEvents();
         Thread.Sleep(500);
-        Zapisz(okno, katalogWyjsciowy, "agent-profile");
+        Zapisz(okno, katalogWyjsciowy, "agent-profiles");
         okno.Close();
 
         Console.WriteLine($"Zrzuty zapisane w {katalogWyjsciowy}");

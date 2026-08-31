@@ -20,7 +20,7 @@
     highlight: true,
   };
 
-  // Profil demonstracyjny dla test-vectors/forma-c-wtyczka.html.
+  // Profil demonstracyjny dla test-vectors/forms/form-c-extension.html.
   // RAMKA TAB-OWA (separator "\t"): czytnik zostaje w PRODUKCYJNEJ konfiguracji
   // z wlaczonym profilem pracownik-tab (imie TAB nazwisko TAB numer TAB dzial
   // ENTER) - na rozpoznanym formularzu wtyczka przechwytuje cala sekwencje
@@ -31,7 +31,7 @@
     name: "Karta pracownika (demo)",
     enabled: true,
     match: {
-      urlPattern: "*forma-c-wtyczka.html*",
+      urlPattern: "*form-c-extension.html*",
       requiredFields: ["imie", "nazwisko"],
     },
     parse: {
@@ -49,7 +49,7 @@
     after: { action: "none" },
   };
 
-  // Drugi profil demonstracyjny: zamowienie leku (test-vectors/forma-c-lek.html).
+  // Drugi profil demonstracyjny: zamowienie leku (test-vectors/forms/form-c-medicine.html).
   // Rowniez ramka TAB-owa - z PRODUKCYJNEGO profilu gs1-datamatrix w czytniku
   // (gtin TAB dataISO TAB partia TAB serial ENTER). Wzorce segmentow pilnuja,
   // zeby ramka pracownika nie wpadla w formularz leku i odwrotnie.
@@ -58,7 +58,7 @@
     name: "Zamówienie leku (demo)",
     enabled: true,
     match: {
-      urlPattern: "*forma-c-lek.html*",
+      urlPattern: "*form-c-medicine.html*",
       requiredFields: ["numerSeryjny", "dataWaznosci"],
     },
     parse: {
@@ -121,7 +121,7 @@
     });
   }
 
-  // Wzorzec URL z gwiazdkami: "*forma-c*" albo "https://erp.firma.pl/magazyn/*".
+  // Wzorzec URL z gwiazdkami: "*form-c*" albo "https://erp.firma.pl/magazyn/*".
   // Wzorzec bez gwiazdki na koncu dopasowuje sie do calego adresu.
   function urlMatches(pattern, url) {
     if (!pattern) return false;

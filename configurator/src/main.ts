@@ -355,7 +355,7 @@ $("btn-bootloader").addEventListener("click", () => void bootloaderFlow());
 $("btn-update-bootloader").addEventListener("click", () => void bootloaderFlow());
 
 // Adres wydan - podmien po opublikowaniu repo na GitHubie.
-const RELEASES_URL = "https://github.com/Mysttic/barcode-reader/releases";
+const RELEASES_URL = "https://github.com/Mysttic/mysttic-barcode-scanner/releases";
 ($("fw-releases") as HTMLAnchorElement).href = RELEASES_URL;
 
 // ---------- zakladki ----------

@@ -33,29 +33,43 @@ public class TrayApp : IDisposable
 
         _ikona = new NotifyIcon
         {
-            Icon = SystemIcons.Application,
+            // ikona marki jest wkompilowana w exe (ApplicationIcon w csproj)
+            Icon = IkonaAplikacji(),
             Visible = true,
-            Text = "Czytnik kodow - agent",
+            Text = "Mysttic Barcode Scanner - agent",
         };
         _ikona.DoubleClick += (_, _) => PokazProfile();
         BudujMenu();
 
         _wedge = new Wedge(() => _konfiguracja, () => _nauka != null);
         _wedge.Skan += NaSkan;
-        _wedge.Diagnostyka += (_, tekst) => Dymek("Czytnik", tekst, ToolTipIcon.Warning);
+        _wedge.Diagnostyka += (_, tekst) => Dymek("Mysttic Barcode Scanner", tekst, ToolTipIcon.Warning);
         _wedge.Start();
 
         if (!Native.RegisterHotKey(_okno.Handle, IdSkrotu,
                 Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT, 0x78 /* F9 */))
         {
-            Dymek("Czytnik", "nie udalo sie zarejestrowac skrotu Ctrl+Alt+F9", ToolTipIcon.Warning);
+            Dymek("Mysttic Barcode Scanner", "nie udalo sie zarejestrowac skrotu Ctrl+Alt+F9", ToolTipIcon.Warning);
         }
 
         ObserwujPlikProfili();
 
         Log.Pisz($"agent start, profili: {_konfiguracja.Profile.Count}, plik: {sciezkaProfili ?? Magazyn.Sciezka}");
-        Dymek("Czytnik kodow", $"Agent dziala. Profili: {_konfiguracja.Profile.Count}. " +
+        Dymek("Mysttic Barcode Scanner", $"Agent dziala. Profili: {_konfiguracja.Profile.Count}. " +
                                "Nauka: Ctrl+Alt+F9", ToolTipIcon.Info);
+    }
+
+    /// <summary>Ikona z samego pliku exe; gdyby sie nie dala odczytac - systemowa.</summary>
+    private static Icon IkonaAplikacji()
+    {
+        try
+        {
+            return Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? SystemIcons.Application;
+        }
+        catch
+        {
+            return SystemIcons.Application;
+        }
     }
 
     private void BudujMenu()
@@ -83,7 +97,7 @@ public class TrayApp : IDisposable
         przeladuj.Click += (_, _) =>
         {
             Przeladuj("recznie z menu");
-            Dymek("Czytnik", $"Wczytano profili: {_konfiguracja.Profile.Count}", ToolTipIcon.Info);
+            Dymek("Mysttic Barcode Scanner", $"Wczytano profili: {_konfiguracja.Profile.Count}", ToolTipIcon.Info);
         };
         menu.Items.Add(przeladuj);
 
@@ -121,7 +135,7 @@ public class TrayApp : IDisposable
         var okno = Native.GetForegroundWindow();
         if (okno == IntPtr.Zero || okno == _okno.Handle)
         {
-            Dymek("Czytnik", "Najpierw przejdz do okna aplikacji, ktorej chcesz nauczyc.", ToolTipIcon.Warning);
+            Dymek("Mysttic Barcode Scanner", "Najpierw przejdz do okna aplikacji, ktorej chcesz nauczyc.", ToolTipIcon.Warning);
             return;
         }
 
@@ -199,7 +213,7 @@ public class TrayApp : IDisposable
         {
             // wyjatek w watku puli zabilby caly proces - lapiemy i logujemy
             Log.Pisz("BLAD makra: " + e);
-            Dymek("Czytnik", "blad makra: " + e.Message, ToolTipIcon.Error);
+            Dymek("Mysttic Barcode Scanner", "blad makra: " + e.Message, ToolTipIcon.Error);
         }
     }
 

@@ -1,62 +1,109 @@
-# Czytnik kodów 1D/2D — programowalna klawiatura USB
+<p align="center">
+  <img src="brand/logo.svg" alt="Mysttic Barcode Scanner" width="420">
+</p>
 
-Podłączasz czytnik do komputera, zbliżasz kod kreskowy lub QR — odczyt wpisuje się
-w aktywne okno, tak jakby ktoś przepisał go z klawiatury. Bez sterowników, bez
-instalowania czegokolwiek na komputerze, na dowolnym systemie.
+<p align="center">
+  A programmable USB barcode scanner that types scans into forms, field by field.
+  <br>
+  RP2040 plus a 1D/2D scanner module, no drivers, nothing to install on the host.
+</p>
 
-To, co wyróżnia urządzenie, to **profile**: czytnik sam rozpoznaje rodzaj kodu
-i potrafi rozłożyć go na pola, wpisując je w zadanej kolejności z klawiszami
-TAB/ENTER — np. prosto w kolejne rubryki formularza. Wszystko konfiguruje się
-stroną WWW otwieraną z pendrive'a czytnika.
+<p align="center">
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg"></a>
+  <a href="https://github.com/Mysttic/mysttic-barcode-scanner/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/Mysttic/mysttic-barcode-scanner"></a>
+  <a href="https://github.com/Mysttic/mysttic-barcode-scanner/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Mysttic/mysttic-barcode-scanner/actions/workflows/ci.yml/badge.svg"></a>
+</p>
 
-## Co potrafi
+---
 
-- działa od razu po podłączeniu, jak zwykła klawiatura USB,
-- skanuje automatycznie po zbliżeniu kodu (bez wciskania przycisku),
-- tnie kody na pola i wypełnia formularze (w tym kody GS1: numer towaru,
-  data ważności, partia, numer seryjny),
-- pilnuje duplikatów i tempa wpisywania (przyjazne dla wolnych aplikacji),
-- konfiguracja bez instalacji — strona `konfigurator.html` z pendrive'a czytnika,
-- wtyczka do przeglądarki wypełnia formularze **po nazwach pól** tam, gdzie
-  sekwencja TAB-ów jest zbyt krucha (obce strony, SPA),
-- aktualizacje przez przeciągnięcie pliku, paczki wydań budowane automatycznie.
+Plug the scanner in, hold a barcode or QR code in front of it, and the decoded
+value is typed into the active window as if someone had entered it on a
+keyboard. No drivers, nothing to install on the computer, works on any operating
+system that accepts a USB keyboard.
 
-## Od czego zacząć
+What makes it different from an off-the-shelf scanner are **profiles**: the
+device recognises the kind of code it just read, splits it into fields and types
+them in a defined order with TAB and ENTER in between, straight into the
+matching boxes of a form. Everything is configured from a web page served by the
+scanner itself, off a small read-only disk it exposes over USB.
 
-| Chcę... | Zajrzyj do |
+## What it does
+
+- works the moment it is plugged in, exactly like a USB keyboard,
+- scans on presentation, without pressing a button,
+- splits codes into fields and fills forms, including GS1 codes (product number,
+  expiry date, batch, serial number),
+- guards against duplicate scans and paces typing for slow applications,
+- configuration without installing anything: open `configurator.html` from the
+  scanner's own disk,
+- a **browser extension** fills forms *by field name* where a fixed TAB sequence
+  is too fragile (third-party pages, single-page apps),
+- an optional **desktop agent** does the same in native Windows applications,
+  including kiosk-mode software,
+- firmware updates by dragging one file; release packages are built by CI.
+
+## Where to start
+
+| I want to... | Read |
 |---|---|
-| zbudować / zainstalować czytnik | [docs/INSTALL.md](docs/INSTALL.md) |
-| skonfigurować skanowanie i profile | [docs/KONFIGURACJA.md](docs/KONFIGURACJA.md) |
-| wypełniać formularze (wszystkie warianty) | [docs/FORMULARZE.md](docs/FORMULARZE.md) |
-| wypełniać formularze po nazwach pól na obcych stronach | [docs/WTYCZKA.md](docs/WTYCZKA.md) |
-| nauczyć wtyczkę nowego formularza (samouczek) | [docs/NAUKA-PROFILU.md](docs/NAUKA-PROFILU.md) |
-| wypełniać formularze w aplikacjach desktopowych (moduł opcjonalny) | [docs/AGENT-DESKTOP.md](docs/AGENT-DESKTOP.md) |
-| przetestować urządzenie (scenariusz „od pudełka", testy, e2e) | [docs/TESTING.md](docs/TESTING.md) |
-| sprawdzić, co system umie, a czego nie (i jakie kody) | [docs/MOZLIWOSCI.md](docs/MOZLIWOSCI.md) |
-| zobaczyć plany rozwoju | [docs/ROADMAP.md](docs/ROADMAP.md) |
-| poznać szczegóły techniczne | [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md) |
-| prześledzić decyzje projektowe | [docs/decisions.md](docs/decisions.md) |
-| zobaczyć historię zmian | [CHANGELOG.md](CHANGELOG.md) |
+| build or install the scanner | [docs/INSTALL.md](docs/INSTALL.md) |
+| configure scanning and profiles | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) |
+| fill in forms (all the available approaches) | [docs/FORMS.md](docs/FORMS.md) |
+| fill in forms by field name on third-party pages | [docs/BROWSER-EXTENSION.md](docs/BROWSER-EXTENSION.md) |
+| teach the extension a new form (step-by-step tutorial) | [docs/LEARNING-PROFILES.md](docs/LEARNING-PROFILES.md) |
+| fill in forms in desktop applications (optional module) | [docs/DESKTOP-AGENT.md](docs/DESKTOP-AGENT.md) |
+| test the device (out-of-the-box scenario, unit and e2e tests) | [docs/TESTING.md](docs/TESTING.md) |
+| know what the system can and cannot do, and which codes it handles | [docs/CAPABILITIES.md](docs/CAPABILITIES.md) |
+| see what is planned next | [docs/ROADMAP.md](docs/ROADMAP.md) |
+| understand the technical details | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| follow the design decisions | [docs/DECISIONS.md](docs/DECISIONS.md) |
+| pick the hardware | [docs/HARDWARE.md](docs/HARDWARE.md) |
+| see what changed | [CHANGELOG.md](CHANGELOG.md) |
 
-Na dysku samego czytnika (`CZYTNIK`) jest komplet do pracy bez repozytorium:
-konfigurator, instrukcje (`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`)
-i formularze testowe (`testy.html`).
+The scanner's own disk (`MYSTTIC`) carries everything needed for daily work
+without this repository: the configurator, the manuals (`MANUAL.md`,
+`BROWSER-EXTENSION.md`, `LEARNING-PROFILES.md`) and test forms (`tests.html`)
+with codes you can scan straight off the screen.
 
-## Schemat połączeń (minimum)
+## Wiring (minimum)
 
-![Schemat połączeń: RP2040 + GM65](docs/img/schemat-minimalny.png)
+Four wires, and the UART crosses over: the module transmits into GP1 and
+receives from GP0.
 
-| Pin modułu skanera | Przewód (nasza wiązka) | Pin płytki RP2040 |
+![Wiring: the RP2040 board and the scanner module](docs/img/wiring-minimal.png)
+
+In connector order on our module (a Waveshare 14810):
+
+| Scanner module pin | RP2040 board pin | Wire in the diagram |
 |---|---|---|
-| VCC | zielony | 5 V (VBUS, pin 40) |
-| GND | czerwony | GND (pin 3) |
-| TXD | żółty | **GP1** (pin 2) |
-| RXD | czarny | **GP0** (pin 1) |
+| VCC | 5 V (VBUS, pin 40) | black |
+| TXD | **GP1** (pin 2) | orange |
+| RXD | **GP0** (pin 1) | violet |
+| GND | GND (pin 38, or any other GND) | grey |
 
-Szczegóły montażu i rozwiązywanie problemów: [docs/INSTALL.md](docs/INSTALL.md).
+Pin order differs between scanner modules, and wire colours mean nothing in
+either the diagram or the harness that comes in the box. Go by the labels on your
+board. Assembly details, the parts to buy and troubleshooting:
+[docs/HARDWARE.md](docs/HARDWARE.md) and [docs/INSTALL.md](docs/INSTALL.md).
 
-## Wydania
+## Releases
 
-Gotowe paczki instalacyjne: zakładka **Releases**. Rozwój odbywa się na gałęzi
-`develop`; proces wydawania i testów opisuje [docs/TESTING.md](docs/TESTING.md)
-oraz [docs/ARCHITEKTURA.md](docs/ARCHITEKTURA.md).
+Ready-to-use packages live under the **Releases** tab. Development happens on the
+`develop` branch; the release and testing process is described in
+[docs/TESTING.md](docs/TESTING.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Contributing
+
+Bug reports, hardware notes and pull requests are welcome. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md); security issues have their own path in
+[SECURITY.md](SECURITY.md).
+
+## License
+
+Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Components from
+other projects that ship in the release package are listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+The user interface of the configurator, the browser extension and the desktop
+agent is currently in Polish; translating it is tracked in
+[docs/ROADMAP.md](docs/ROADMAP.md).
