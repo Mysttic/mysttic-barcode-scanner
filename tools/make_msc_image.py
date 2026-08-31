@@ -2,9 +2,9 @@
 """Generator obrazu dysku FAT12 wbudowywanego w firmware C (USB MSC, tylko-do-odczytu).
 
 Uzycie:
-  python make_msc_image.py --out msc_image.c --label CZYTNIK \
+  python make_msc_image.py --out msc_image.c --label MYSTTIC \
       --file konfigurator.html=../configurator/dist/index.html \
-      --file INSTRUKCJA.md=../firmware-pico-sdk/msc_files/INSTRUKCJA.md
+      --file MANUAL.md=../firmware-pico-sdk/msc_files/MANUAL.md
 
 Obraz jest deterministyczny (stale znaczniki czasu) - ta sama zawartosc wejsciowa
 daje identyczny bajt w bajt wynik. Po zbudowaniu obraz jest parsowany z powrotem
@@ -59,7 +59,10 @@ def short_name_for(name, taken):
         base, ext = name, ""
     base_c = "".join(c for c in base.upper() if c.isalnum() or c in "_-")[:8] or "PLIK"
     ext_c = "".join(c for c in ext.upper() if c.isalnum())[:3]
-    fits = (base_c == base.upper() and ext_c == ext.upper() and len(base) <= 8 and len(ext) <= 3)
+    # Bez wpisu LFN nazwa wraca z dysku WIELKIMI literami, wiec "miesci sie
+    # w 8.3" tylko wtedy, gdy jest identyczna ze swoja postacia 8.3 - inaczej
+    # (np. katalog "forms") trzeba dolozyc LFN, zeby zachowac wielkosc liter.
+    fits = (base_c == base and ext_c == ext and len(base) <= 8 and len(ext) <= 3)
     if fits and (base_c, ext_c) not in taken:
         taken.add((base_c, ext_c))
         return base_c, ext_c, False
@@ -291,7 +294,7 @@ def emit_c(img, path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
-    ap.add_argument("--label", default="CZYTNIK")
+    ap.add_argument("--label", default="MYSTTIC")
     ap.add_argument("--file", action="append", required=True,
                     help="nazwa_na_dysku=sciezka_zrodlowa")
     args = ap.parse_args()

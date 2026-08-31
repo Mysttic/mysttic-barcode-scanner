@@ -6,7 +6,8 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>AplikacjaTestowa</AssemblyName>
+    <AssemblyName>MystticDemoApp</AssemblyName>
+    <ApplicationIcon>ikona.ico</ApplicationIcon>
     <RootNamespace>AplikacjaTestowa</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>

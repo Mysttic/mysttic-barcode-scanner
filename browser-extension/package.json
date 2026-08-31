@@ -1,9 +1,9 @@
 {
-  "name": "barcode-reader-extension",
+  "name": "mysttic-barcode-scanner-extension",
   "private": true,
   "version": "0.10.0",
   "type": "module",
-  "description": "Rozszerzenie przegladarki: wypelnianie formularzy danymi ze skanu",
+  "description": "Browser extension: fills forms with data from a barcode scan",
   "scripts": {
     "test": "node tests/test_parse.mjs",
     "test:e2e": "node tests/test_e2e.mjs",
@@ -11,5 +11,8 @@
   },
   "devDependencies": {
     "playwright": "1.56.1"
-  }
+  },
+  "license": "Apache-2.0",
+  "author": "Mysttic",
+  "homepage": "https://github.com/Mysttic/mysttic-barcode-scanner"
 }

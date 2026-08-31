@@ -1,144 +1,160 @@
-# Czytnik kodów 1D/2D — instrukcja instalacji i konfiguracji
+# Mysttic Barcode Scanner — installation and setup
 
-Urządzenie po instalacji działa jak zwykła klawiatura USB: podłączasz je do dowolnego
-komputera, zbliżasz kod — tekst wpisuje się w aktywne okno. Profile pozwalają ciąć kody
-na pola i przeplatać je klawiszami (TAB/ENTER), a konfigurację robi się stroną WWW
-z pendrive'a czytnika — bez instalowania czegokolwiek.
+Once installed, the device behaves like an ordinary USB keyboard: plug it into
+any computer, present a code, and the text is typed into the active window.
+Profiles let it split codes into fields and interleave them with TAB and ENTER,
+and the whole configuration is done from a web page served off the scanner's own
+disk, without installing anything.
 
-## Co potrzebujesz
+## What you need
 
-- płytka **RP2040 z natywnym USB** (Raspberry Pi Pico lub klon, np. YD-RP2040),
-- moduł skanera **GM65/GM805** (UART TTL) + 4 przewody,
-- kabel USB **z liniami danych**,
-- komputer z Windows (instalator) oraz **Chrome lub Edge** (konfigurator),
-- paczka wydania `barcode-reader-vX.Y.Z.zip` (z GitHub Releases).
+- an **RP2040 board with native USB** (Raspberry Pi Pico or a clone such as
+  the YD-RP2040),
+- a 1D/2D scanner module with a TTL UART and four wires (we use a
+  **Waveshare 14810**; GM65 and GM805 work the same),
+- a USB cable **with data lines**,
+- a computer with **Chrome or Edge** for the configurator (the prototype
+  installer additionally needs Windows),
+- the release package `mysttic-barcode-scanner-vX.Y.Z.zip` from GitHub Releases.
 
-## 1. Podłączenie skanera do płytki
+Hardware choices and the modules we have actually tested: [HARDWARE.md](HARDWARE.md).
 
-Piny na module skanera (silk przy złączu): `GND | RXD | TXD | VCC`.
+## 1. Wiring the scanner module to the board
 
-| Pin modułu | Pin płytki RP2040 |
+Pin order on our module's connector (Waveshare 14810): `VCC | TXD | RXD | GND`.
+Other modules order them differently, so read the silkscreen on yours; the
+mapping below is by pin name, not by position.
+
+| Module pin | RP2040 board pin |
 |---|---|
-| VCC | 5 V (VBUS / Vin / Vout — pin 5 V przy USB) |
+| VCC | 5 V (VBUS / Vin / Vout, the 5 V pin next to USB) |
+| TXD | **GP1** (physical pin 2) |
+| RXD | **GP0** (physical pin 1) |
 | GND | GND |
-| TXD | **GP1** (pin fizyczny 2) |
-| RXD | **GP0** (pin fizyczny 1) |
 
-Zasady: łącz przy odpiętym USB, najpierw masę; UART zawsze „na krzyż" (TXD→GP1, RXD→GP0).
-**Nie kieruj się kolorami fabrycznej wiązki** — bywają przypadkowe; patrz na opisy pinów.
-Moduł wymaga zasilania 5 V, a komunikuje się poziomem 3,3 V (bezpiecznym dla RP2040);
-jeśli masz inny moduł niż GM65/GM805, potwierdź poziom TX w jego dokumentacji.
+Rules: wire it up with USB unplugged, ground first; UART always crosses over
+(TXD to GP1, RXD to GP0). **Do not go by the colours of the factory harness**,
+they are arbitrary. Look at the pin labels. The module needs 5 V power but
+signals at 3.3 V, which is safe for the RP2040. If you use a module other than
+the Waveshare 14810, confirm its TX level in its own datasheet.
 
-## 2. Instalacja oprogramowania
+## 2. Installing the software
 
-Zawartość paczki wydania:
+What is inside the release package:
 
 ```
-firmware/barcode_reader.uf2   FIRMWARE PRODUKCYJNY — to wgrywasz
-wtyczka/                      rozszerzenie przeglądarki (wariant C formularzy)
-agent-desktopowy/             agent do aplikacji Windows (wariant D, opcjonalny)
-konfigurator.html             kopia konfiguratora (ten sam jest w urządzeniu)
-INSTALL.md, WTYCZKA.md, NAUKA-PROFILU.md, AGENT-DESKTOP.md
-prototyp-circuitpython/       wariant deweloperski (opcjonalny)
-SHA256SUMS.txt                sumy kontrolne
+firmware/mysttic_barcode_scanner.uf2   PRODUCTION FIRMWARE - this is what you flash
+browser-extension/            browser extension (form-filling variant C)
+desktop-agent/                agent for Windows applications (variant D, optional)
+configurator.html             a copy of the configurator (the same one is on the device)
+INSTALL.md, BROWSER-EXTENSION.md, LEARNING-PROFILES.md, DESKTOP-AGENT.md
+circuitpython-prototype/      development prototype (optional)
+SHA256SUMS.txt                checksums
 ```
 
-Obok paczki publikowany jest plik `aplikacja-testowa-v<wersja>-win-x64.zip`
-— przenośna aplikacja do prób z agentem desktopowym.
+A second asset is published next to it, `demo-app-v<version>-win-x64.zip`, a
+portable application for practising with the desktop agent.
 
-**Instalacja produkcyjna (dowolny system) — jeden krok:**
+**Production install (any operating system), one step:**
 
-1. Wejdź w tryb bootloadera: przytrzymaj **BOOT** na płytce i wciśnij **RST**
-   (albo podłącz USB trzymając BOOT) — pojawi się dysk `RPI-RP2`.
-2. Przeciągnij na niego **`firmware/barcode_reader.uf2`**. Płytka zrestartuje
-   się sama.
-3. Gotowe — czytnik zgłasza się jako klawiatura i pokazuje dysk **`CZYTNIK`**
-   z konfiguratorem, instrukcjami i formularzami testowymi w środku.
+1. Enter the bootloader: hold **BOOT** on the board and press **RST** (or plug
+   in USB while holding BOOT). A disk named `RPI-RP2` appears.
+2. Drag **`firmware/mysttic_barcode_scanner.uf2`** onto it. The board reboots by itself.
+3. Done. The scanner shows up as a keyboard and exposes a disk called
+   **`MYSTTIC`** containing the configurator, the manuals and test forms.
 
-Nic nie trzeba kopiować na urządzenie: konfigurator (`konfigurator.html`),
-instrukcje (`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`) i testy
-(`testy.html` + `formularze/`) są wbudowane w firmware.
+Nothing has to be copied onto the device: the configurator
+(`configurator.html`), the manuals (`MANUAL.md`, `BROWSER-EXTENSION.md`,
+`LEARNING-PROFILES.md`) and the tests (`tests.html` plus `forms/`) are built into
+the firmware.
 
-**Wariant prototypowy (CircuitPython)** — tylko do prac rozwojowych, katalog
-`prototyp-circuitpython/`: uruchom `install.ps1` (Windows; prawy przycisk →
-*Uruchom w programie PowerShell*) albo ręcznie przeciągnij `flash/*.uf2` na
-`RPI-RP2` i skopiuj zawartość `device/` na dysk `CIRCUITPY`. Różnice wariantów:
-[ARCHITEKTURA.md](ARCHITEKTURA.md).
+**Prototype variant (CircuitPython)**, for development work only, directory
+`circuitpython-prototype/`: run `install.ps1` (Windows, right-click, *Run with
+PowerShell*), or drag `flash/*.uf2` onto `RPI-RP2` by hand and copy the contents
+of `device/` onto the `CIRCUITPY` disk. The differences between the variants are
+described in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-**Wtyczka do przeglądarki** (potrzebna tylko do wypełniania po nazwach pól):
-`chrome://extensions` → *Tryb dewelopera* → *Załaduj rozpakowane* → katalog
-`wtyczka/`. Szczegóły: [WTYCZKA.md](WTYCZKA.md).
+**Browser extension** (needed only for filling forms by field name):
+`chrome://extensions` → *Developer mode* → *Load unpacked* → the `browser-extension/`
+directory. Details: [BROWSER-EXTENSION.md](BROWSER-EXTENSION.md).
 
-**Agent desktopowy** (to samo, ale w aplikacjach Windows — moduł opcjonalny):
-katalog `agent-desktopowy/`, kliknij prawym na `zainstaluj-agenta.ps1` →
-*Uruchom w programie PowerShell*. Szczegóły: [AGENT-DESKTOP.md](AGENT-DESKTOP.md).
+**Desktop agent** (the same idea in Windows applications, an optional module):
+directory `desktop-agent/`, right-click `install-agent.ps1` → *Run with
+PowerShell*. Details: [DESKTOP-AGENT.md](DESKTOP-AGENT.md).
 
-## 3. Konfiguracja skanera (jednorazowo, nowy moduł)
+## 3. Setting up the scanner module (once, for a new module)
 
-Fabrycznie moduł może mieć włączone wyjście USB zamiast UART. Jeśli po instalacji
-skaner pika przy odczycie, ale nic się nie wpisuje:
+A brand-new module may be shipped with USB output enabled instead of UART. If
+the scanner beeps on a read but nothing is typed:
 
-1. Otwórz manual GM65 (`docs/GM65-manual.pdf` w repo, str. 9) i zeskanuj kod
-   **„Series Output"**, a dla pewności też **„9600bps (Default)"**.
-2. Tryb pracy bez przycisku (odczyt po zbliżeniu kodu): zeskanuj kod
-   **„Induction Mode"** (str. 12) — albo podłącz czytnik i uruchom na płytce
-   skrypt `setup_induction.py` z repo (ustawia tryb komendami i zapisuje w EEPROM
-   skanera na stałe).
+1. Open the module's command manual (see [HARDWARE.md](HARDWARE.md) for where to get
+   it, the page with output settings) and scan the **"Series Output"** code, and
+   for good measure **"9600bps (Default)"** as well.
+2. Trigger-free operation (reading as soon as a code is presented): scan the
+   **"Induction Mode"** code, or connect the scanner and run `setup_induction.py`
+   from this repository on the board. It sends the commands and stores the mode
+   permanently in the scanner's EEPROM.
 
-## 4. Pierwszy test
+## 4. First test
 
-Otwórz Notatnik, kliknij w niego i zeskanuj dowolny kod EAN — powinien wpisać się
-tekst + ENTER. Dziesięć skanów tego samego kodu = dziesięć identycznych linii.
+Open a text editor, click into it and scan any EAN code. The text plus ENTER
+should appear. Ten scans of the same code give ten identical lines.
 
-Po instalacji na dysku czytnika (**`CZYTNIK`**, tylko-do-odczytu) znajdziesz:
-`konfigurator.html`, `testy.html` + `formularze/` (komplet testów),
-`INSTRUKCJA.md`, `WTYCZKA.md`, `NAUKA-PROFILU.md`. W wariancie prototypowym
-(dysk `CIRCUITPY`) dodatkowo `config/config.json` (można edytować) i pliki
-firmware `*.py`, `lib/` (nie ruszać).
+After installation the scanner's disk (**`MYSTTIC`**, read-only) contains
+`configurator.html`, `tests.html` plus `forms/` (the full test set), `MANUAL.md`,
+`BROWSER-EXTENSION.md` and `LEARNING-PROFILES.md`. In the prototype variant (the
+`CIRCUITPY` disk) there is additionally `config/config.json`, which can be
+edited, and the firmware files `*.py` and `lib/`, which should be left alone.
 
-## 5. Konfigurator (profile)
+## 5. The configurator (profiles)
 
-1. Otwórz plik **`konfigurator.html`** z dysku czytnika w Chrome/Edge
-   (firmware produkcyjny C: dysk **`CZYTNIK`**, tylko-do-odczytu;
-   prototyp CircuitPython: dysk `CIRCUITPY`).
-2. Kliknij **Połącz** i wybierz **drugi** port „Urządzenie szeregowe USB"
-   (pierwszy to konsola diagnostyczna — jeśli trafisz źle, dostaniesz timeout;
-   rozłącz i wybierz drugi).
-3. Zakładka **Urządzenie**: opóźnienia klawiszy, pauza po TAB/ENTER (dla wolnych
-   aplikacji), blokada duplikatów, prefiks/sufiks.
-4. Zakładka **Profile** — serce urządzenia. Profil = wykrywanie (regex) +
-   parsowanie (regex z grupami albo **GS1**) + sekwencja akcji, np.:
-   `{imie} TAB TAB ENTER {nazwisko}` albo `{gtin} TAB {dataWaznosciISO} ENTER`.
-   Kody niepasujące do żadnego profilu przepisują się 1:1.
-5. Zakładka **Test** (tryb testowy): skany pokazują się na stronie (surowo +
-   rozbite na pola), nic nie wpisuje się do okien — idealne do strojenia profili.
-6. **Zastosuj (RAM)** = do pierwszego odłączenia; **Zapisz trwale (NVM)** =
-   na stałe w pamięci płytki. Oba przyciski są przy pasku zakładek.
+1. Open **`configurator.html`** from the scanner's disk in Chrome or Edge
+   (production C firmware: the read-only **`MYSTTIC`** disk; CircuitPython
+   prototype: the `CIRCUITPY` disk).
+2. Click **Połącz** (Connect) and pick the **second** "USB serial device" port.
+   The first one is the diagnostic console; if you pick it you get a timeout, so
+   disconnect and choose the other one.
+3. The **Urządzenie** (Device) tab: key delays, the pause after TAB and ENTER
+   for slow applications, duplicate blocking, prefix and suffix.
+4. The **Profile** (Profiles) tab is the heart of the device. A profile is
+   detection (a regular expression) plus parsing (a regular expression with
+   groups, or **GS1**) plus a sequence of actions, for example
+   `{imie} TAB TAB ENTER {nazwisko}` or `{gtin} TAB {dataWaznosciISO} ENTER`.
+   Codes that match no profile are typed through verbatim.
+5. The **Test** tab (test mode): scans are shown on the page, raw and split into
+   fields, and nothing is typed into any window. This is the place to tune
+   profiles.
+6. **Zastosuj (RAM)** (Apply) lasts until the device is unplugged; **Zapisz
+   trwale (NVM)** (Save permanently) writes to the board's flash. Both buttons
+   sit next to the tab bar.
 
-Zrzuty ekranu wszystkich zakładek z opisami: [KONFIGURACJA.md](KONFIGURACJA.md).
+Annotated screenshots of every tab: [CONFIGURATION.md](CONFIGURATION.md).
 
-Uwaga: wzorce regex działają na urządzeniu w okrojonym silniku — kwantyfikatory
-`{m,n}` są niedozwolone (konfigurator to wychwyci); rozpisuj jawnie, np. `[0-9][0-9]`.
+Note: regular expressions run on the device in a cut-down engine. The `{m,n}`
+quantifier is not supported (the configurator catches this), so spell patterns
+out, for example `[0-9][0-9]`.
 
-## 6. Aktualizacja firmware
+## 6. Updating the firmware
 
-1. Pobierz nową paczkę wydania i sprawdź sumę SHA-256 (`SHA256SUMS.txt`).
-2. W konfiguratorze: zakładka **Aktualizacja** → **Restart do bootloadera**
-   (albo ręcznie BOOT+RST).
-3. Postępuj jak przy instalacji (instalator wykryje istniejący `CIRCUITPY`
-   i podmieni tylko pliki; UF2 wgrywaj tylko, gdy wydanie tego wymaga).
+1. Download the new release package and verify the SHA-256 sums
+   (`SHA256SUMS.txt`).
+2. In the configurator: the **Aktualizacja** (Update) tab → **Restart do
+   bootloadera** (Reboot to bootloader), or use BOOT+RST by hand.
+3. Continue as with the installation. The prototype installer detects an
+   existing `CIRCUITPY` and replaces only the files; flash a new UF2 only when
+   the release says so.
 
-Konfiguracja użytkownika przechowywana jest w NVM płytki i **przeżywa aktualizację**.
-Przywracanie fabrycznych: przycisk w konfiguratorze albo przytrzymanie przycisku
-na GP2 ~1 s przy podłączaniu USB.
+User configuration lives in the board's flash and **survives an update**. To
+restore factory settings use the button in the configurator, or hold the button
+on GP2 for about a second while plugging in USB.
 
-## Najczęstsze problemy
+## Common problems
 
-| Objaw | Przyczyna / rozwiązanie |
+| Symptom | Cause and fix |
 |---|---|
-| skaner pika, nic się nie wpisuje | wyjście modułu ustawione na USB → zeskanuj „Series Output" (pkt 3); albo TXD/RXD nie „na krzyż" |
-| krzaczki / pojedyncze `\x00` | zła prędkość — zeskanuj „9600bps (Default)" |
-| wpisuje podwójnie | trzymasz kod przed okiem — blokada duplikatów w konfiguratorze (domyślnie 1,5 s) |
-| aplikacja gubi znaki / TAB nie działa | zwiększ „Opóźnienie klawiszy" i „Pauzę po TAB/ENTER"; uwaga: pola z autouzupełnianiem (np. Notepad++) mogą połykać TAB |
-| konfigurator: timeout po połączeniu | wybrany pierwszy port (konsola) — rozłącz i wybierz drugi |
-| urządzenie w pętli błędu po edycji configu | niemożliwe przy poprawnym firmware (walidacja + fallback), ale zawsze działa factory reset przyciskiem GP2 przy starcie |
+| the scanner beeps but nothing is typed | the module's output is set to USB, scan "Series Output" (step 3); or TXD/RXD are not crossed over |
+| garbage characters or stray `\x00` | wrong baud rate, scan "9600bps (Default)" |
+| everything is typed twice | you are holding the code in front of the lens; use duplicate blocking in the configurator (1.5 s by default) |
+| the application drops characters, or TAB does nothing | increase "key delay" and "pause after TAB/ENTER". Note that fields with autocomplete can swallow TAB |
+| configurator: timeout after connecting | you picked the first port (the console), disconnect and choose the second |
+| the device loops on an error after a config change | not possible with correct firmware (validation plus fallback), and a factory reset with the GP2 button at power-on always works |

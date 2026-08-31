@@ -51,7 +51,7 @@ public class OknoNauki : Form
         _proces = Native.ProcesOkna(oknoDocelowe);
         _tytul = Native.TytulOkna(oknoDocelowe);
 
-        Text = "Nauka profilu - czytnik kodow";
+        Text = "Nauka profilu - Mysttic Barcode Scanner";
         Width = 570;
         Height = 478;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -328,7 +328,7 @@ public class OknoNauki : Form
 
         MessageBox.Show($"Zapisano profil \"{profil.Nazwa}\" ({profil.Kroki.Count} krokow).\n\n" +
                         "Profil jest juz aktywny - mozesz skanowac.",
-            "Czytnik kodow", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            "Mysttic Barcode Scanner", MessageBoxButtons.OK, MessageBoxIcon.Information);
         Close();
     }
 

@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work as described in the docs
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      options:
+        - Firmware / device
+        - Configurator
+        - Browser extension
+        - Desktop agent
+        - Build, CI or release package
+        - Documentation
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Release tag, or the version shown in the configurator (Device tab).
+      placeholder: v1.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: scan
+    attributes:
+      label: The code being scanned
+      description: >
+        If the problem involves a specific code, paste its content (or a
+        photo). For GS1 codes mark the group separator as <GS>.
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: >
+        Operating system, browser (for the extension), target application (for
+        the agent), scanner module model and how it is wired.
+      placeholder: |
+        OS: Windows 11 23H2
+        Browser: Chrome 141
+        Module: GM65, connected to GP0/GP1

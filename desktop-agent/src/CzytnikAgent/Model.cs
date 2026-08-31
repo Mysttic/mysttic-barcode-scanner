@@ -1,4 +1,4 @@
-// Model profilu aplikacji i jego magazyn (JSON w %APPDATA%\CzytnikAgent).
+// Model profilu aplikacji i jego magazyn (JSON w %APPDATA%\MystticBarcodeScanner).
 //
 // Profil jest celowo blizniaczy do profilu wtyczki przegladarkowej:
 //   match (gdzie) -> parse (jak rozlozyc kod na pola) -> kroki (co zrobic)
@@ -12,7 +12,7 @@ namespace CzytnikAgent;
 
 public class Dopasowanie
 {
-    /// <summary>Nazwa procesu bez rozszerzenia, np. "AplikacjaTestowa". Puste = dowolny.</summary>
+    /// <summary>Nazwa procesu bez rozszerzenia, np. "MystticDemoApp". Puste = dowolny.</summary>
     public string Proces { get; set; } = "";
 
     /// <summary>Wzorzec tytulu okna z gwiazdkami, np. "*Karta pracownika*". Puste = dowolny.</summary>
@@ -142,7 +142,7 @@ public static class Magazyn
     };
 
     public static string Katalog =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CzytnikAgent");
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MystticBarcodeScanner");
 
     public static string Sciezka => Path.Combine(Katalog, "profile.json");
 

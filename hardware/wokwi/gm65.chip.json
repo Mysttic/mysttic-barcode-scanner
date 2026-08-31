@@ -1,5 +1,6 @@
 {
-  "name": "GM65",
-  "author": "barcode-reader",
-  "pins": ["", "", "", "", "RX", "TX", "GND", "VCC"]
+  "name": "1D/2D scanner (UART)",
+  "author": "Mysttic",
+  "_note": "Pin order mirrors the real module (Waveshare 14810): looking at the connector, VCC, TXD, RXD, GND. Wokwi lays pins out like a DIP package: the first half of the array on the left (top to bottom), the second half on the right (bottom to top).",
+  "pins": ["", "", "", "", "GND", "RX", "TX", "VCC"]
 }

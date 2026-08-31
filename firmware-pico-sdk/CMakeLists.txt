@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.13)
 
-# PICO_SDK_PATH bierzemy ze srodowiska (C:/Workspaces/pico-sdk)
+# PICO_SDK_PATH bierzemy ze srodowiska (patrz CONTRIBUTING.md)
 include(pico_sdk_import.cmake)
 
-project(barcode_reader C CXX ASM)
+project(mysttic_barcode_scanner C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 
 pico_sdk_init()
@@ -14,17 +14,17 @@ find_package(Python3 COMPONENTS Interpreter REQUIRED)
 set(MSC_IMAGE_C ${CMAKE_CURRENT_BINARY_DIR}/msc_image.c)
 set(REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 set(MSC_INPUTS
-  "konfigurator.html=${REPO_ROOT}/configurator/dist/index.html"
-  "INSTRUKCJA.md=${CMAKE_CURRENT_SOURCE_DIR}/msc_files/INSTRUKCJA.md"
-  "CZYTAJ.TXT=${CMAKE_CURRENT_SOURCE_DIR}/msc_files/CZYTAJ.TXT"
-  "WTYCZKA.md=${REPO_ROOT}/docs/WTYCZKA.md"
-  "NAUKA-PROFILU.md=${REPO_ROOT}/docs/NAUKA-PROFILU.md"
-  "testy.html=${REPO_ROOT}/test-vectors/testy.html"
-  "formularze/forma-a-tab.html=${REPO_ROOT}/test-vectors/formularze/forma-a-tab.html"
-  "formularze/forma-b-nazwy.html=${REPO_ROOT}/test-vectors/formularze/forma-b-nazwy.html"
-  "formularze/forma-gs1.html=${REPO_ROOT}/test-vectors/formularze/forma-gs1.html"
-  "formularze/forma-c-wtyczka.html=${REPO_ROOT}/test-vectors/formularze/forma-c-wtyczka.html"
-  "formularze/forma-c-lek.html=${REPO_ROOT}/test-vectors/formularze/forma-c-lek.html"
+  "configurator.html=${REPO_ROOT}/configurator/dist/index.html"
+  "MANUAL.md=${CMAKE_CURRENT_SOURCE_DIR}/msc_files/MANUAL.md"
+  "README.TXT=${CMAKE_CURRENT_SOURCE_DIR}/msc_files/README.TXT"
+  "BROWSER-EXTENSION.md=${REPO_ROOT}/docs/BROWSER-EXTENSION.md"
+  "LEARNING-PROFILES.md=${REPO_ROOT}/docs/LEARNING-PROFILES.md"
+  "tests.html=${REPO_ROOT}/test-vectors/tests.html"
+  "forms/form-a-tab.html=${REPO_ROOT}/test-vectors/forms/form-a-tab.html"
+  "forms/form-b-names.html=${REPO_ROOT}/test-vectors/forms/form-b-names.html"
+  "forms/form-gs1.html=${REPO_ROOT}/test-vectors/forms/form-gs1.html"
+  "forms/form-c-extension.html=${REPO_ROOT}/test-vectors/forms/form-c-extension.html"
+  "forms/form-c-medicine.html=${REPO_ROOT}/test-vectors/forms/form-c-medicine.html"
 )
 set(MSC_FILE_ARGS "")
 set(MSC_DEPS ${REPO_ROOT}/tools/make_msc_image.py)
@@ -36,12 +36,12 @@ endforeach()
 add_custom_command(
   OUTPUT ${MSC_IMAGE_C}
   COMMAND ${Python3_EXECUTABLE} ${REPO_ROOT}/tools/make_msc_image.py
-          --out ${MSC_IMAGE_C} --label CZYTNIK ${MSC_FILE_ARGS}
+          --out ${MSC_IMAGE_C} --label MYSTTIC ${MSC_FILE_ARGS}
   DEPENDS ${MSC_DEPS}
   COMMENT "Generowanie obrazu dysku MSC (konfigurator + instrukcja + formularze testowe)"
 )
 
-add_executable(barcode_reader
+add_executable(mysttic_barcode_scanner
   src/main.c
   src/usb_descriptors.c
   src/protocol_cdc.c
@@ -56,7 +56,7 @@ add_executable(barcode_reader
   ${MSC_IMAGE_C}
 )
 
-target_include_directories(barcode_reader PRIVATE src)
+target_include_directories(mysttic_barcode_scanner PRIVATE src)
 
 # Wersja wydania: VERSION.md w korzeniu repo jest jedynym zrodlem prawdy.
 file(READ ${REPO_ROOT}/VERSION.md _version_md)
@@ -65,9 +65,9 @@ if(NOT FW_VERSION)
   set(FW_VERSION "0.0.0-dev")
 endif()
 message(STATUS "Wersja firmware (z VERSION.md): ${FW_VERSION}")
-target_compile_definitions(barcode_reader PRIVATE FIRMWARE_VERSION_C="${FW_VERSION}")
+target_compile_definitions(mysttic_barcode_scanner PRIVATE FIRMWARE_VERSION_C="${FW_VERSION}")
 
-target_link_libraries(barcode_reader
+target_link_libraries(mysttic_barcode_scanner
   pico_stdlib
   pico_unique_id
   pico_flash
@@ -79,4 +79,4 @@ target_link_libraries(barcode_reader
   tinyusb_board
 )
 
-pico_add_extra_outputs(barcode_reader)
+pico_add_extra_outputs(mysttic_barcode_scanner)

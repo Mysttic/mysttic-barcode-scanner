@@ -1,4 +1,4 @@
-// Prosty log pracy agenta: %APPDATA%\CzytnikAgent\agent.log
+// Prosty log pracy agenta: %APPDATA%\MystticBarcodeScanner\agent.log
 // Sluzy diagnostyce wdrozen ("dlaczego nie wypelnilo?") i testom.
 using System.IO;
 

@@ -6,7 +6,8 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>CzytnikAgent</AssemblyName>
+    <AssemblyName>MystticBarcodeAgent</AssemblyName>
+    <ApplicationIcon>ikona.ico</ApplicationIcon>
     <RootNamespace>CzytnikAgent</RootNamespace>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <InvariantGlobalization>true</InvariantGlobalization>

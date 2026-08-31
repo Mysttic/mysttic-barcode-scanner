@@ -1,63 +1,106 @@
-# Schemat połączeń — Wokwi
+# Wiring diagram — Wokwi
 
-Wizualny schemat prototypu (Etap 1 instrukcji): RP2040 (Pico / klon typu YD-RP2040) + moduł skanera GM65 + płytka stykowa z LED / przyciskiem / buzzerem.
+Two diagrams live here:
 
-**Zapisany projekt:** https://wokwi.com/projects/472807254038722561 (konto mystticdruid)
+| File | What it shows |
+|---|---|
+| `diagram-minimal.json` | the four wires between the board and the scanner, and nothing else. This is the one rendered as `docs/img/wiring-minimal.png` |
+| `diagram.json` | the full prototype: an RP2040, the scanner, and a breadboard with an LED, a button and a buzzer |
 
-## Połączenia (1:1 z instrukcją w Notion)
+**Saved project:** https://wokwi.com/projects/472807254038722561
 
-UART idzie bezpośrednio (przewody dupont), zasilanie przez szyny płytki stykowej:
+## The minimal diagram
 
-| Skąd | Dokąd | Kolor | Uwagi |
-|------|-------|-------|-------|
-| Pico VBUS (5 V) | szyna + płytki (`tp`) | czerwony | 5 V z USB |
-| Pico GND | szyna − płytki (`tn`) | czarny | wspólna masa — podłączyć jako pierwszą |
-| GM65 VCC | szyna + | czerwony | GM65 wymaga 5 V |
-| GM65 GND | szyna − | czarny | |
-| GM65 TX | Pico GP1 = RX0 (pin 2) | żółty | UART na krzyż |
-| GM65 RX | Pico GP0 = TX0 (pin 1) | zielony | UART na krzyż |
+The board is rotated (`"rotate": 270`), with the scanner module to its left:
 
-Elementy na płytce stykowej (opcjonalne):
-
-| Element | Kolumny | Sterowanie | Uwagi |
-|---------|---------|------------|-------|
-| Rezystor 330 Ω | 7–10 (rząd b) | GP6 → kol. 7 (pomarańczowy) | szeregowo z LED |
-| LED (anoda kol. 10, katoda kol. 12) | 10–12 (rząd a) | — | katoda zworką do szyny − |
-| Przycisk TRIG | 16–18 (rząd b) | GP2 → kol. 16 (fioletowy) | druga nóżka zworką do szyny −; pull-up wewnętrzny w firmware |
-| Buzzer (+ kol. 22, − kol. 24) | 22–24 (rząd b) | GP7 → kol. 22 (cyjan) | na docelowej płytce przez tranzystor NPN (baza przez 1 kΩ), jeśli pobiera >10 mA |
-
-## Fabryczna wiązka posiadanego modułu (UWAGA — kolory!)
-
-Silk przy złączu JST modułu: `GND | RXD | TXD | VCC` (sekcja „UART"). Kolory wiązki **nie** trzymają się konwencji:
-
-| Kolor przewodu | Pin modułu | Dokąd |
+| From | To | Wire |
 |---|---|---|
-| zielony | VCC | szyna +5 V |
-| żółty | GND | szyna GND |
-| fioletowy | TXD (nadaje) | GP1 = RX Pico |
-| niebieski | RXD (odbiera) | GP0 = TX Pico |
+| GM65 VCC | Pico VBUS (5 V) | black |
+| GM65 GND | Pico GND | grey |
+| GM65 TX | Pico GP1 | orange |
+| GM65 RX | Pico GP0 | violet |
 
-Kieruj się opisami pinów na module, nie kolorami. Moduł ma własny buzzer i przycisk wyzwalania — zewnętrzne LED/przycisk/buzzer ze schematu są opcjonalne.
+Colours are arbitrary. What matters is that the UART crosses over and that GND
+goes to a GND pin: wiring GND to a GPIO, or TXD straight to GP0, is the mistake
+that is easiest to make and hardest to spot on a picture.
 
-## Konwerter poziomów — celowo nieobecny
+## The full prototype
 
-GM65 komunikuje się TTL **3,3 V**, więc konwerter jest zbędny. Dodaj go **tylko jeśli** pomiar/karta katalogowa Twojego modułu pokaże 5 V na TX skanera (GPIO RP2040 nie są 5V-tolerant):
+UART goes directly over jumper wires; power runs through the breadboard rails:
+
+UART goes directly over jumper wires; power runs through the breadboard rails:
+
+| From | To | Colour | Notes |
+|------|-------|-------|-------|
+| Pico VBUS (5 V) | breadboard + rail (`tp`) | red | 5 V from USB |
+| Pico GND | breadboard − rail (`tn`) | black | common ground, connect it first |
+| GM65 VCC | + rail | red | the GM65 needs 5 V |
+| GM65 GND | − rail | black | |
+| GM65 TX | Pico GP1 = RX0 (pin 2) | yellow | UART crosses over |
+| GM65 RX | Pico GP0 = TX0 (pin 1) | green | UART crosses over |
+
+Optional parts on the breadboard:
+
+| Part | Columns | Driven by | Notes |
+|---------|---------|------------|-------|
+| 330 Ω resistor | 7-10 (row b) | GP6 → column 7 (orange) | in series with the LED |
+| LED (anode column 10, cathode column 12) | 10-12 (row a) | — | cathode jumpered to the − rail |
+| TRIG button | 16-18 (row b) | GP2 → column 16 (violet) | the other leg jumpered to the − rail; the pull-up is internal, in firmware |
+| Buzzer (+ column 22, − column 24) | 22-24 (row b) | GP7 → column 22 (cyan) | on a real board drive it through an NPN transistor (1 kΩ to the base) if it draws more than 10 mA |
+
+## The scanner stand-in (`gm65.chip.c`)
+
+The simulation has no model of a real scanner, so `gm65.chip.c` is a stand-in
+that periodically pushes an EAN-13 frame over UART. Its pin order matches the
+module we use (Waveshare 14810): looking at the connector, **VCC, TXD, RXD,
+GND**. If your module orders them differently, change the `pins` array in
+`gm65.chip.json` rather than rewiring the diagram, so that the names in the
+connections keep meaning what they say.
+
+## The factory harness of the older GM65 module (mind the colours)
+
+On that module the silkscreen next to the JST connector reads
+`GND | RXD | TXD | VCC`, the opposite order to the Waveshare unit. Its harness
+colours do **not** follow any convention either:
+
+| Wire colour | Module pin | Goes to |
+|---|---|---|
+| green | VCC | the +5 V rail |
+| yellow | GND | the GND rail |
+| violet | TXD (transmits) | GP1 = Pico RX |
+| blue | RXD (receives) | GP0 = Pico TX |
+
+Go by the pin labels on the module, not by the colours. The module has its own
+buzzer and trigger button, so the external LED, button and buzzer in the diagram
+are optional.
+
+## Level shifter — deliberately absent
+
+The GM65 signals at **3.3 V** TTL, so a shifter is unnecessary. Add one **only
+if** a measurement or your module's datasheet shows 5 V on the scanner's TX (the
+RP2040's GPIOs are not 5 V tolerant):
 
 ```
-TX skanera ──[1 kΩ]──●──→ GP1 (RX Pico)
-                     │
+scanner TX --[1 kΩ]--*--> GP1 (Pico RX)
+                     |
                    [2 kΩ]
-                     │
+                     |
                     GND
 ```
 
-Nie wstawiaj dzielnika „na zapas" przy linii 3,3 V — 3,3 V × 2/3 ≈ 2,2 V, czyli poziom na granicy logicznej jedynki RP2040.
+Do not add a divider "just in case" on a 3.3 V line: 3.3 V × 2/3 is about 2.2 V,
+which sits right at the RP2040's logic-high threshold.
 
-## Jak otworzyć od zera
+## Opening it from scratch
 
 1. https://wokwi.com/projects/new/micropython-pi-pico
-2. Podmień `main.py` i `diagram.json`, dodaj `gm65.chip.c` i `gm65.chip.json` (▼ przy zakładkach → *New file…*).
+2. Replace `main.py` and `diagram.json`, then add `gm65.chip.c` and
+   `gm65.chip.json` (the ▼ next to the tabs → *New file…*).
 
-## Ograniczenie symulatora (2026-08)
+## A simulator limitation (2026-08)
 
-`machine.UART` w Wokwi na `wokwi-pi-pico` nie działa (konstruktor się zawiesza; UART0 dodatkowo koliduje z konsolą REPL). Symulacja służy więc jako **schemat + atrapa skanera**: `gm65.chip.c` cyklicznie wysyła kody EAN-13 i loguje je w zakładce **CHIPS CONSOLE**. Odbiór po stronie Pico testujemy na prawdziwym sprzęcie (CircuitPython, Etap 2).
+`machine.UART` does not work in Wokwi on `wokwi-pi-pico` (the constructor hangs,
+and UART0 additionally collides with the REPL console). The simulation therefore
+serves as **a schematic plus a dummy scanner**: `gm65.chip.c` periodically sends
+EAN-13 codes and logs them in the **CHIPS CONSOLE** tab. Reception on the Pico
+side is tested on real hardware.

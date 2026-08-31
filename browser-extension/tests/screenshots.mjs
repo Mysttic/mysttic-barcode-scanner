@@ -1,4 +1,4 @@
-// Zrzuty ekranu do dokumentacji (docs/img/wtyczka-*.png).
+// Zrzuty ekranu do dokumentacji (docs/img/extension-*.png).
 // Robione na zywo: Chromium z zaladowanym rozszerzeniem przechodzi ten sam
 // scenariusz, co operator - skan formularza i pelny tryb nauki.
 //
@@ -17,7 +17,7 @@ const PYTHON = process.platform === "win32" ? "python" : "python3";
 const PORT = 8138;
 // Sekwencja TAB-owa, ktora WYPISUJE produkcyjny profil pracownik-tab czytnika:
 const RAMKA = "JAN\tKOWALSKI\t12345\tIT";
-const STRONA = `http://127.0.0.1:${PORT}/formularze/forma-c-wtyczka.html`;
+const STRONA = `http://127.0.0.1:${PORT}/forms/form-c-extension.html`;
 
 const serwer = spawn(PYTHON, ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"], {
   cwd: join(ROOT, "test-vectors"),
@@ -27,8 +27,8 @@ const userDataDir = mkdtempSync(join(tmpdir(), "br-shots-"));
 let context;
 
 async function shot(target, nazwa) {
-  await target.screenshot({ path: join(IMG, `wtyczka-${nazwa}.png`) });
-  console.log("  ->", `docs/img/wtyczka-${nazwa}.png`);
+  await target.screenshot({ path: join(IMG, `extension-${nazwa}.png`) });
+  console.log("  ->", `docs/img/extension-${nazwa}.png`);
 }
 
 // Jak prawdziwy HID: Shift przy wielkich literach, "\t" = klawisz TAB.
@@ -66,9 +66,9 @@ try {
   await page.waitForTimeout(700);
 
   // 1-2. rozpoznany formularz: przed i po skanie
-  await shot(page, "formularz-przed");
+  await shot(page, "form-before");
   await skanuj(page, RAMKA);
-  await shot(page, "formularz-po");
+  await shot(page, "form-after");
 
   // 3-6. tryb nauki, krok po kroku
   await page.reload();
@@ -83,7 +83,7 @@ try {
   });
   await worker.evaluate((id) => chrome.tabs.sendMessage(id, { cmd: "learn" }), tabId);
   await page.waitForTimeout(400);
-  await shot(page, "nauka-1-skan");
+  await shot(page, "learn-1-scan");
 
   await skanuj(page, RAMKA);
   await page.waitForTimeout(300);
@@ -91,13 +91,13 @@ try {
   for (let i = 0; i < nazwy.length; i += 1) {
     await page.fill(`input[data-idx="${i}"]`, nazwy[i]);
   }
-  await shot(page, "nauka-2-segmenty");
+  await shot(page, "learn-2-segments");
 
   await page.click('button[data-act="names"]');
   await page.waitForTimeout(300);
   await page.hover("input[name=imie]"); // podswietlenie pola pod kursorem
   await page.waitForTimeout(200);
-  await shot(page, "nauka-3-pola");
+  await shot(page, "learn-3-fields");
 
   for (const selektor of ["input[name=imie]", "input[name=nazwisko]", "input[name=numer]", "select[name=dzial]"]) {
     await page.click(selektor);
@@ -105,7 +105,7 @@ try {
     await page.click('button[data-act="confirm"]'); // klik wybiera, przycisk zatwierdza
     await page.waitForTimeout(200);
   }
-  await shot(page, "nauka-4-zapis");
+  await shot(page, "learn-4-save");
 
   await page.click('button[data-act="save"]');
   await page.waitForTimeout(600);
@@ -115,7 +115,7 @@ try {
   await opcje.setViewportSize({ width: 1180, height: 900 });
   await opcje.goto(`chrome-extension://${extId}/src/options.html`);
   await opcje.waitForTimeout(500);
-  await shot(opcje, "opcje");
+  await shot(opcje, "options");
   await opcje.close();
 
   // 8-9. popup dla strony z profilem i bez profilu
@@ -139,7 +139,7 @@ try {
   await page.waitForSelector("input[name=motyw]");
   await page.waitForTimeout(900);
   await page.bringToFront();
-  await popup("popup-bez-profilu");
+  await popup("popup-no-profile");
 
   // 10-14. samouczek NAUKA-PROFILU.md: nauka profilu na formularzu leku.
   // Wylaczamy wbudowany profil demo-lek, zeby koncowe zrzuty pokazywaly
@@ -158,7 +158,7 @@ try {
 
   const lek = await context.newPage();
   await lek.setViewportSize({ width: 1180, height: 820 });
-  await lek.goto(`http://127.0.0.1:${PORT}/formularze/forma-c-lek.html`);
+  await lek.goto(`http://127.0.0.1:${PORT}/forms/form-c-medicine.html`);
   await lek.waitForSelector("input[name=gtin]");
   await lek.waitForTimeout(700);
   await lek.bringToFront();
@@ -169,7 +169,7 @@ try {
   });
   await worker.evaluate((id) => chrome.tabs.sendMessage(id, { cmd: "learn" }), lekTabId);
   await lek.waitForTimeout(400);
-  await shot(lek, "nauka-lek-1-start");
+  await shot(lek, "medicine-1-start");
 
   await skanuj(lek, RAMKA_LEK);
   await lek.waitForTimeout(300);
@@ -177,14 +177,14 @@ try {
   for (let i = 0; i < nazwyLek.length; i += 1) {
     await lek.fill(`input[data-idx="${i}"]`, nazwyLek[i]);
   }
-  await shot(lek, "nauka-lek-2-segmenty");
+  await shot(lek, "medicine-2-segments");
 
   await lek.click('button[data-act="names"]');
   await lek.waitForTimeout(300);
   // zrzut pokazuje stan POTWIERDZANIA: pole kliknięte, panel z Zatwierdź/Wybierz inne/Wstecz
   await lek.click("input[name=gtin]");
   await lek.waitForTimeout(250);
-  await shot(lek, "nauka-lek-3-pola");
+  await shot(lek, "medicine-3-fields");
   await lek.click('button[data-act="confirm"]');
   await lek.waitForTimeout(200);
 
@@ -195,7 +195,7 @@ try {
   // wpisany wlasny wzorzec pokazuje podglad na zywo
   await lek.fill("input[data-field='format']", "dd-mm-yy");
   await lek.waitForTimeout(200);
-  await shot(lek, "format-daty");
+  await shot(lek, "date-format");
   await lek.fill("input[data-field='format']", ""); // samouczek zostawia ISO
   await lek.waitForTimeout(150);
   await lek.click('button[data-act="confirm"]');
@@ -208,12 +208,12 @@ try {
     await lek.waitForTimeout(200);
   }
   await lek.fill('input[data-field="name"]', "Zamówienie leku — mój profil");
-  await shot(lek, "nauka-lek-4-zapis");
+  await shot(lek, "medicine-4-save");
 
   await lek.click('button[data-act="save"]');
   await lek.waitForTimeout(700);
   await skanuj(lek, RAMKA_LEK);
-  await shot(lek, "nauka-lek-5-dziala");
+  await shot(lek, "medicine-5-works");
   await lek.close();
 } finally {
   if (context) await context.close();

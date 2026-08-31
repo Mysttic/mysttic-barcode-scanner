@@ -31,7 +31,7 @@
       ".panel h2{margin:0 0 8px;font-size:14px}" +
       ".panel p{margin:0 0 10px;color:#475569}" +
       ".panel input,.panel select{width:100%;padding:6px 8px;border:1px solid #c5cdd9;border-radius:6px;font-size:13px;margin-bottom:6px}" +
-      ".panel button{padding:7px 12px;border:0;border-radius:8px;background:#2563eb;color:#fff;font-size:13px;cursor:pointer;margin-right:6px}" +
+      ".panel button{padding:7px 12px;border:0;border-radius:8px;background:#be123c;color:#fff;font-size:13px;cursor:pointer;margin-right:6px}" +
       ".panel button.ghost{background:#e2e8f0;color:#0f172a}" +
       ".rows{max-height:200px;overflow:auto;margin-bottom:10px}" +
       ".row{display:flex;gap:6px;align-items:center;margin-bottom:4px}" +

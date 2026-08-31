@@ -20,7 +20,7 @@ jobs:
   # Testy agenta wymagaja Windowsa (UI Automation, WinForms). Same pliki exe
   # sklada juz job "build" - przekazywanie ich miedzy jobami przez artefakty
   # potrafi przewrocic wydanie, gdy skonczy sie magazyn artefaktow.
-  testy-agenta:
+  agent-tests:
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop')
@@ -36,7 +36,7 @@ jobs:
         run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
 
   build:
-    needs: testy-agenta
+    needs: agent-tests
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop')
@@ -103,7 +103,7 @@ jobs:
           npm run build
 
       # Firmware produkcyjny (C) ma konfigurator i instrukcje w srodku (dysk
-      # CZYTNIK), wiec kompilujemy go PO buildzie konfiguratora.
+      # MYSTTIC), wiec kompilujemy go PO buildzie konfiguratora.
       - name: Narzedzia ARM
         if: steps.ver.outputs.release == 'true'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
@@ -122,7 +122,7 @@ jobs:
           git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
           cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
 
-      - name: Kompilacja firmware produkcyjnego (UF2 z dyskiem CZYTNIK)
+      - name: Kompilacja firmware produkcyjnego (UF2 z dyskiem MYSTTIC)
         if: steps.ver.outputs.release == 'true'
         working-directory: firmware-pico-sdk
         run: |
@@ -141,8 +141,8 @@ jobs:
           target_commitish: ${{ steps.ver.outputs.sha }}
           name: v${{ steps.ver.outputs.version }}
           files: |
-            release/barcode-reader-v*.zip
-            release/barcode-reader-v*.zip.sha256
-            release/aplikacja-testowa-v*.zip
-            release/aplikacja-testowa-v*.zip.sha256
+            release/mysttic-barcode-scanner-v*.zip
+            release/mysttic-barcode-scanner-v*.zip.sha256
+            release/demo-app-v*.zip
+            release/demo-app-v*.zip.sha256
           body_path: CHANGELOG.md

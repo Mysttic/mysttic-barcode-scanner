@@ -7,13 +7,25 @@ __pycache__/
 # duże pliki do ponownego pobrania (instalki firmware trzymamy świadomie)
 hardware/downloads/*.zip
 
+# build konfiguratora (CI i build_release.py robia go od zera)
+configurator/dist/
+
 # artefakty budowania wydań (CI buduje je od zera)
 release/
 
 # build firmware C (Pico SDK)
 firmware-pico-sdk/build/
 firmware-pico-sdk/tests/*.exe
+firmware-pico-sdk/test_host
+firmware-pico-sdk/test_host.exe
 
 # agent desktopowy (.NET)
 desktop-agent/**/bin/
 desktop-agent/**/obj/
+
+# grafika generowana z brand/icon.svg (node brand/make_icons.mjs + python brand/make_ico.py).
+# Ikony wtyczki i pliki .ico aplikacji ZOSTAJA w repo - bez nich nie zbuduje sie
+# rozszerzenie ani projekty .NET; ponizsze to tylko produkty posrednie.
+brand/icon-128.png
+brand/icon-256.png
+brand/icon.ico

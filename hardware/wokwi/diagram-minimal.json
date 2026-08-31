@@ -1,15 +1,23 @@
 {
   "version": 1,
-  "author": "barcode-reader",
+  "author": "Mysttic",
   "editor": "wokwi",
   "parts": [
-    { "id": "pico", "type": "wokwi-pi-pico", "top": 0, "left": 0, "attrs": { "env": "micropython-20260406-v1.28.0" } },
-    { "id": "gm65", "type": "chip-gm65", "top": -45, "left": -205, "attrs": {} }
+    {
+      "type": "wokwi-pi-pico",
+      "id": "pico",
+      "top": 0,
+      "left": 0,
+      "rotate": 270,
+      "attrs": { "env": "micropython-20260406-v1.28.0" }
+    },
+    { "type": "chip-gm65", "id": "gm65", "top": 68.22, "left": -252.59, "attrs": {} }
   ],
   "connections": [
-    [ "gm65:VCC", "pico:VBUS", "green", [] ],
-    [ "gm65:GND", "pico:GND.1", "red", [] ],
-    [ "gm65:TX", "pico:GP1", "gold", [] ],
-    [ "gm65:RX", "pico:GP0", "black", [] ]
-  ]
+    [ "gm65:VCC", "pico:VBUS", "black", [] ],
+    [ "gm65:TX", "pico:GP1", "orange", [] ],
+    [ "gm65:RX", "pico:GP0", "purple", [] ],
+    [ "gm65:GND", "pico:GND.8", "grey", [] ]
+  ],
+  "dependencies": {}
 }

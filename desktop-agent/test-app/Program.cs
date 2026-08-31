@@ -6,7 +6,7 @@
 // (WinForms mapuje Control.Name -> AutomationId) - to pozwala agentowi
 // celowac w pola po identyfikatorze, a nie po wspolrzednych.
 //
-// Uruchomienie w trybie pelnoekranowym (symulacja kiosku):  AplikacjaTestowa.exe --kiosk
+// Uruchomienie w trybie pelnoekranowym (symulacja kiosku):  MystticDemoApp.exe --kiosk
 using System.Text;
 
 namespace AplikacjaTestowa;

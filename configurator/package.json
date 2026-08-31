@@ -1,12 +1,13 @@
 {
-  "name": "barcode-reader-configurator",
+  "name": "mysttic-barcode-scanner-configurator",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "shots": "node tests/screenshots.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
@@ -15,5 +16,9 @@
   },
   "dependencies": {
     "zod": "^3.23.0"
-  }
+  },
+  "description": "Configuration web page for the Mysttic Barcode Scanner",
+  "license": "Apache-2.0",
+  "author": "Mysttic",
+  "homepage": "https://github.com/Mysttic/mysttic-barcode-scanner"
 }

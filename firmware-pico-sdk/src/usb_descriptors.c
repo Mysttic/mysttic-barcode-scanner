@@ -1,10 +1,14 @@
 // Deskryptory USB: urzadzenie kompozytowe CDC (konfiguracja NDJSON) + HID (klawiatura).
-// VID/PID deweloperskie (0xCAFE) - przed sprzedaza produktu wymagany legalny VID/PID.
+//
+// VID 0x1209 nalezy do pid.codes - rejestru dla projektow otwartych. PID 0x0001
+// jest tam ZAREZERWOWANY DO TESTOW: wolno go uzywac przy budowaniu wlasnego
+// egzemplarza, ale nie w urzadzeniu wypuszczanym do obrotu. Przed sprzedaza
+// zglos wlasny PID (https://pid.codes/howto/) i podmien wartosc ponizej.
 #include "pico/unique_id.h"
 #include "tusb.h"
 
-#define USB_VID 0xCAFE
-#define USB_PID 0x4010
+#define USB_VID 0x1209
+#define USB_PID 0x0001
 #define USB_BCD 0x0200
 
 enum {
@@ -71,12 +75,12 @@ const uint8_t *tud_descriptor_configuration_cb(uint8_t index) {
 
 static const char *string_desc_arr[] = {
     (const char[]){0x09, 0x04},   // 0: jezyk en-US
-    "barcode-reader",             // 1: producent
-    "Czytnik kodow 1D/2D",        // 2: produkt
+    "Mysttic",                    // 1: producent
+    "Mysttic Barcode Scanner",    // 2: produkt
     NULL,                         // 3: numer seryjny (unikalny, generowany)
-    "Kanal konfiguracyjny NDJSON",// 4: interfejs CDC
-    "Klawiatura",                 // 5: interfejs HID
-    "Dysk z konfiguratorem",      // 6: interfejs MSC
+    "Configuration channel (NDJSON)", // 4: interfejs CDC
+    "Keyboard",                   // 5: interfejs HID
+    "Configurator disk",          // 6: interfejs MSC
 };
 
 static uint16_t _desc_str[32];

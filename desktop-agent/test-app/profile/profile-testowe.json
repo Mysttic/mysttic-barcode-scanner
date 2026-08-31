@@ -13,7 +13,7 @@
       "Nazwa": "Karta pracownika (test)",
       "Wlaczony": true,
       "Match": {
-        "Proces": "AplikacjaTestowa",
+        "Proces": "MystticDemoApp",
         "TytulWzorzec": "*Karta pracownika*"
       },
       "Parse": {

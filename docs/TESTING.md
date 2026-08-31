@@ -1,46 +1,50 @@
-# Testowanie
+# Testing
 
-Cztery poziomy: scenariusz „od pudełka" (ręczny, z dysku czytnika), testy
-jednostkowe (automatyczne), scenariusz e2e na sprzęcie (półautomatyczny)
-i plan testów akceptacyjnych (checklista przed wdrożeniem).
+Four levels: the out-of-the-box scenario (manual, from the scanner's disk), unit
+tests (automated), an e2e scenario on hardware (semi-automated) and an acceptance
+test plan (a checklist before deployment).
 
-## 0. Scenariusz „od pudełka" — pełny test z dysku czytnika
+The user interfaces are in Polish, so Polish labels appear in brackets below.
 
-Wszystko, czego potrzeba, jest w czytniku. Konfiguracja urządzenia przez cały
-scenariusz jest JEDNA (produkcyjna) — niczego nie przełączasz między testami.
+## 0. Out of the box — the full test from the scanner's disk
 
-**Przygotowanie (raz):**
+Everything needed is inside the scanner. The device configuration stays the same
+(the production one) throughout the whole scenario; nothing is switched between
+tests.
 
-1. Podłącz czytnik do USB — pojawi się dysk **`CZYTNIK`**.
-2. Otwórz z dysku `konfigurator.html` (Chrome/Edge) → **Połącz** → zakładka
-   **Profile**: włączone mają być `pracownik-tab` i `gs1-datamatrix`
-   (stan fabryczny wydania; jeśli nie — zaznacz i **Zapisz trwale**) → Rozłącz.
-3. Zainstaluj wtyczkę: `chrome://extensions` → **Tryb dewelopera** →
-   **Załaduj rozpakowane** → katalog `browser-extension/` z repozytorium lub
-   paczki wydania. W **Szczegóły** wtyczki włącz **„Zezwalaj na dostęp do
-   adresów URL plików"** (strony testowe otwierają się z dysku).
-4. Otwórz z dysku **`testy.html`** — to menu całego scenariusza.
+**Preparation (once):**
 
-**Testy (kolejno, kody skanujesz prosto z ekranu):**
+1. Plug the scanner into USB. A disk named **`MYSTTIC`** appears.
+2. Open `configurator.html` from the disk (Chrome or Edge) → **Połącz**
+   (Connect) → the **Profile** tab: tick `pracownik-tab` and `gs1-datamatrix`,
+   then click **Zapisz trwale** and disconnect. Every profile is disabled out of
+   the factory, so this step is what turns the scenario on.
+3. Install the extension: `chrome://extensions` → **Developer mode** → **Load
+   unpacked** → the `browser-extension/` directory from the repository or the
+   release package. In the extension's **Details**, enable **"Allow access to
+   file URLs"** (the test pages open from the disk).
+4. Open **`tests.html`** from the disk. That is the menu for the whole scenario.
 
-| # | Test | Kroki | Oczekiwany wynik |
+**The tests, in order, scanning the codes straight off the screen:**
+
+| # | Test | Steps | Expected result |
 |---|---|---|---|
-| 1 | **A — TAB-y** | otwórz formularz A, kliknij pole „Imię", zeskanuj | pola wypełnione PO KOLEI (JAN/KOWALSKI/12345/IT), Enter zatwierdza |
-| 2 | **B — pola po nazwie** | otwórz formularz B, nic nie klikaj, zeskanuj | wartości trafiają po nazwach mimo pomieszanej kolejności; pułapki puste |
-| 3 | **GS1 — TAB-y** | otwórz formularz GS1, kliknij pierwsze pole, zeskanuj | GTIN, data `RRRR-MM-DD`, partia, numer seryjny po kolei |
-| 4 | **C — karta pracownika (wtyczka)** | otwórz, sprawdź dymek „Czytnik: Karta pracownika (demo)" i badge `ON`, zeskanuj BEZ klikania | te same dane co w teście 1, ale pola są pomieszane i wypełniają się PO NAZWACH; panel „stan strony" pokazuje 4/4 |
-| 5 | **C — negatywny** | na stronie testu 4 przełącz na widok *Ustawienia*, kliknij w pole, zeskanuj | badge gaśnie, TAB-y działają jak zwykła klawiatura (bez wtyczki) |
-| 6 | **C — zamówienie leku** | otwórz, sprawdź dymek „Czytnik: Zamówienie leku (demo)", zeskanuj DataMatrix | numer seryjny `K7L9XW24MQ1R`, data `2027-10-31` (z `271000` — dzień 00 = koniec miesiąca), GTIN, seria — po nazwach; pułapki puste |
-| 7 | **przełączanie profili** | wróć na stronę testu 4 i zeskanuj kod LEKU | nic się nie wypełnia (ramka odrzucona) — profile nie strzelają na krzyż |
+| 1 | **A — TABs** | open form A, click the "Imię" field, scan | fields filled IN ORDER (JAN/KOWALSKI/12345/IT), Enter submits |
+| 2 | **B — fields by name** | open form B, click nothing, scan | values land by name despite the shuffled order; decoy fields stay empty |
+| 3 | **GS1 — TABs** | open the GS1 form, click the first field, scan | GTIN, date `YYYY-MM-DD`, batch, serial number, in order |
+| 4 | **C — employee card (extension)** | open it, check for the "Czytnik: Karta pracownika (demo)" toast and the `ON` badge, scan WITHOUT clicking | the same data as in test 1, but the fields are shuffled and get filled BY NAME; the "stan strony" panel shows 4/4 |
+| 5 | **C — negative** | on the page from test 4 switch to the *Ustawienia* view, click a field, scan | the badge goes out and the TABs behave like an ordinary keyboard (as if the extension were not installed) |
+| 6 | **C — medicine order** | open it, check for the "Czytnik: Zamówienie leku (demo)" toast, scan the DataMatrix | serial number `K7L9XW24MQ1R`, date `2027-10-31` (from `271000`, day 00 meaning end of month), GTIN and batch, all by name; decoy fields empty |
+| 7 | **profile switching** | go back to the page from test 4 and scan the MEDICINE code | nothing is filled (the frame is rejected): profiles do not fire across pages |
 
-Kryterium zaliczenia: 1–7 zgodne z tabelą. Dalej (opcjonalnie): tryb nauki
-na obcej stronie z poligonu ([FORMULARZE.md](FORMULARZE.md), sekcja „Poligon")
-— procedura w [WTYCZKA.md](WTYCZKA.md).
+Pass criterion: tests 1-7 match the table. Optionally, next: learning mode on a
+third-party page from the range ([FORMS.md](FORMS.md), section "A range"), with
+the procedure in [BROWSER-EXTENSION.md](BROWSER-EXTENSION.md).
 
-## 1. Testy jednostkowe (bez sprzętu)
+## 1. Unit tests (no hardware)
 
-Uruchamiają się automatycznie w CI przy każdym PR do `master`
-(`.github/workflows/ci.yml`). Lokalnie:
+They run automatically in CI on every pull request to `master`
+(`.github/workflows/ci.yml`). Locally:
 
 ```bash
 cd firmware-circuitpython && python tests/test_firmware.py
@@ -54,23 +58,25 @@ cd firmware-pico-sdk && gcc -Wall -Wextra -Werror -I src tests/test_host.c src/s
 cd browser-extension && npm ci && npm test
 ```
 
-Zakres: ramkowanie UART, parser i profile (regex + GS1), walidacja konfiguracji,
-zapis NVM, protokół CDC — te same wektory w wersji Python i C; dla wtyczki
-dodatkowo dopasowanie adresów i transformacje wartości.
+Scope: UART framing, the parser and profiles (regex and GS1), configuration
+validation, NVM storage and the CDC protocol, with the same vectors in the Python
+and C versions; for the extension also address matching and value
+transformations.
 
-### Test e2e wtyczki (Chromium, bez sprzętu)
+### The extension's e2e test (Chromium, no hardware)
 
 ```bash
-cd browser-extension && npm run test:e2e      # na serwerze: xvfb-run -a npm run test:e2e
+cd browser-extension && npm run test:e2e      # on a server: xvfb-run -a npm run test:e2e
 ```
 
-Startuje prawdziwy Chromium z załadowanym rozszerzeniem, otwiera
-`test-vectors/forma-c-wtyczka.html` i symuluje skan zdarzeniami klawiatury.
-Sprawdza, że rozpoznany formularz zostaje wypełniony **i że strona faktycznie
-widzi wartości** (nie tylko `value`), że na widoku bez profilu wtyczka milczy
-oraz że obcy kod zostaje oddany stronie. Chodzi też w CI przy każdym PR.
+It starts a real Chromium with the extension loaded, opens
+`test-vectors/forms/form-c-extension.html` and simulates a scan with keyboard
+events. It checks that a recognised form gets filled **and that the page really
+sees the values** (not just `value`), that the extension stays silent on a view
+with no profile, and that a foreign code is handed back to the page. It runs in
+CI on every pull request too.
 
-### Testy agenta desktopowego (moduł opcjonalny)
+### Desktop agent tests (optional module)
 
 ```bash
 dotnet run -c Release --project desktop-agent/tests/TestyAgenta
@@ -80,70 +86,98 @@ dotnet run -c Release --project desktop-agent/tests/TestyAgenta
 python desktop-agent/tests/test_e2e.py
 ```
 
-Jednostkowe (34 asercje) sprawdzają parser na tych samych wektorach co firmware
-i wtyczka, dopasowanie okien i przetwarzanie nagrania z trybu nauki. E2E
-(27 asercji) uruchamia **prawdziwą aplikację WinForms** i prawdziwe UI
-Automation: rozpoznanie okna, wypełnienie pól z weryfikacją stanu aplikacji,
-nietknięte pola-pułapki, odrzucenie obcego kodu, przechwycenie skanu przez
-agenta w tle (także w stylu prawdziwego czytnika, z Shiftem) oraz działanie
-nowego profilu bez restartu.
+The unit tests (34 assertions) exercise the parser on the same vectors as the
+firmware and the extension, plus window matching and the processing of a
+recording from learning mode. The e2e test (27 assertions) starts a **real
+WinForms application** and real UI Automation: window recognition, filling fields
+with verification against the application's own state, untouched decoy fields,
+rejection of a foreign code, a scan captured by the agent in the background (also
+in the style of a real reader, with Shift) and a new profile working without a
+restart.
 
-Testy jednostkowe agenta chodzą w CI (job `agent-desktopowy`, Windows);
-e2e wymaga pulpitu z prawdziwymi oknami, więc uruchamia się je lokalnie.
+The agent's unit tests run in CI (the `agent-desktopowy` job, on Windows); the
+e2e test needs a desktop with real windows, so it is run locally.
 
-## 2. Scenariusz e2e na sprzęcie
+## 2. The e2e scenario on hardware
 
-Podłącz czytnik i uruchom:
+Plug the scanner in and run:
 
 ```bash
 python tools/test_e2e.py
 ```
 
-Skrypt sam znajdzie urządzenie (działa z oboma wariantami firmware) i przejdzie
-7 kroków: wykrycie → odczyt konfiguracji → zmiana + odczyt zwrotny → **zapis
-trwały + restart + kontrola trwałości** → tryb testowy (operator skanuje kod) →
-wpis przez klawiaturę do Notatnika (operator potwierdza) → blokada duplikatów
-(operator potwierdza). Kończy się raportem PASS/FAIL; konfiguracja urządzenia
-wraca do stanu sprzed testu.
+The script finds the device by itself (it works with both firmware variants) and
+goes through seven steps: detection → reading the configuration → a change plus a
+read-back → **a permanent save, a restart and a persistence check** → test mode
+(the operator scans a code) → typing into a text editor over the keyboard (the
+operator confirms) → duplicate blocking (the operator confirms). It ends with a
+PASS/FAIL report and restores the device configuration to its previous state.
 
-## 3. Paczka testowa przed wydaniem
+## 3. A test package before a release
 
-Zakładka *Actions* → workflow `ci` → **Run workflow** (gałąź `develop`) —
-CI przejdzie testy i zbuduje kompletny zip wydania jako artifact (bez
-publikacji). Zainstaluj go na urządzeniu testowym (`install.ps1`) i przejdź
-scenariusz e2e, zanim zrobisz PR wydaniowy.
+The *Actions* tab → the `ci` workflow → **Run workflow** (branch `develop`). CI
+runs the tests and builds the complete release zip as an artifact, without
+publishing it. Install it on a test device (`install.ps1`) and go through the e2e
+scenario before opening the release pull request.
 
-## 4. Plan testów akceptacyjnych (przed wdrożeniem produkcyjnym)
+## 3a. Verifying a published release
 
-Sprzęt:
-- [ ] 100 kolejnych skanów bez resetu i utraty znaków
-- [ ] odłączenie/podłączenie USB nie wymaga żadnej konfiguracji
-- [ ] konfiguracja nieuszkodzona po nagłym odłączeniu zasilania (także w trakcie „Zapisz trwale")
-- [ ] stabilna praca z docelowym przewodem USB
+The tests from section 1 can be run against the files from a **downloaded
+package** rather than local builds, which checks exactly what a customer gets.
+After unpacking `mysttic-barcode-scanner-v<version>.zip` and
+`demo-app-v<version>-win-x64.zip`:
 
-Parsowanie i klawiatura:
-- [ ] kod prosty przepisany 1:1; profile tną poprawnie pola puste/długie
-- [ ] TAB/ENTER działają w aplikacji docelowej (dobrane pauzy)
-- [ ] błędny kod nie zawiesza urządzenia (onError wg konfiguracji)
-- [ ] blokada duplikatów przy trzymaniu kodu przed okiem
+```bash
+# checksum of the package, and of the files inside it
+sha256sum -c mysttic-barcode-scanner-v<version>.zip.sha256
+cd mysttic-barcode-scanner-v<version> && sha256sum -c SHA256SUMS.txt
+```
+
+```bash
+# the desktop agent from the package (27 assertions)
+AGENT_EXE=.../desktop-agent/MystticBarcodeAgent.exe \
+APLIKACJA_EXE=.../demo-app-v<version>/MystticDemoApp.exe \
+PROFIL_TESTOWY=.../desktop-agent/example-profile.json \
+python desktop-agent/tests/test_e2e.py
+```
+
+```bash
+# the extension from the package (22 assertions)
+cd browser-extension && EXT_DIR=.../browser-extension node tests/test_e2e.mjs
+```
+
+## 4. Acceptance test plan (before a production rollout)
+
+Hardware:
+- [ ] 100 consecutive scans with no reset and no lost characters
+- [ ] unplugging and replugging USB requires no configuration
+- [ ] the configuration survives a sudden power loss (including one during "Zapisz trwale")
+- [ ] stable operation with the USB cable that will actually be used
+
+Parsing and keyboard:
+- [ ] a plain code is typed verbatim; profiles cut empty and long fields correctly
+- [ ] TAB and ENTER work in the target application (with suitable pauses)
+- [ ] a malformed code does not hang the device (onError as configured)
+- [ ] duplicate blocking works while a code is held in front of the lens
 
 GS1:
-- [ ] AI 01/17/10/21 w różnej kolejności, pola zmienne na końcu i przed separatorem
-- [ ] separator GS (0x1D) nie ginie; data „00" przeliczana wg reguły
+- [ ] AI 01/17/10/21 in various orders, with variable fields at the end and before a separator
+- [ ] the GS separator (0x1D) is not lost; the day "00" rule is applied
 
-Wtyczka (jeśli wdrażana):
-- [ ] profil włącza się na docelowym formularzu i gaśnie po wyjściu z niego
-- [ ] pola-pułapki zostają puste; formularz zapisuje się z kompletem danych
-- [ ] na stronie bez profilu skan zachowuje się jak przed instalacją wtyczki
-- [ ] tryb nauki tworzy działający profil na formularzu klienta
+Extension (if deployed):
+- [ ] the profile activates on the target form and goes quiet after leaving it
+- [ ] decoy fields stay empty; the form submits with a complete set of data
+- [ ] on a page with no profile, a scan behaves as it did before installing the extension
+- [ ] learning mode produces a working profile on the customer's form
 
-Konfigurator:
-- [ ] połączenie w Chrome i Edge; tryb testowy nie wpisuje do okien
-- [ ] błędna konfiguracja nie da się zapisać; import/eksport zachowuje profile
-- [ ] ustawienia fabryczne działają (przycisk i wariant sprzętowy GP2)
+Configurator:
+- [ ] connects in Chrome and Edge; test mode types into no window
+- [ ] an invalid configuration cannot be saved; import and export preserve profiles
+- [ ] factory settings work (both the button and the GP2 hardware variant)
 
-## Proces wydania (przypomnienie)
+## The release process (a reminder)
 
-`develop` → (opcjonalnie paczka testowa + e2e) → PR do `master` (CI: testy) →
-merge → automatyczny release, jeśli wersja w [VERSION.md](../VERSION.md) została
-podniesiona. Szczegóły: [ARCHITEKTURA.md](ARCHITEKTURA.md).
+`develop` → (optionally a test package plus e2e) → a pull request to `master` (CI:
+tests) → merge → an automatic release, if the version in
+[VERSION.md](../VERSION.md) was raised. Details:
+[ARCHITECTURE.md](ARCHITECTURE.md).
