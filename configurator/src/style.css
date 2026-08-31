@@ -60,3 +60,7 @@ footer { color: var(--muted); font-size: 0.8rem; }
 .scan-entry .p { color: var(--accent); }
 
 .podtytul { margin: 2px 0 12px 34px; color: var(--muted); font-size: .85rem; letter-spacing: .02em; }
+
+#conn-bar .spacer { flex: 1; }
+.lang { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; }
+.lang select { padding: 2px 6px; }

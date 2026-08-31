@@ -2,15 +2,15 @@
 # Pracuje na SUROWYCH bajtach (separator GS 0x1D musi przetrwac transport).
 # Obslugiwane AI:
 #   01 - GTIN, dokladnie 14 cyfr
-#   17 - data waznosci YYMMDD, dokladnie 6 cyfr (+ pole pochodne dataWaznosciISO)
-#   10 - numer partii, 1-20 znakow, konczy sie GS albo koncem kodu
+#   17 - data waznosci YYMMDD, dokladnie 6 cyfr (+ pole pochodne expiryISO)
+#   10 - number partii, 1-20 znakow, konczy sie GS albo koncem kodu
 #   21 - numer seryjny, 1-20 znakow, konczy sie GS albo koncem kodu
 # AIM ID (np. "]d2") jest zdejmowany z poczatku i zwracany jako metadana.
 
 GS = 0x1D
 
-_FIXED = {"01": ("gtin", 14, True), "17": ("dataWaznosci", 6, True)}
-_VARIABLE = {"10": ("partia", 20), "21": ("numerSeryjny", 20)}
+_FIXED = {"01": ("gtin", 14, True), "17": ("expiry", 6, True)}
+_VARIABLE = {"10": ("batch", 20), "21": ("serial", 20)}
 
 _DAYS = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
@@ -95,8 +95,8 @@ def parse(raw):
             return None, aim, "AI " + ai + " zdublowany"
     if not fields:
         return None, aim, "pusty kod"
-    if "dataWaznosci" in fields:
-        iso = date_to_iso(fields["dataWaznosci"])
+    if "expiry" in fields:
+        iso = date_to_iso(fields["expiry"])
         if iso:
-            fields["dataWaznosciISO"] = iso
+            fields["expiryISO"] = iso
     return fields, aim, None

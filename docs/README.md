@@ -1,6 +1,6 @@
 # Documentation
 
-Everything about the scanner, in nine pages. Start with the one that matches
+Everything about the scanner, in eight pages. Start with the one that matches
 what you are doing.
 
 ## Using it
@@ -30,7 +30,7 @@ what you are doing.
 
 ---
 
-The documentation is in English. The **user interfaces** of the configurator,
-the extension and the agent are still in Polish, so wherever a page tells you to
-click something, the Polish label is given with a translation next to it.
-Translating the interfaces is on the [roadmap](roadmap.md).
+The documentation and the user interfaces are in English. The configurator,
+the browser extension and the desktop agent each carry a **language selector**
+with Polish as the second option; the screenshots in these pages show the English
+interface.

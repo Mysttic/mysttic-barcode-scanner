@@ -1,129 +1,131 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEcUlEQVR4nLxXz2sVRxz/zGafTUw08SLGUjS9pBeLHkpfaYXSH1S9tBTa0oa2NrTQQ1vqqT3UQmmhUCiWFkoO7R9QKBjxRzwIBhTJQeWpGDUYiQrGqIkviS8xeW9n/O7uzO7M7MxTLy68Nzsz35n5fj7fX7MhtOfuqzu7eL2+SwBlLsRmGlrLOQf1QX36Z4ioD9kXesuFHI/lWdJq8rdoukITI6LE9mypDFbVmUy9zLzct522+Id+64W+Of3UIel72ubzVh+aDLWxOpb8DXr//IXR/UOZArNbP36rwfnhHGmMKEdiInws5IacAhG3URTteGlsaIhVX/loTQR2nsa7i8iRIPIih0RZQG7K6QwaTLQ0NoWRYJ/SYLeJPLe5Qihs5MJGLuWFm6lsfc7sehEFn4RIHc6ziLs0T/qmPDd8QfgOt9sI5ZA6ZdPmpm0fijyWY8r2OlJL3uhnjJVDajYYSOBB4kQu5XSHU54PW175lBxPfINvCBLkMtSUzeNXtroDHe9vAzo7kkUrXyeiWp9KNu98902Unn3GHRXCCk3OM0c0lUnnQ5/NOz/Yhq4v3kPQuQrTA/9h3S/fYPLHv9CYvot1u7/EwsnzuNL/QyYfrGpH1/atYCvbgIwBCrfaAm4fPIZodk5DnjMU+mwuFc76bEWJDq+CG+N5yK0mhrq/6oOcBrS3aKmByf8PFxiDYsBlc/3R6dP2NeL8XuUS5o6fRtDeJkWEZGARc5VRA7nJgMfblQMJSaetjBpX8ovj1zD+3e9GBk0youAex6WWWQzY3q6IzEKMo6BMszh32TzLoNLsoS/OFe60y7QxkWlmeDdt1ta7kZyw1WCqPr+A2thEwoyL6bBZnGdI1WJpV8WMLr/mjTJ6fv46n9SesZ/+xs0Dw86qGRTjmDujIDeHZR4Z5/X5WuJw9uENGlueqaY2N85J50NfhoPjUFd0qPnqyBmcfK3ffX+Anp7Nyhr6qprtiOolZ0b3AXcV1Bm0kWcK2IvSjXl+uNCTFIxEo2dQX5zbNs8jIR0PffU8t7vpA7pyulk6nu/Fc398j5b2tqQ/Q0np3Le/FpDbTIWZ44liRsxZEE5luBbnrT1PZ4cnCvX2OG0OuDKho55H9xaTfuzFQjNHvZaORwv3oVe1yb1HMD86LosRMH/5quYLrOgLkpI0Ezrq+Z3BI1REljB96FgyfvW3f1Ebv45lqoaXd/+J2VOjxiUjbucuXnHcEf03pLhlZze9LWBpZjiQL7dzd263b0Ku27HeD+g31dx7rdASlpLCvoZJswhRcDhHSE7RjUhUssX2ZgLem4xdYJxxriWlwv5ppxJwsEqB9sJh3EDOnQxpyJvK5b4WxQqwiA2QaavN73Ceeg4449xQXt5EHcxWg5ZwINhycXCiwUX/k7F5Lk9lcOeHN4cnYifEixcO7I2/1Wj8xuPbXDyyzWVLH6diR9/UiX2A9nUcP0c3vtNVWrG0i9aWaeVmEl7rP9zO7f6vaGqTz3MaHVlaLu35rDqcfZ4/AAAA//+Z2lP7AAAABklEQVQDAEYzL5IiLf1DAAAAAElFTkSuQmCC" />
-    <title>Mysttic Barcode Scanner — konfigurator</title>
+    <title>Mysttic Barcode Scanner - configurator</title>
   </head>
   <body>
     <header>
       <h1><img id="brand-icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAEcUlEQVR4nLxXz2sVRxz/zGafTUw08SLGUjS9pBeLHkpfaYXSH1S9tBTa0oa2NrTQQ1vqqT3UQmmhUCiWFkoO7R9QKBjxRzwIBhTJQeWpGDUYiQrGqIkviS8xeW9n/O7uzO7M7MxTLy68Nzsz35n5fj7fX7MhtOfuqzu7eL2+SwBlLsRmGlrLOQf1QX36Z4ioD9kXesuFHI/lWdJq8rdoukITI6LE9mypDFbVmUy9zLzct522+Id+64W+Of3UIel72ubzVh+aDLWxOpb8DXr//IXR/UOZArNbP36rwfnhHGmMKEdiInws5IacAhG3URTteGlsaIhVX/loTQR2nsa7i8iRIPIih0RZQG7K6QwaTLQ0NoWRYJ/SYLeJPLe5Qihs5MJGLuWFm6lsfc7sehEFn4RIHc6ziLs0T/qmPDd8QfgOt9sI5ZA6ZdPmpm0fijyWY8r2OlJL3uhnjJVDajYYSOBB4kQu5XSHU54PW175lBxPfINvCBLkMtSUzeNXtroDHe9vAzo7kkUrXyeiWp9KNu98902Unn3GHRXCCk3OM0c0lUnnQ5/NOz/Yhq4v3kPQuQrTA/9h3S/fYPLHv9CYvot1u7/EwsnzuNL/QyYfrGpH1/atYCvbgIwBCrfaAm4fPIZodk5DnjMU+mwuFc76bEWJDq+CG+N5yK0mhrq/6oOcBrS3aKmByf8PFxiDYsBlc/3R6dP2NeL8XuUS5o6fRtDeJkWEZGARc5VRA7nJgMfblQMJSaetjBpX8ovj1zD+3e9GBk0youAex6WWWQzY3q6IzEKMo6BMszh32TzLoNLsoS/OFe60y7QxkWlmeDdt1ta7kZyw1WCqPr+A2thEwoyL6bBZnGdI1WJpV8WMLr/mjTJ6fv46n9SesZ/+xs0Dw86qGRTjmDujIDeHZR4Z5/X5WuJw9uENGlueqaY2N85J50NfhoPjUFd0qPnqyBmcfK3ffX+Anp7Nyhr6qprtiOolZ0b3AXcV1Bm0kWcK2IvSjXl+uNCTFIxEo2dQX5zbNs8jIR0PffU8t7vpA7pyulk6nu/Fc398j5b2tqQ/Q0np3Le/FpDbTIWZ44liRsxZEE5luBbnrT1PZ4cnCvX2OG0OuDKho55H9xaTfuzFQjNHvZaORwv3oVe1yb1HMD86LosRMH/5quYLrOgLkpI0Ezrq+Z3BI1REljB96FgyfvW3f1Ebv45lqoaXd/+J2VOjxiUjbucuXnHcEf03pLhlZze9LWBpZjiQL7dzd263b0Ku27HeD+g31dx7rdASlpLCvoZJswhRcDhHSE7RjUhUssX2ZgLem4xdYJxxriWlwv5ppxJwsEqB9sJh3EDOnQxpyJvK5b4WxQqwiA2QaavN73Ceeg4449xQXt5EHcxWg5ZwINhycXCiwUX/k7F5Lk9lcOeHN4cnYifEixcO7I2/1Wj8xuPbXDyyzWVLH6diR9/UiX2A9nUcP0c3vtNVWrG0i9aWaeVmEl7rP9zO7f6vaGqTz3MaHVlaLu35rDqcfZ4/AAAA//+Z2lP7AAAABklEQVQDAEYzL5IiLf1DAAAAAElFTkSuQmCC" alt="" width="22" height="22" style="vertical-align:-4px;margin-right:.4rem">Mysttic Barcode Scanner</h1>
-      <p class="podtytul">konfigurator</p>
+      <p class="podtytul" data-i18n="app.subtitle">configurator</p>
       <div id="conn-bar">
-        <button id="btn-connect">Połącz</button>
-        <button id="btn-disconnect" hidden>Rozłącz</button>
-        <span id="conn-status" class="badge off">rozłączony</span>
+        <button id="btn-connect" data-i18n="conn.connect">Connect</button>
+        <button id="btn-disconnect" hidden data-i18n="conn.disconnect">Disconnect</button>
+        <span id="conn-status" class="badge off" data-i18n="conn.disconnected">disconnected</span>
         <span id="dev-info"></span>
+        <span class="spacer"></span>
+        <label class="lang">
+          <span data-i18n="lang.label">Language</span>
+          <select id="sel-lang">
+            <option value="en">English</option>
+            <option value="pl">Polski</option>
+          </select>
+        </label>
       </div>
     </header>
 
     <main id="app" hidden>
       <nav id="tabs">
-        <button data-tab="sec-device" class="tab active">Urządzenie</button>
-        <button data-tab="sec-profiles" class="tab">Profile</button>
-        <button data-tab="sec-test" class="tab">Test</button>
-        <button data-tab="sec-update" class="tab">Aktualizacja</button>
-        <button data-tab="sec-actions" class="tab">Serwis</button>
+        <button data-tab="sec-device" class="tab active" data-i18n="tab.device">Device</button>
+        <button data-tab="sec-profiles" class="tab" data-i18n="tab.profiles">Profiles</button>
+        <button data-tab="sec-test" class="tab" data-i18n="tab.test">Test</button>
+        <button data-tab="sec-update" class="tab" data-i18n="tab.update">Update</button>
+        <button data-tab="sec-actions" class="tab" data-i18n="tab.service">Service</button>
         <span class="spacer"></span>
-        <button id="btn-apply" class="primary">Zastosuj</button>
-        <button id="btn-save" class="primary">Zapisz trwale</button>
+        <button id="btn-apply" class="primary" data-i18n="btn.apply">Apply</button>
+        <button id="btn-save" class="primary" data-i18n="btn.save">Save permanently</button>
       </nav>
       <pre id="validation" class="log" hidden></pre>
 
       <section id="sec-device">
-        <h2>Urządzenie</h2>
+        <h2 data-i18n="device.heading">Device</h2>
         <div class="grid">
-          <label>Opóźnienie klawiszy (ms)
+          <label><span data-i18n="device.keyDelay">Key delay (ms)</span>
             <input type="number" id="dev-keydelay" min="0" max="500" />
           </label>
-          <label>Klawisz kończący (bez profilu)
+          <label><span data-i18n="device.suffixKey">Closing key (with no profile)</span>
             <select id="dev-suffix"></select>
           </label>
-          <label>Tryb bez profilu
+          <label><span data-i18n="device.outMode">Mode with no profile</span>
             <select id="dev-outmode">
-              <option value="passthrough">przepisz 1:1</option>
-              <option value="split">podziel (splitAt)</option>
+              <option value="passthrough" data-i18n="device.outMode.passthrough">pass through 1:1</option>
+              <option value="split" data-i18n="device.outMode.split">split (splitAt)</option>
             </select>
           </label>
-          <label>Podział po znaku nr
+          <label><span data-i18n="device.splitAt">Split after character no.</span>
             <input type="number" id="dev-splitat" min="1" value="4" />
           </label>
-          <label>Pauza po TAB/ENTER (ms)
+          <label><span data-i18n="device.actionDelay">Pause after TAB/ENTER (ms)</span>
             <input type="number" id="dev-actiondelay" min="0" max="1000" />
           </label>
-          <label>Blokada duplikatów (ms, 0 = wył.)
+          <label><span data-i18n="device.dupBlock">Duplicate block (ms, 0 = off)</span>
             <input type="number" id="dev-dupblock" min="0" max="10000" />
           </label>
-          <label>Prefiks tekstowy
-            <input type="text" id="dev-prefixtext" placeholder="(brak)" />
+          <label><span data-i18n="device.prefixText">Text prefix</span>
+            <input type="text" id="dev-prefixtext" data-i18n-ph="device.none" placeholder="(none)" />
           </label>
-          <label>Sufiks tekstowy
-            <input type="text" id="dev-suffixtext" placeholder="(brak)" />
+          <label><span data-i18n="device.suffixText">Text suffix</span>
+            <input type="text" id="dev-suffixtext" data-i18n-ph="device.none" placeholder="(none)" />
           </label>
-          <label>Gdy profil nie sparsuje kodu
+          <label><span data-i18n="device.onError">When a profile cannot parse the code</span>
             <select id="dev-onerror">
-              <option value="raw">wyślij surowy 1:1</option>
-              <option value="skip">pomiń skan</option>
+              <option value="raw" data-i18n="device.onError.raw">send it raw, 1:1</option>
+              <option value="skip" data-i18n="device.onError.skip">skip the scan</option>
             </select>
           </label>
         </div>
       </section>
 
       <section id="sec-profiles" hidden>
-        <h2>Profile</h2>
-        <p class="hint">
-          Sekwencja akcji: <code>{pole}</code> wpisuje sparsowane pole,
-          <code>"tekst"</code> wpisuje stały tekst, a słowa
-          <code>TAB ENTER ESC BACKSPACE UP DOWN LEFT RIGHT F1–F12</code> naciskają klawisz.
-          Przykład: <code>{imie} TAB TAB ENTER {nazwisko}</code>
-        </p>
+        <h2 data-i18n="profiles.heading">Profiles</h2>
+        <p class="hint" data-i18n-html="profiles.hint"></p>
         <div id="profiles-list"></div>
-        <button id="btn-add-profile">+ Dodaj profil</button>
+        <button id="btn-add-profile" data-i18n="profiles.add">+ Add profile</button>
       </section>
 
       <section id="sec-test" hidden>
-        <h2>Test</h2>
+        <h2 data-i18n="test.heading">Test</h2>
         <label class="switch">
           <input type="checkbox" id="chk-testmode" />
-          Tryb testowy (skany lecą tutaj, nic nie wpisuje się do okien)
+          <span data-i18n="test.mode">Test mode (scans land here, nothing is typed into windows)</span>
         </label>
         <div id="test-log" class="log"></div>
       </section>
 
       <section id="sec-update" hidden>
-        <h2>Aktualizacja firmware</h2>
-        <p>Zainstalowana wersja: <b id="fw-version">?</b>
-          <a id="fw-releases" href="#" target="_blank" rel="noopener">sprawdź najnowsze wydanie i changelog</a></p>
+        <h2 data-i18n="update.heading">Firmware update</h2>
+        <p><span data-i18n="update.installed">Installed version:</span> <b id="fw-version">?</b>
+          <a id="fw-releases" href="#" target="_blank" rel="noopener" data-i18n="update.releases">check the latest release and the changelog</a></p>
         <ol class="hint">
-          <li>Pobierz paczkę wydania i zweryfikuj sumę SHA-256 z pliku <code>SHA256SUMS.txt</code>.</li>
-          <li>Kliknij niżej <b>Restart do bootloadera</b> — czytnik pojawi się jako dysk <code>RPI-RP2</code>.</li>
-          <li>Jeśli wydanie zawiera nowy CircuitPython — przeciągnij plik <code>.uf2</code> na <code>RPI-RP2</code> i poczekaj na dysk <code>CIRCUITPY</code>.</li>
-          <li>Skopiuj zawartość katalogu <code>device/</code> z paczki na dysk <code>CIRCUITPY</code> (nadpisz pliki), po czym odłącz i podłącz USB.</li>
+          <li data-i18n-html="update.step1"></li>
+          <li data-i18n-html="update.step2"></li>
+          <li data-i18n-html="update.step3"></li>
+          <li data-i18n-html="update.step4"></li>
         </ol>
-        <button id="btn-update-bootloader">Restart do bootloadera (RPI-RP2)</button>
+        <button id="btn-update-bootloader" data-i18n="update.bootloader">Restart into the bootloader (RPI-RP2)</button>
       </section>
 
       <section id="sec-actions" hidden>
-        <h2>Serwis</h2>
-        <p class="hint"><b>Zastosuj</b> (pasek u góry) działa do restartu urządzenia;
-          <b>Zapisz trwale</b> utrwala konfigurację w pamięci czytnika.</p>
+        <h2 data-i18n="service.heading">Service</h2>
+        <p class="hint" data-i18n-html="service.hint"></p>
         <div class="row">
-          <button id="btn-reload">Odśwież z urządzenia</button>
-          <button id="btn-export">Eksport JSON</button>
-          <button id="btn-import">Import JSON</button>
+          <button id="btn-reload" data-i18n="service.reload">Reload from the device</button>
+          <button id="btn-export" data-i18n="service.export">Export JSON</button>
+          <button id="btn-import" data-i18n="service.import">Import JSON</button>
           <input type="file" id="file-import" accept=".json" hidden />
         </div>
         <div class="row danger-zone">
-          <button id="btn-factory">Ustawienia fabryczne</button>
-          <button id="btn-reboot">Restart</button>
-          <button id="btn-bootloader">Restart do bootloadera (UF2)</button>
+          <button id="btn-factory" data-i18n="service.factory">Factory settings</button>
+          <button id="btn-reboot" data-i18n="service.reboot">Restart</button>
+          <button id="btn-bootloader" data-i18n="service.bootloader">Restart into the bootloader (UF2)</button>
         </div>
       </section>
     </main>
 
     <footer>
-      <span id="fw-note">Otwórz w Chrome/Edge. Strona łączy się z czytnikiem przez WebSerial (USB).</span>
+      <span id="fw-note" data-i18n="footer.note">Open in Chrome or Edge. The page talks to the scanner over WebSerial (USB).</span>
     </footer>
 
     <script type="module" src="./src/main.ts"></script>

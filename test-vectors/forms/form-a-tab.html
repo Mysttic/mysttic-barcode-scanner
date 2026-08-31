@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Test A — formularz z tabulatorami</title>
+<title>Test A - form filled with tabs</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; }
   .wrap { max-width: 860px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
@@ -22,21 +22,22 @@
 <body>
 <div class="wrap">
   <form class="card" onsubmit="event.preventDefault(); document.querySelector('.ok').style.display='block';">
-    <h1>Karta pracownika — wariant A (tabulatory)</h1>
-    <p class="hint">Czytnik z włączonym profilem <b>pracownik-tab</b> wpisze pola po kolei,
-    przeskakując TAB-em: imię → nazwisko → numer → dział, na końcu ENTER zatwierdzi formularz.
-    <b>Kliknij w pole „Imię" i zeskanuj kod obok.</b></p>
-    <label>Imię</label><input name="imie" autofocus>
-    <label>Nazwisko</label><input name="nazwisko">
-    <label>Numer pracownika</label><input name="numer">
-    <label>Dział</label><input name="dzial">
-    <button type="submit">Zapisz</button>
-    <div class="ok">✔ Formularz zatwierdzony (ENTER z czytnika)</div>
+    <h1>Employee card - variant A (tabs)</h1>
+    <p class="hint">With the <b>employee-tab</b> profile enabled, the scanner types the fields
+    one after another and jumps between them with TAB: first name → last name → number →
+    department, then ENTER submits the form.
+    <b>Click the "First name" box and scan the code next to it.</b></p>
+    <label>First name</label><input name="firstName" autofocus>
+    <label>Last name</label><input name="lastName">
+    <label>Employee number</label><input name="number">
+    <label>Department</label><input name="department">
+    <button type="submit">Save</button>
+    <div class="ok">✔ Form submitted (ENTER from the scanner)</div>
   </form>
   <div class="card qr">
-    <h1>Kod do zeskanowania</h1>
+    <h1>Code to scan</h1>
     <img alt="QR PRC" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAAD4AQAAAADpqhamAAABUklEQVR4nO1ZSY7DMAwjjf7/yxyIkp3DALkUTg0oauC61iFaqM2lcEvjno2Xf0/j5R9tnw8A5lbeCYSuk9FAfzgHEKAYW10n+LV84xE+aY+LyM86wRnybfb/JKbrC/399EcEfsbAU+8fR+gvrxn+RKzqpD+v35RBwFPkG5v5/N//OQs89f5xAJ8GfTxBPmjj/4FpAAe/KvvHF4+Rbz9f1fMF9gv9aYBD5NvNZyV9OQFGMAQUcIx8W/O/XPloBBTs5wSAFvmfVfiD5PRfkwB65H9V15+xnz1Qo/lHjvlCwGwInAlwhHz753+uSAhjzOmf6tX/MTTOxxZRG/+b5MY/bz6yCKrJ/KPVApQFsiigzfzLvPTy8LcqIbvgf5LrYNb/BD9+L994kK9qej0MNqn/H69z5Jmd37oHRgv9mfvqAWf4o8P9P9///472z3j5t/Stff4A0vNvHDpEU6QAAAAASUVORK5CYII=">
-    <p class="hint">Zawartość: <code>PRC;JAN;KOWALSKI;12345;IT</code></p>
+    <p class="hint">Contents: <code>PRC;JAN;KOWALSKI;12345;IT</code></p>
   </div>
 </div>
 </body>

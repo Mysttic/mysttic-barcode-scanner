@@ -32,10 +32,10 @@ static int emit(pm_actions_t *acts, action_type_t type, const char *value) {
 
 static const char *gs1_field(const gs1_result_t *r, const char *name) {
   if (strcmp(name, "gtin") == 0) return r->gtin;
-  if (strcmp(name, "dataWaznosci") == 0) return r->expiry;
-  if (strcmp(name, "dataWaznosciISO") == 0) return r->expiry_iso;
-  if (strcmp(name, "partia") == 0) return r->lot;
-  if (strcmp(name, "numerSeryjny") == 0) return r->serial;
+  if (strcmp(name, "expiry") == 0) return r->expiry;
+  if (strcmp(name, "expiryISO") == 0) return r->expiry_iso;
+  if (strcmp(name, "batch") == 0) return r->lot;
+  if (strcmp(name, "serial") == 0) return r->serial;
   if (strcmp(name, "aim") == 0) return r->aim;
   return NULL;
 }

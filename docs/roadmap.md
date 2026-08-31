@@ -70,7 +70,7 @@ portable demo application and screenshots in the manual). Details:
   **a manual run through learning mode** by an operator.
 - [ ] A test in a real kiosk application (the Ctrl+Alt+F9 shortcut, the wizard
   window over a full screen).
-- [x] ~~A profile editor in the interface~~ — done: the "Profile (zarządzaj)"
+- [x] ~~A profile editor in the interface~~ — done: the "Profiles (manage)"
   window (enable and disable, name, process, title pattern, step preview,
   deletion).
 - [ ] One-click profile import and export to a file (as in the extension).
@@ -92,11 +92,11 @@ portable demo application and screenshots in the manual). Details:
 - [x] ~~Product identity~~ — done: the name Mysttic Barcode Scanner across the
   USB descriptors, the device disk, the extension, the agent and the packages,
   with a logo and icons generated from `brand/icon.svg`.
-- [ ] **Translate the user interfaces** (configurator, extension, desktop agent,
-  demo forms) to English. The documentation is already in English; the interfaces
-  are still Polish, which is the biggest remaining barrier for contributors from
-  outside Poland. It should be one coordinated change, including the test
-  assertions that check on-screen text.
+- [x] ~~Translate the user interfaces~~ — done: the configurator, the extension,
+  the agent, the demo forms and the on-device documentation are in English, each
+  component carrying a language selector with Polish as the second option. The
+  same change put the configuration formats into English (GS1 field names, the
+  agent's JSON keys and its action and mode values).
 - [ ] A live demo on GitHub Pages (the configurator and the test forms are static
   files, so they can be published as they are).
 - [ ] Publish the extension in the Chrome Web Store (deliberately skipped so far,

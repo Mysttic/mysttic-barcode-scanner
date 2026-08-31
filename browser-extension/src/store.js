@@ -22,59 +22,59 @@
 
   // Profil demonstracyjny dla test-vectors/forms/form-c-extension.html.
   // RAMKA TAB-OWA (separator "\t"): czytnik zostaje w PRODUKCYJNEJ konfiguracji
-  // z wlaczonym profilem pracownik-tab (imie TAB nazwisko TAB numer TAB dzial
+  // z wlaczonym profilem employee-tab (firstName TAB lastName TAB number TAB department
   // ENTER) - na rozpoznanym formularzu wtyczka przechwytuje cala sekwencje
   // (TAB-y nie ruszaja fokusa) i rozklada pola po nazwach. Nikt niczego nie
   // przelacza. segmentPatterns odrozniaja te ramke od innych 4-segmentowych.
   var DEMO_PROFILE = {
     id: "demo-pracownik",
-    name: "Karta pracownika (demo)",
+    name: "Employee card (demo)",
     enabled: true,
     match: {
       urlPattern: "*form-c-extension.html*",
-      requiredFields: ["imie", "nazwisko"],
+      requiredFields: ["firstName", "lastName"],
     },
     parse: {
       type: "delimited",
       separator: "\t",
-      fields: ["imie", "nazwisko", "numer", "dzial"],
-      segmentPatterns: { numer: "^[0-9]+$" },
+      fields: ["firstName", "lastName", "number", "department"],
+      segmentPatterns: { number: "^[0-9]+$" },
     },
     fields: {
-      imie: "input[name=imie]",
-      nazwisko: "input[name=nazwisko]",
-      numer: "input[name=numer]",
-      dzial: "select[name=dzial]",
+      firstName: "input[name=firstName]",
+      lastName: "input[name=lastName]",
+      number: "input[name=number]",
+      department: "select[name=department]",
     },
     after: { action: "none" },
   };
 
   // Drugi profil demonstracyjny: zamowienie leku (test-vectors/forms/form-c-medicine.html).
   // Rowniez ramka TAB-owa - z PRODUKCYJNEGO profilu gs1-datamatrix w czytniku
-  // (gtin TAB dataISO TAB partia TAB serial ENTER). Wzorce segmentow pilnuja,
+  // (gtin TAB dataISO TAB batch TAB serial ENTER). Wzorce segmentow pilnuja,
   // zeby ramka pracownika nie wpadla w formularz leku i odwrotnie.
   var DEMO_PROFILE_LEK = {
     id: "demo-lek",
-    name: "Zamówienie leku (demo)",
+    name: "Medicine order (demo)",
     enabled: true,
     match: {
       urlPattern: "*form-c-medicine.html*",
-      requiredFields: ["numerSeryjny", "dataWaznosci"],
+      requiredFields: ["serial", "expiry"],
     },
     parse: {
       type: "delimited",
       separator: "\t",
-      fields: ["gtin", "dataWaznosci", "partia", "numerSeryjny"],
+      fields: ["gtin", "expiry", "batch", "serial"],
       segmentPatterns: {
         gtin: "^[0-9]{14}$",
-        dataWaznosci: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+        expiry: "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
       },
     },
     fields: {
       gtin: "input[name=gtin]",
-      dataWaznosci: "input[name=dataWaznosci]",
-      partia: "input[name=partia]",
-      numerSeryjny: "input[name=numerSeryjny]",
+      expiry: "input[name=expiry]",
+      batch: "input[name=batch]",
+      serial: "input[name=serial]",
     },
     after: { action: "none" },
   };

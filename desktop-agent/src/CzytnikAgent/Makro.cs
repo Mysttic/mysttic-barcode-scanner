@@ -20,7 +20,7 @@ public class WynikMakra
     public string Podsumowanie()
     {
         var sb = new StringBuilder();
-        sb.Append($"kroki: {Udane}/{Kroki.Count}");
+        sb.Append($"steps: {Udane}/{Kroki.Count}");
         var pierwszyBlad = Kroki.FirstOrDefault(k => !k.Ok);
         if (pierwszyBlad != null) sb.Append($" - {pierwszyBlad.Opis}");
         return sb.ToString();
@@ -60,37 +60,37 @@ public static class Makro
     {
         switch (krok.Akcja)
         {
-            case "pauza":
+            case "pause":
                 Thread.Sleep(Math.Clamp(krok.Ms, 0, 10_000));
-                return new WynikKroku(true, $"pauza {krok.Ms} ms");
+                return new WynikKroku(true, $"pause {krok.Ms} ms");
 
-            case "klawisz":
+            case "key":
                 if (!Klawisze.TryGetValue(krok.Klawisz, out var vk))
-                    return new WynikKroku(false, $"nieznany klawisz: {krok.Klawisz}");
+                    return new WynikKroku(false, $"unknown key: {krok.Klawisz}");
                 Native.WyslijKlawisz(vk);
-                return new WynikKroku(true, $"klawisz {krok.Klawisz}");
+                return new WynikKroku(true, $"key {krok.Klawisz}");
 
-            case "tekst":
+            case "text":
                 {
                     var tekst = ParserSkanu.Podstaw(krok.Wartosc, pola);
                     foreach (var znak in tekst) Native.WyslijZnak(znak);
-                    return new WynikKroku(true, $"wpisano \"{tekst}\"");
+                    return new WynikKroku(true, $"typed \"{tekst}\"");
                 }
 
-            case "klik":
+            case "click":
                 return Klik(krok.Cel, okno, elementOkna);
 
-            case "pole":
+            case "field":
                 return Pole(krok, pola, okno, elementOkna, ustawienia);
 
             default:
-                return new WynikKroku(false, $"nieznana akcja: {krok.Akcja}");
+                return new WynikKroku(false, $"unknown action: {krok.Akcja}");
         }
     }
 
     private static WynikKroku Klik(Cel? cel, IntPtr okno, AutomationElement? elementOkna)
     {
-        if (cel == null) return new WynikKroku(false, "krok klik bez celu");
+        if (cel == null) return new WynikKroku(false, "click step with no target");
 
         if (cel.MaUia && elementOkna != null)
         {
@@ -102,18 +102,18 @@ public static class Makro
                     var prostokat = element.Current.BoundingRectangle;
                     Native.KlikMysza((int)(prostokat.Left + prostokat.Width / 2),
                                      (int)(prostokat.Top + prostokat.Height / 2));
-                    return new WynikKroku(true, $"klik {cel.Opis()} (UIA)");
+                    return new WynikKroku(true, $"click {cel.Opis()} (UIA)");
                 }
                 catch (ElementNotAvailableException) { }
             }
         }
 
-        if (!cel.MaPunkt) return new WynikKroku(false, $"nie znaleziono celu {cel.Opis()}");
+        if (!cel.MaPunkt) return new WynikKroku(false, $"target {cel.Opis()} not found");
         var punkt = new Native.POINT { X = cel.X!.Value, Y = cel.Y!.Value };
         if (!Native.ClientToScreen(okno, ref punkt))
-            return new WynikKroku(false, "nie udalo sie przeliczyc wspolrzednych");
+            return new WynikKroku(false, "could not translate the coordinates");
         Native.KlikMysza(punkt.X, punkt.Y);
-        return new WynikKroku(true, $"klik {cel.Opis()} (wspolrzedne)");
+        return new WynikKroku(true, $"click {cel.Opis()} (coordinates)");
     }
 
     private static WynikKroku Pole(Krok krok, IReadOnlyDictionary<string, string> pola,
@@ -132,8 +132,8 @@ public static class Makro
                     return new WynikKroku(false, $"{cel.Opis()}: {blad}");
 
                 // Pola z podpowiedziami dopisuja wlasne sugestie, wiec przy
-                // trybie "wpisz" nie wymagamy zgodnosci co do znaku.
-                if (ustawienia.WeryfikujOdczytem && krok.Tryb != "wpisz")
+                // trybie "type" nie wymagamy zgodnosci co do znaku.
+                if (ustawienia.WeryfikujOdczytem && krok.Tryb != "type")
                 {
                     Thread.Sleep(20);
                     if (!Uia.Potwierdza(element, wartosc, out var odczytano))
@@ -153,7 +153,7 @@ public static class Makro
                 Thread.Sleep(30);
                 WyczyscPole();
                 foreach (var znak in wartosc) Native.WyslijZnak(znak);
-                return new WynikKroku(true, $"({cel.X},{cel.Y}) = \"{wartosc}\" (wspolrzedne)");
+                return new WynikKroku(true, $"({cel.X},{cel.Y}) = \"{wartosc}\" (coordinates)");
             }
         }
 
@@ -161,10 +161,10 @@ public static class Makro
         if (cel == null || (!cel.MaUia && !cel.MaPunkt))
         {
             foreach (var znak in wartosc) Native.WyslijZnak(znak);
-            return new WynikKroku(true, $"aktywne pole = \"{wartosc}\"");
+            return new WynikKroku(true, $"focused box = \"{wartosc}\"");
         }
 
-        return new WynikKroku(false, $"nie znaleziono celu {cel.Opis()}");
+        return new WynikKroku(false, $"target {cel.Opis()} not found");
     }
 
     /// <summary>Ctrl+A, potem Delete - czysci pole przed wpisaniem (wariant wspolrzednych).</summary>

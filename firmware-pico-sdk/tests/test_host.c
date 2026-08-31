@@ -103,7 +103,7 @@ static int test_regex(void) {
   char g[64];
   const char *prc = "PRC;JAN;KOWALSKI;12345;IT";
 
-  // detect + parse profilu pracownik-tab (4 grupy)
+  // detect + parse profilu employee-tab (4 grupy)
   CHECK(mr_match("^PRC;", prc, &m) == 1);
   CHECK(mr_match("^PRC;", "EMP;ANNA;NOWAK;1;HR", &m) == 0);
   CHECK(mr_match("^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$", prc, &m) == 1);
@@ -114,7 +114,7 @@ static int test_regex(void) {
   CHECK(mr_group(&m, 4, prc, g, sizeof(g)) == 0 && strcmp(g, "IT") == 0);
   CHECK(mr_match("^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$", "PRC;JAN;KOWALSKI", &m) == 0);
 
-  // profil demo-prefiks-P: grupy przylegajace
+  // profil demo-prefix-P: grupy przylegajace
   CHECK(mr_match("^P[0-9]+$", "P0058746601261", &m) == 1);
   CHECK(mr_match("^P[0-9]+$", "P00587X", &m) == 0);
   CHECK(mr_match("^(P[0-9][0-9][0-9])([0-9]+)$", "P0058746601261", &m) == 1);
@@ -164,7 +164,7 @@ static int test_config(void) {
   CHECK(cfg.frame_timeout_ms == 250 && cfg.duplicate_block_ms == 1500);
   CHECK(cfg.key_delay_ms == 10 && cfg.action_delay_ms == 30);
   CHECK(cfg.out_mode == OUT_PASSTHROUGH && strcmp(cfg.suffix_key, "ENTER") == 0);
-  CHECK(cfg.profile_count == 4);  // gs1-datamatrix, pracownik-tab, lek-wtyczka, demo-prefiks-P
+  CHECK(cfg.profile_count == 4);  // gs1-datamatrix, employee-tab, medicine-extension, demo-prefix-P
 
   const cfg_profile_t *gs1p = &cfg.profiles[0];
   CHECK(strcmp(gs1p->name, "gs1-datamatrix") == 0 && gs1p->parse_type == PARSE_GS1 && !gs1p->enabled);
@@ -172,7 +172,7 @@ static int test_config(void) {
         strcmp(gs1p->output[0].value, "gtin") == 0);
 
   const cfg_profile_t *prac = &cfg.profiles[1];
-  CHECK(strcmp(prac->name, "pracownik-tab") == 0 && prac->parse_type == PARSE_REGEX_GROUPS);
+  CHECK(strcmp(prac->name, "employee-tab") == 0 && prac->parse_type == PARSE_REGEX_GROUPS);
   CHECK(prac->field_count == 4 && prac->fields[0].group >= 1);
   CHECK(strcmp(prac->detect_pattern, "^PRC;") == 0);
 
@@ -191,7 +191,7 @@ static int test_config(void) {
       "{\"version\": 1, \"profiles\": [{\"name\": \"x\", \"detect\": {\"pattern\": \"^A\"}, "
       "\"parse\": {\"type\": \"gs1\"}, \"output\": [{\"type\": \"key\", \"key\": \"SUPER\"}]}]}";
   err = config_parse(bad4, strlen(bad4), &cfg);
-  CHECK(err != NULL && strstr(err, "nieznany klawisz") != NULL);
+  CHECK(err != NULL && strstr(err, "unknown key") != NULL);
 
   printf("config_parse OK\n");
   return 0;
@@ -209,11 +209,11 @@ static int test_matcher(void) {
   json[n] = '\0';
   CHECK(config_parse(json, n, &g_cfg) == NULL);
   g_cfg.profiles[0].enabled = 1;  // gs1-datamatrix
-  g_cfg.profiles[1].enabled = 1;  // pracownik-tab
+  g_cfg.profiles[1].enabled = 1;  // employee-tab
 
   pm_actions_t acts;
 
-  // profil pracownik-tab: JAN TAB KOWALSKI TAB 12345 TAB IT ENTER
+  // profil employee-tab: JAN TAB KOWALSKI TAB 12345 TAB IT ENTER
   const uint8_t prc[] = "PRC;JAN;KOWALSKI;12345;IT";
   CHECK(pm_build_actions(&g_cfg, prc, sizeof(prc) - 1, &acts) == PM_MATCHED);
   CHECK(acts.count == 8);
@@ -221,7 +221,7 @@ static int test_matcher(void) {
   CHECK(acts.items[1].type == ACT_KEY && strcmp(acts.items[1].value, "TAB") == 0);
   CHECK(strcmp(acts.items[6].value, "IT") == 0 && strcmp(acts.items[7].value, "ENTER") == 0);
 
-  // profil gs1: gtin TAB dataISO TAB partia TAB serial ENTER
+  // profil gs1: gtin TAB dataISO TAB batch TAB serial ENTER
   const uint8_t gs1[] = "0105901234123457" "17270630" "10P77" "\x1d" "21S001";
   CHECK(pm_build_actions(&g_cfg, gs1, sizeof(gs1) - 1, &acts) == PM_MATCHED);
   CHECK(acts.count == 8);

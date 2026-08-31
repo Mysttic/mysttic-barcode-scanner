@@ -1,7 +1,7 @@
 // UI Automation: znajdowanie kontrolek w oknie i wpisywanie do nich wartosci.
 //
 // To jest desktopowy odpowiednik selektorow CSS z wtyczki: zamiast
-// "input[name=imie]" mamy AutomationId/Name kontrolki. Dzieki temu profil
+// "input[name=firstName]" mamy AutomationId/Name kontrolki. Dzieki temu profil
 // przezywa przesuniecie okna, zmiane rozdzielczosci i skalowania DPI -
 // w przeciwienstwie do makr opartych na samych wspolrzednych.
 using System.Windows.Automation;
@@ -96,18 +96,18 @@ public static class Uia
     /// bez symulowania klawiatury), w razie potrzeby lista rozwijana, a gdy
     /// kontrolka nie wspiera wzorcow - fokus i wpisanie znakow.
     /// </summary>
-    /// <param name="tryb">"wpisz" | "wybierz" | "auto" - patrz Krok.Tryb.</param>
+    /// <param name="tryb">"type" | "select" | "auto" - patrz Krok.Tryb.</param>
     public static bool Wpisz(AutomationElement element, string wartosc, out string blad, string tryb = "auto")
     {
         blad = "";
-        if (ToHaslo(element)) { blad = "pole hasla - pomijam"; return false; }
+        if (ToHaslo(element)) { blad = "password box, skipping"; return false; }
 
         try
         {
             // Operator uczyl WPISYWANIEM - nie probujemy wybierac z listy.
             // Pole wyszukiwania z podpowiedziami wyglada w UI Automation jak
             // lista wyboru, a jest zwyklym polem tekstowym.
-            if (tryb == "wpisz")
+            if (tryb == "type")
             {
                 var poleTekstowe = ZnajdzEdytor(element) ?? element;
                 return WpiszZKlawiatury(poleTekstowe, wartosc, out blad);
@@ -117,7 +117,7 @@ public static class Uia
             // ValuePattern.SetValue na ComboBox podmienia tylko widoczny tekst,
             // a aplikacja nie dostaje zdarzenia zmiany i zapisuje puste pole.
             var typ = element.Current.ControlType;
-            if (typ == ControlType.ComboBox || typ == ControlType.List || tryb == "wybierz")
+            if (typ == ControlType.ComboBox || typ == ControlType.List || tryb == "select")
             {
                 var wynikListy = WybierzZListy(element, wartosc);
                 if (wynikListy == WyborZListy.Wybrano) return true;
@@ -126,7 +126,7 @@ public static class Uia
                 // (lista edytowalna, wyszukiwarka z podpowiedziami) dostaje go
                 // Z KLAWIATURY: ustawienie wartosci wzorcem nie wywoluje zdarzen
                 // i aplikacja nic nie widzi.
-                if (tryb == "wybierz")
+                if (tryb == "select")
                 {
                     blad = $"brak pozycji \"{wartosc}\" na liscie";
                     return false;

@@ -27,6 +27,7 @@ public class TrayApp : IDisposable
     {
         _sciezkaProfili = sciezkaProfili;
         _konfiguracja = Magazyn.Wczytaj(sciezkaProfili);
+        Teksty.Ustaw(_konfiguracja.Jezyk);
 
         _okno = new OknoUkryte(UruchomNauke);
         _okno.CreateControl();
@@ -36,27 +37,26 @@ public class TrayApp : IDisposable
             // ikona marki jest wkompilowana w exe (ApplicationIcon w csproj)
             Icon = IkonaAplikacji(),
             Visible = true,
-            Text = "Mysttic Barcode Scanner - agent",
+            Text = Teksty.T("tray.tooltip"),
         };
         _ikona.DoubleClick += (_, _) => PokazProfile();
         BudujMenu();
 
         _wedge = new Wedge(() => _konfiguracja, () => _nauka != null);
         _wedge.Skan += NaSkan;
-        _wedge.Diagnostyka += (_, tekst) => Dymek("Mysttic Barcode Scanner", tekst, ToolTipIcon.Warning);
+        _wedge.Diagnostyka += (_, tekst) => Dymek(Teksty.T("app.name"), tekst, ToolTipIcon.Warning);
         _wedge.Start();
 
         if (!Native.RegisterHotKey(_okno.Handle, IdSkrotu,
                 Native.MOD_CONTROL | Native.MOD_ALT | Native.MOD_NOREPEAT, 0x78 /* F9 */))
         {
-            Dymek("Mysttic Barcode Scanner", "nie udalo sie zarejestrowac skrotu Ctrl+Alt+F9", ToolTipIcon.Warning);
+            Dymek(Teksty.T("app.name"), Teksty.T("tray.hotkeyFailed"), ToolTipIcon.Warning);
         }
 
         ObserwujPlikProfili();
 
-        Log.Pisz($"agent start, profili: {_konfiguracja.Profile.Count}, plik: {sciezkaProfili ?? Magazyn.Sciezka}");
-        Dymek("Mysttic Barcode Scanner", $"Agent dziala. Profili: {_konfiguracja.Profile.Count}. " +
-                               "Nauka: Ctrl+Alt+F9", ToolTipIcon.Info);
+        Log.Pisz($"agent started, profiles: {_konfiguracja.Profile.Count}, file: {sciezkaProfili ?? Magazyn.Sciezka}");
+        Dymek(Teksty.T("app.name"), Teksty.T("tray.started", _konfiguracja.Profile.Count), ToolTipIcon.Info);
     }
 
     /// <summary>Ikona z samego pliku exe; gdyby sie nie dala odczytac - systemowa.</summary>
@@ -76,7 +76,7 @@ public class TrayApp : IDisposable
     {
         var menu = new ContextMenuStrip();
 
-        var wlaczony = new ToolStripMenuItem("Wlaczony") { Checked = _konfiguracja.Wlaczony, CheckOnClick = true };
+        var wlaczony = new ToolStripMenuItem(Teksty.T("tray.enabled")) { Checked = _konfiguracja.Wlaczony, CheckOnClick = true };
         wlaczony.Click += (_, _) =>
         {
             _konfiguracja.Wlaczony = wlaczony.Checked;
@@ -85,23 +85,23 @@ public class TrayApp : IDisposable
         menu.Items.Add(wlaczony);
 
         menu.Items.Add(new ToolStripSeparator());
-        var naukaPozycja = new ToolStripMenuItem("Ucz nowego formularza\tCtrl+Alt+F9");
+        var naukaPozycja = new ToolStripMenuItem(Teksty.T("tray.learn"));
         naukaPozycja.Click += (_, _) => UruchomNauke();
         menu.Items.Add(naukaPozycja);
 
-        var profilePozycja = new ToolStripMenuItem("Profile (zarzadzaj)...");
+        var profilePozycja = new ToolStripMenuItem(Teksty.T("tray.profiles"));
         profilePozycja.Click += (_, _) => PokazProfile();
         menu.Items.Add(profilePozycja);
 
-        var przeladuj = new ToolStripMenuItem("Przeladuj profile z pliku");
+        var przeladuj = new ToolStripMenuItem(Teksty.T("tray.reload"));
         przeladuj.Click += (_, _) =>
         {
-            Przeladuj("recznie z menu");
-            Dymek("Mysttic Barcode Scanner", $"Wczytano profili: {_konfiguracja.Profile.Count}", ToolTipIcon.Info);
+            Przeladuj("manually from the menu");
+            Dymek(Teksty.T("app.name"), Teksty.T("tray.reloaded", _konfiguracja.Profile.Count), ToolTipIcon.Info);
         };
         menu.Items.Add(przeladuj);
 
-        var otworzPlik = new ToolStripMenuItem("Otworz plik profili");
+        var otworzPlik = new ToolStripMenuItem(Teksty.T("tray.openFile"));
         otworzPlik.Click += (_, _) =>
         {
             var plik = _sciezkaProfili ?? Magazyn.Sciezka;
@@ -111,11 +111,35 @@ public class TrayApp : IDisposable
         menu.Items.Add(otworzPlik);
 
         menu.Items.Add(new ToolStripSeparator());
-        var koniec = new ToolStripMenuItem("Zakoncz");
+        menu.Items.Add(MenuJezyka());
+
+        menu.Items.Add(new ToolStripSeparator());
+        var koniec = new ToolStripMenuItem(Teksty.T("tray.quit"));
         koniec.Click += (_, _) => { _ikona.Visible = false; Application.Exit(); };
         menu.Items.Add(koniec);
 
         _ikona.ContextMenuStrip = menu;
+    }
+
+    /// <summary>Wybor jezyka; zapisuje sie do pliku profili razem z reszta ustawien.</summary>
+    private ToolStripMenuItem MenuJezyka()
+    {
+        var jezyk = new ToolStripMenuItem(Teksty.T("tray.language"));
+        foreach (var (kod, etykieta) in new[] { ("en", "English"), ("pl", "Polski") })
+        {
+            var pozycja = new ToolStripMenuItem(etykieta) { Checked = _konfiguracja.Jezyk == kod };
+            var wybrany = kod;
+            pozycja.Click += (_, _) =>
+            {
+                _konfiguracja.Jezyk = wybrany;
+                Teksty.Ustaw(wybrany);
+                Magazyn.Zapisz(_konfiguracja, _sciezkaProfili);
+                BudujMenu();
+                _ikona.Text = Teksty.T("tray.tooltip");
+            };
+            jezyk.DropDownItems.Add(pozycja);
+        }
+        return jezyk;
     }
 
     private OknoProfili? _oknoProfili;
@@ -124,7 +148,7 @@ public class TrayApp : IDisposable
     {
         if (_oknoProfili != null && !_oknoProfili.IsDisposed) { _oknoProfili.Activate(); return; }
         _oknoProfili = new OknoProfili(_konfiguracja, _sciezkaProfili, () => Przeladuj("edycja profili"));
-        _oknoProfili.FormClosed += (_, _) => { _oknoProfili = null; Przeladuj("zamkniecie okna profili"); };
+        _oknoProfili.FormClosed += (_, _) => { _oknoProfili = null; Przeladuj("profiles window closed"); };
         _oknoProfili.Show();
     }
 
@@ -135,7 +159,7 @@ public class TrayApp : IDisposable
         var okno = Native.GetForegroundWindow();
         if (okno == IntPtr.Zero || okno == _okno.Handle)
         {
-            Dymek("Mysttic Barcode Scanner", "Najpierw przejdz do okna aplikacji, ktorej chcesz nauczyc.", ToolTipIcon.Warning);
+            Dymek(Teksty.T("app.name"), Teksty.T("tray.focusFirst"), ToolTipIcon.Warning);
             return;
         }
 
@@ -143,7 +167,7 @@ public class TrayApp : IDisposable
         _nauka.FormClosed += (_, _) =>
         {
             _nauka = null;
-            Przeladuj("zamkniecie kreatora");
+            Przeladuj("wizard closed");
         };
         _nauka.Show();
     }
@@ -151,16 +175,16 @@ public class TrayApp : IDisposable
     /// <summary>Nowy profil ma dzialac natychmiast, bez restartu agenta.</summary>
     private void PoZapisieProfilu(Profil profil)
     {
-        Przeladuj($"nauka profilu \"{profil.Nazwa}\"");
-        Dymek("Profil zapisany",
-            $"\"{profil.Nazwa}\" dziala od zaraz ({profil.Kroki.Count} krokow). Mozesz skanowac.",
+        Przeladuj($"profile \"{profil.Nazwa}\" learned");
+        Dymek(Teksty.T("tray.profileSaved"),
+            Teksty.T("tray.profileSavedBody", profil.Nazwa, profil.Kroki.Count),
             ToolTipIcon.Info);
     }
 
     private void Przeladuj(string powod)
     {
         _konfiguracja = Magazyn.Wczytaj(_sciezkaProfili);
-        Log.Pisz($"przeladowano profile ({powod}): {_konfiguracja.Profile.Count}");
+        Log.Pisz($"profiles reloaded ({powod}): {_konfiguracja.Profile.Count}");
     }
 
     /// <summary>
@@ -187,7 +211,7 @@ public class TrayApp : IDisposable
                 _debounce?.Dispose();
                 _debounce = new System.Threading.Timer(_ =>
                 {
-                    try { Przeladuj("zmiana pliku profili"); }
+                    try { Przeladuj("profiles file changed"); }
                     catch (IOException) { /* plik w trakcie zapisu - nastepne zdarzenie zalatwi sprawe */ }
                 }, null, 300, Timeout.Infinite);
             };
@@ -202,18 +226,18 @@ public class TrayApp : IDisposable
     {
         try
         {
-            Log.Pisz($"skan: {zdarzenie.Ramka} -> profil \"{zdarzenie.Profil.Nazwa}\", " +
-                     $"pola: {string.Join(", ", zdarzenie.Pola.Select(p => p.Key + "=" + p.Value))}");
+            Log.Pisz($"scan: {zdarzenie.Ramka} -> profile \"{zdarzenie.Profil.Nazwa}\", " +
+                     $"fields: {string.Join(", ", zdarzenie.Pola.Select(p => p.Key + "=" + p.Value))}");
             var wynik = Makro.Wykonaj(zdarzenie.Profil, zdarzenie.Pola, zdarzenie.Okno, _konfiguracja.Ustawienia);
-            foreach (var krok in wynik.Kroki) Log.Pisz($"  [{(krok.Ok ? "OK" : "BLAD")}] {krok.Opis}");
+            foreach (var krok in wynik.Kroki) Log.Pisz($"  [{(krok.Ok ? "OK" : "FAIL")}] {krok.Opis}");
             var tekst = $"{zdarzenie.Profil.Nazwa}: {wynik.Podsumowanie()}";
-            Dymek("Wypelniono", tekst, wynik.Nieudane == 0 ? ToolTipIcon.Info : ToolTipIcon.Warning);
+            Dymek(Teksty.T("tray.filled"), tekst, wynik.Nieudane == 0 ? ToolTipIcon.Info : ToolTipIcon.Warning);
         }
         catch (Exception e)
         {
             // wyjatek w watku puli zabilby caly proces - lapiemy i logujemy
-            Log.Pisz("BLAD makra: " + e);
-            Dymek("Mysttic Barcode Scanner", "blad makra: " + e.Message, ToolTipIcon.Error);
+            Log.Pisz("macro FAILED: " + e);
+            Dymek(Teksty.T("app.name"), Teksty.T("tray.macroError", e.Message), ToolTipIcon.Error);
         }
     }
 

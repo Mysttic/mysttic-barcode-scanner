@@ -8,7 +8,8 @@ independent of the extension and the firmware.
   [docs/desktop-agent.md](../docs/desktop-agent.md)
 - **Building and testing:** [docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md)
 
-Code and user interface are in Polish; see the note in
+The interface is in English (Polish available from the tray menu); source
+identifiers and comments are in Polish, see the note in
 [docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md#a-note-on-language).
 
 | File | Role |

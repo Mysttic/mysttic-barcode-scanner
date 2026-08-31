@@ -39,11 +39,11 @@ def save_to_nvm(config, nvm=None):
     """Zapis + weryfikacja. Zwraca None przy sukcesie albo opis bledu."""
     nvm = _default_nvm() if nvm is None else nvm
     if nvm is None:
-        return "NVM niedostepny na tej plytce"
+        return "NVM is not available on this board"
     try:
         payload = json.dumps(config).encode("utf-8")
     except (TypeError, ValueError) as e:
-        return "konfiguracja nieserializowalna: " + str(e)
+        return "configuration cannot be serialised: " + str(e)
     blob = (
         NVM_MAGIC
         + bytes([NVM_VERSION])
@@ -52,10 +52,10 @@ def save_to_nvm(config, nvm=None):
         + payload
     )
     if len(blob) > len(nvm):
-        return "konfiguracja za duza do NVM: " + str(len(blob)) + " > " + str(len(nvm)) + " B"
+        return "configuration too large for the NVM: " + str(len(blob)) + " > " + str(len(nvm)) + " B"
     nvm[0 : len(blob)] = blob
     if bytes(nvm[0 : len(blob)]) != blob:
-        return "weryfikacja zapisu NVM nieudana"
+        return "NVM write verification failed"
     return None
 
 
@@ -83,7 +83,7 @@ def load_from_nvm(nvm=None):
 def clear_nvm(nvm=None):
     nvm = _default_nvm() if nvm is None else nvm
     if nvm is None:
-        return "NVM niedostepny na tej plytce"
+        return "NVM is not available on this board"
     nvm[0:2] = b"\x00\x00"
     return None
 
@@ -109,7 +109,7 @@ DEFAULTS = {
 _ALLOWED_DETECT = ("regex",)
 _ALLOWED_PARSE = ("regexGroups", "gs1")
 _ALLOWED_OUTPUT = ("field", "key", "text")
-_GS1_FIELDS = ("gtin", "dataWaznosci", "dataWaznosciISO", "partia", "numerSeryjny", "aim")
+_GS1_FIELDS = ("gtin", "expiry", "expiryISO", "batch", "serial", "aim")
 
 
 def _merge(base, override):
@@ -124,11 +124,11 @@ def _merge(base, override):
 
 def _check_pattern(pattern, where, errors):
     if not isinstance(pattern, str) or not pattern:
-        errors.append(where + ": brak wzorca regex")
+        errors.append(where + ": no regex pattern")
         return
     if "{" in pattern or "}" in pattern:
         errors.append(
-            where + ": kwantyfikatory {m,n} nie sa wspierane w CircuitPython re - rozpisz jawnie"
+            where + ": {m,n} quantifiers are not supported by the CircuitPython re module, write them out"
         )
         return
     try:
@@ -136,26 +136,26 @@ def _check_pattern(pattern, where, errors):
 
         re.compile(pattern)
     except Exception as e:
-        errors.append(where + ": bledny regex (" + str(e) + ")")
+        errors.append(where + ": malformed regex (" + str(e) + ")")
 
 
 def validate(config):
     """Zwraca liste bledow (pusta = konfiguracja poprawna)."""
     errors = []
     if not isinstance(config, dict):
-        return ["konfiguracja nie jest obiektem JSON"]
+        return ["the configuration is not a JSON object"]
     if config.get("version") != 1:
-        errors.append("nieobslugiwana wersja konfiguracji: " + str(config.get("version")))
+        errors.append("unsupported configuration version: " + str(config.get("version")))
 
     device = config.get("device", {})
     if not isinstance(device.get("keyDelayMs", 10), int) or not 0 <= device.get("keyDelayMs", 10) <= 500:
-        errors.append("device.keyDelayMs: oczekiwane 0-500 ms")
+        errors.append("device.keyDelayMs: expected 0-500 ms")
     if not isinstance(device.get("actionDelayMs", 30), int) or not 0 <= device.get("actionDelayMs", 30) <= 1000:
-        errors.append("device.actionDelayMs: oczekiwane 0-1000 ms")
+        errors.append("device.actionDelayMs: expected 0-1000 ms")
 
     scanner = config.get("scanner", {})
     if scanner.get("baudrate", 9600) not in (1200, 4800, 9600, 14400, 19200, 38400, 57600, 115200):
-        errors.append("scanner.baudrate: niedozwolona wartosc")
+        errors.append("scanner.baudrate: value not allowed")
     if not isinstance(scanner.get("duplicateBlockMs", 0), int) or not 0 <= scanner.get("duplicateBlockMs", 0) <= 10000:
         errors.append("scanner.duplicateBlockMs: oczekiwane 0-10000 ms (0 = wylaczone)")
 
@@ -163,7 +163,7 @@ def validate(config):
     if out.get("mode", "passthrough") not in ("passthrough", "split"):
         errors.append("output.mode: dozwolone passthrough/split")
     if out.get("suffixKey") and out.get("suffixKey") not in KEY_NAMES:
-        errors.append("output.suffixKey: nieznany klawisz " + str(out.get("suffixKey")))
+        errors.append("output.suffixKey: unknown key " + str(out.get("suffixKey")))
     if out.get("onError", "raw") not in ("raw", "skip"):
         errors.append("output.onError: dozwolone raw/skip")
     for tkey in ("prefixText", "suffixText"):
@@ -182,9 +182,9 @@ def validate(config):
             continue
         name = profile.get("name")
         if not name:
-            errors.append(where + ": brak nazwy")
+            errors.append(where + ": no name")
         elif name in names:
-            errors.append(where + ": zdublowana nazwa '" + str(name) + "'")
+            errors.append(where + ": duplicate name '" + str(name) + "'")
         else:
             names.append(name)
 
@@ -206,16 +206,16 @@ def validate(config):
                 _check_pattern(parse.get("pattern"), where + ".parse", errors)
             fields = parse.get("fields", {})
             if not isinstance(fields, dict) or not fields:
-                errors.append(where + ".parse.fields: oczekiwana niepusta mapa pole->grupa")
+                errors.append(where + ".parse.fields: expected a non-empty field->group map")
             else:
                 field_names = list(fields.keys())
                 for fname, group in fields.items():
                     if not isinstance(group, int) or group < 1:
-                        errors.append(where + ".parse.fields." + str(fname) + ": numer grupy >= 1")
+                        errors.append(where + ".parse.fields." + str(fname) + ": group number must be >= 1")
 
         output = profile.get("output", [])
         if not isinstance(output, list) or not output:
-            errors.append(where + ".output: oczekiwana niepusta lista akcji")
+            errors.append(where + ".output: expected a non-empty list of actions")
             output = []
         for aidx, action in enumerate(output):
             awhere = where + ".output[" + str(aidx) + "]"
@@ -223,9 +223,9 @@ def validate(config):
             if kind not in _ALLOWED_OUTPUT:
                 errors.append(awhere + ".type: dozwolone " + str(_ALLOWED_OUTPUT))
             elif kind == "field" and action.get("name") not in field_names:
-                errors.append(awhere + ": pole '" + str(action.get("name")) + "' nie istnieje w parse.fields")
+                errors.append(awhere + ": field '" + str(action.get("name")) + "' does not exist in parse.fields")
             elif kind == "key" and action.get("key") not in KEY_NAMES:
-                errors.append(awhere + ": nieznany klawisz " + str(action.get("key")))
+                errors.append(awhere + ": unknown key " + str(action.get("key")))
     return errors
 
 

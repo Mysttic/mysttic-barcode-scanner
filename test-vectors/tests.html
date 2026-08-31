@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Mysttic Barcode Scanner — formularze testowe</title>
+<title>Mysttic Barcode Scanner - test forms</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; color: #0f172a; }
   .wrap { max-width: 860px; margin: 0 auto; }
@@ -20,58 +20,60 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Formularze testowe czytnika</h1>
-  <p class="note">Każda strona ma na sobie kod do zeskanowania z ekranu i panel pokazujący,
-  co „widzi" formularz. <b>Wszystkie testy działają na jednej, produkcyjnej
-  konfiguracji czytnika</b> (profile <code>pracownik-tab</code> i
-  <code>gs1-datamatrix</code> włączone) — na rozpoznanych stronach wtyczka
-  przechwytuje sekwencję czytnika i sama rozkłada pola, niczego nie przełączasz.
-  Testy „wtyczka" wymagają rozszerzenia przeglądarki (<code>browser-extension/</code>
-  z repozytorium, opis w MANUAL.md); przy otwieraniu z tego dysku włącz
-  w szczegółach rozszerzenia <b>„Zezwalaj na dostęp do adresów URL plików"</b>.</p>
+  <h1>Scanner test forms</h1>
+  <p class="note">Every page carries a code you can scan off the screen and a panel showing
+  what the form actually "sees". <b>All the tests run on one production scanner
+  configuration</b> (the <code>employee-tab</code> and <code>gs1-datamatrix</code> profiles
+  switched on): on the recognised pages the extension captures the scanner's sequence and
+  distributes the fields itself, and you switch nothing. The "extension" tests need the
+  browser extension (<code>browser-extension/</code> from the repository, described in
+  MANUAL.md); when opening them off this disk, turn on <b>"Allow access to file URLs"</b>
+  in the extension's details.</p>
 
   <div class="card">
-    <h2>A — sekwencja TAB-ów</h2>
-    <p><span class="tag dev">czytnik: profil <code>pracownik-tab</code> WŁĄCZONY</span><br>
-    Profil w czytniku tnie kod pracownika i wypełnia pola po kolei TAB-ami.
-    Kliknij w pole „Imię" i skanuj. Działa w każdej aplikacji, liczy się kolejność pól.</p>
-    <a class="go" href="forms/form-a-tab.html">Otwórz</a>
+    <h2>A - a sequence of TABs</h2>
+    <p><span class="tag dev">scanner: profile <code>employee-tab</code> ON</span><br>
+    The profile in the scanner splits the employee code and fills the boxes one after
+    another with TABs. Click the "First name" box and scan. Works in any application;
+    what matters is the order of the boxes.</p>
+    <a class="go" href="forms/form-a-tab.html">Open</a>
   </div>
 
   <div class="card">
-    <h2>B — pola po nazwie (skrypt strony)</h2>
-    <p><span class="tag dev">czytnik: konfiguracja dowolna (kod <code>EMP;…</code> leci 1:1)</span><br>
-    Strona sama nasłuchuje klawiatury i rozdziela ramkę po nazwach pól —
-    wzorzec dla systemów, których kod kontrolujemy. Po prostu zeskanuj.</p>
-    <a class="go" href="forms/form-b-names.html">Otwórz</a>
+    <h2>B - fields by name (page script)</h2>
+    <p><span class="tag dev">scanner: any configuration (the <code>EMP;…</code> code passes 1:1)</span><br>
+    The page listens to the keyboard itself and splits the frame by field name, the pattern
+    for systems whose code you control. Just scan.</p>
+    <a class="go" href="forms/form-b-names.html">Open</a>
   </div>
 
   <div class="card">
-    <h2>GS1 — przyjęcie towaru (TAB-y)</h2>
-    <p><span class="tag dev">czytnik: profil <code>gs1-datamatrix</code> WŁĄCZONY</span><br>
-    Czytnik rozbiera kod GS1 (GTIN, data ważności na ISO, partia, numer seryjny)
-    i wypełnia formularz TAB-ami. Kliknij w pierwsze pole i skanuj.</p>
-    <a class="go" href="forms/form-gs1.html">Otwórz</a>
+    <h2>GS1 - goods receipt (TABs)</h2>
+    <p><span class="tag dev">scanner: profile <code>gs1-datamatrix</code> ON</span><br>
+    The scanner splits a GS1 code (GTIN, expiry date to ISO, batch, serial number) and fills
+    the form with TABs. Click the first box and scan.</p>
+    <a class="go" href="forms/form-gs1.html">Open</a>
   </div>
 
   <div class="card">
-    <h2>C — karta pracownika (wtyczka, SPA)</h2>
-    <p><span class="tag dev">czytnik: profil <code>pracownik-tab</code> WŁĄCZONY (jak w teście A)</span>
-    <span class="tag ext">wtyczka</span><br>
-    Pola w innej kolejności niż kod + pola-pułapki, więc same TAB-y by tu
-    zawiodły — wtyczka przechwytuje sekwencję czytnika i rozkłada pola po
-    nazwach. Drugi widok strony celowo bez profilu — wtyczka tam milczy.</p>
-    <a class="go" href="forms/form-c-extension.html">Otwórz</a>
+    <h2>C - employee card (extension, SPA)</h2>
+    <p><span class="tag dev">scanner: profile <code>employee-tab</code> ON (as in test A)</span>
+    <span class="tag ext">extension</span><br>
+    The boxes are in a different order than the code, with decoy boxes in between, so TABs
+    alone would fail here: the extension captures the scanner's sequence and distributes the
+    fields by name. The page's second view deliberately has no profile, and the extension
+    stays quiet there.</p>
+    <a class="go" href="forms/form-c-extension.html">Open</a>
   </div>
 
   <div class="card">
-    <h2>C — zamówienie leku (wtyczka + GS1)</h2>
-    <p><span class="tag dev">czytnik: profil <code>gs1-datamatrix</code> WŁĄCZONY (jak w teście GS1)</span>
-    <span class="tag ext">wtyczka</span><br>
-    DataMatrix jak na prawdziwym leku: czytnik parsuje GS1 (data „00" = koniec
-    miesiąca), a wtyczka przechwytuje jego sekwencję i trafia w pola zamówienia.
-    Razem z testem wyżej pokazuje automatyczne przełączanie profili.</p>
-    <a class="go" href="forms/form-c-medicine.html">Otwórz</a>
+    <h2>C - medicine order (extension + GS1)</h2>
+    <p><span class="tag dev">scanner: profile <code>gs1-datamatrix</code> ON (as in the GS1 test)</span>
+    <span class="tag ext">extension</span><br>
+    A DataMatrix like the one on a real medicine: the scanner parses GS1 (day "00" = end of
+    the month) and the extension captures its sequence and hits the boxes of the order form.
+    Together with the test above it shows profiles switching automatically.</p>
+    <a class="go" href="forms/form-c-medicine.html">Open</a>
   </div>
 </div>
 </body>

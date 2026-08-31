@@ -4,8 +4,8 @@ A product extension for forms where a fixed TAB sequence is too fragile: fields
 in a different order than the data in the code, decoy fields between them,
 single-page apps that rebuild the form on the fly.
 
-The extension's user interface is in Polish; Polish labels are given in brackets
-throughout this document.
+The extension's interface is in English; the language selector at the bottom of
+the popup also offers Polish.
 
 ## How it works
 
@@ -13,7 +13,7 @@ The extension is **passive until it recognises a form**.
 
 | Situation | What the extension does | What the operator sees |
 |---|---|---|
-| form recognised | captures the scan and spreads the data across fields **by name** | an `ON` badge, a toast saying "Wypełniono 4 pola" (filled 4 fields) |
+| form recognised | captures the scan and spreads the data across fields **by name** | an `ON` badge and a toast saying "Filled in 4 fields" |
 | form not recognised | **nothing**, it does not touch the keyboard | the scanner types as usual (TABs, passthrough) |
 
 The captured "scan" also covers a **TAB sequence produced by a device profile**
@@ -82,7 +82,7 @@ in the extension's details. Simpler still: run a local server
 
 ## First test
 
-1. Open `test-vectors/forms/form-c-extension.html` (the *Karta pracownika*,
+1. Open `test-vectors/forms/form-c-extension.html` (the *Employee card*,
    employee card, view).
 2. The badge should show `ON` and a toast should flash in the corner: "Czytnik:
    Karta pracownika (demo)".
@@ -98,12 +98,12 @@ in the extension's details. Simpler still: run a local server
 
 Notice three things at once: the data landed in the right fields despite being in
 **a different order than in the code**, the decoy fields (e-mail, phone) stayed
-empty, and `Dział` (department) is a `<select>` where the extension picked the
+empty, and `Department` is a `<select>` where the extension picked the
 option by value. The panel at the bottom is the page's internal state: had the
 extension only replaced `value` without firing events, it would have stayed empty
 and the form would have been submitted with no data.
 
-5. Switch to the *Ustawienia* (Settings) tab and the badge goes out. Click a
+5. Switch to the *Settings* tab and the badge goes out. Click a
    field and scan: the code is typed raw, straight from the keyboard.
 
 ## A second example — a medicine order, and profiles switching
@@ -114,20 +114,20 @@ profiles (in the scanner and in the extension) select themselves per page:
 1. The medicine box carries a **GS1 DataMatrix** (on the page: a code with the
    content of a real medicine, a GTIN with a valid check digit, expiry date
    `271000`, batch, serial number after a GS separator).
-2. The **`lek-wtyczka` profile in the scanner** (present in the default
+2. The **`medicine-extension` profile in the scanner** (present in the default
    configuration, needs enabling) parses GS1, converts the date (day "00" means
    the last day of the month, so `2027-10-31`) and types the frame
-   `LEK;gtin;date;batch;serial`. The GS separator cannot travel over a keyboard,
+   `MED;gtin;date;batch;serial`. The GS separator cannot travel over a keyboard,
    so it is the scanner that marks the field boundaries.
 3. **A second extension profile** (built in) recognises the order page and
    distributes the frame across the fields: the serial number and the expiry date
    end up in the right places despite the shuffled field order.
 
-The switching is visible directly: on the *Karta pracownika* page the employee
+The switching is visible directly: on the *Employee card* page the employee
 profile is active (a medicine scan fills nothing there), on the order page the
 medicine profile is (an employee frame is handed back to the page). The badge and
 the toast always say which profile fired. Note that the `gs1-datamatrix` profile
-(TABs, variant A) catches the same codes as `lek-wtyczka`, so it has to be
+(TABs, variant A) catches the same codes as `medicine-extension`, so it has to be
 disabled for this demo.
 
 ## Teaching it a new form
@@ -144,11 +144,10 @@ its normal production configuration, typing
 what to do with that sequence on this particular page.
 
 > For the exercise, switch off the built-in demo profile for this page
-> ("Zamówienie leku (demo)" under **Profile formularzy**), otherwise it fills the
+> ("Medicine order (demo)" under **Form profiles**), otherwise it fills the
 > form before your profile gets a chance: the first matching profile wins.
 
-**Step 1 — start learning and scan.** Extension icon → **Ucz formularza** (Teach
-a form). Scan the code; the characters **do not reach the form**, the extension
+**Step 1 — start learning and scan.** Extension icon → **Teach a form**. Scan the code; the characters **do not reach the form**, the extension
 only observes them. You are teaching from what the **scanner types**, so if its
 profile produces a TAB sequence, learning captures the whole series and splits it
 on the tabs.
@@ -158,7 +157,7 @@ on the tabs.
 **Step 2 — name the segments.** The extension has already cut up what the scanner
 typed (recognising the separator among `;` `|` `,` and tab) and shows the
 segments: your values on the left, name fields on the right. Type names that mean
-something to you, here `gtin`, `dataWaznosci`, `partia`, `numerSeryjny`. Mark a
+something to you, here `gtin`, `expiry`, `batch`, `serial`. Mark a
 segment that should be skipped, a fixed prefix for instance, with `_`.
 
 ![Learning mode, step 2: naming the segments](img/extension-medicine-2-segments.png)
@@ -169,10 +168,10 @@ the cursor is highlighted) and click the right one. A click **selects** the fiel
 (a permanent green outline) but does not advance on its own; the panel waits for a
 decision:
 
-- **Zatwierdź i dalej** (Confirm and continue) saves the assignment and moves on,
-- **Wybierz inne pole** (Pick another field) — misclicked? just click a different one,
+- **Confirm and continue** (Confirm and continue) saves the assignment and moves on,
+- **Pick another box** (Pick another field) — misclicked? just click a different one,
 - **← Wstecz** (Back) returns to the previous name, so you can fix an earlier choice,
-- **Pomiń pole** (Skip field) — this name has no counterpart on this form.
+- **Skip the box** — this name has no counterpart on this form.
 
 ![Learning mode, step 3: a field selected, waiting for confirmation](img/extension-medicine-3-fields.png)
 
@@ -186,7 +185,7 @@ you pick a finished result instead of inventing a pattern. See
 **Step 4 — save.** Give the profile a name and check the suggested **address
 pattern**; the profile will only activate on matching pages (`*` stands for any
 fragment). **← Wstecz** returns to the last field if you want to correct
-something. Click **Zapisz i włącz** (Save and enable).
+something. Click **Save and enable**.
 
 ![Learning mode, step 4: profile name and address pattern](img/extension-medicine-4-save.png)
 
@@ -198,7 +197,7 @@ fields stay empty, and a toast confirms which profile fired. The "stan strony"
 ![Learning mode, step 5: the profile works](img/extension-medicine-5-works.png)
 
 The profile is stored locally and works immediately. Finished profiles can be
-exported to a file (**Profile formularzy** → *Eksportuj*) and distributed to
+exported to a file (**Form profiles** → *Eksportuj*) and distributed to
 other workstations.
 
 ## Form profiles — adding and managing
@@ -210,22 +209,22 @@ There are two ways to add a profile:
 - **import**: load a JSON file exported on another workstation (provisioning:
   one engineer teaches, everyone else imports).
 
-Management: extension icon → **Profile formularzy** (Form profiles). For each
+Management: extension icon → **Form profiles**. For each
 profile, directly in the list:
 
 | Operation | How |
 |---|---|
 | rename | type in the name field, it saves itself when the field loses focus |
 | change the address (where it works) | the "adres" field, a pattern with `*`, for example `https://erp.company.com/receiving*` |
-| enable / disable | the "włączony" checkbox (a disabled profile stays in the list) |
+| enable / disable | the "enabled" checkbox (a disabled profile stays in the list) |
 | order | the ▲▼ arrows: when several profiles match a page, **the first one wins** |
-| duplicate | "Duplikuj", a copy to adapt (say, the same form under a second address) |
-| delete | "Usuń", with a confirmation |
+| duplicate | "Duplicate", a copy to adapt (say, the same form under a second address) |
+| delete | "Delete", with a confirmation |
 
 Fields, selectors and parsing are edited in the **Konfiguracja (JSON)** section
 below the list (the whole configuration, for manual editing), or simply teach the
 profile again and delete the old one. **Eksportuj/Importuj do pliku** moves the
-whole set between workstations; **Przywróć domyślne** (Restore defaults) goes
+whole set between workstations; **Restore the defaults** goes
 back to the two demo profiles.
 
 ![The profile list and the JSON configuration](img/extension-options.png)
@@ -238,21 +237,21 @@ Deliberately a twin of the profile in the scanner: *where* → *how to split* �
 ```json
 {
   "id": "erp-przyjecie",
-  "name": "Przyjęcie towaru — ERP",
+  "name": "Goods receipt - ERP",
   "enabled": true,
   "match": {
     "urlPattern": "https://erp.firma.pl/magazyn/przyjecie*",
-    "requiredFields": ["gtin", "partia"]
+    "requiredFields": ["gtin", "batch"]
   },
   "parse": {
     "type": "delimited",
     "prefix": "PRC;",
     "separator": ";",
-    "fields": ["_", "imie", "nazwisko", "numer", "dzial"]
+    "fields": ["_", "firstName", "lastName", "number", "department"]
   },
   "fields": {
-    "imie": "input[name=imie]",
-    "dzial": "select[name=dzial]"
+    "firstName": "input[name=firstName]",
+    "department": "select[name=department]"
   },
   "after": { "action": "none" }
 }
@@ -284,9 +283,9 @@ an object:
 
 ```json
 "fields": {
-  "dataWaznosci": { "selector": "input[name=termin]", "format": "DD.MM.RRRR" },
+  "expiry": { "selector": "input[name=termin]", "format": "DD.MM.RRRR" },
   "gtin":         { "selector": "#ean", "transform": ["gtin13"] },
-  "partia":       "#lot"
+  "batch":       "#lot"
 }
 ```
 
@@ -296,7 +295,8 @@ The two forms can be mixed; a plain selector keeps working as before.
 
 `format` is **any pattern** built from tokens; everything else passes through
 unchanged. Case does not matter, `DD-MM-RR` and `dd-mm-yy` mean the same thing.
-The Polish token letters (`RRRR` for year) work alongside the English ones.
+The Polish token letters (`RRRR` for the year) work alongside the English
+ones, so profiles taught with the Polish interface keep working.
 
 | Token | Meaning | Example |
 |---|---|---|
@@ -365,7 +365,7 @@ date, the confirmation panel adds a row of buttons **previewing the result on
 your value**, so you click a finished result instead of inventing a pattern. Next
 to them is a field for **your own pattern**, with a preview updating as you type,
 so you see the effect before confirming. When the value also carries a time, the
-suggestions include it. A plain **Zatwierdź i dalej** inserts the value
+suggestions include it. A plain **Confirm and continue** inserts the value
 unchanged, so the rest of the wizard behaves the same:
 
 ![The date format buttons in the confirmation panel](img/extension-date-format.png)
@@ -381,7 +381,7 @@ boundaries of variable-length fields (AI 10 and 21). The ways out:
   (`parse.separator: "\t"`). The scanner marks the field boundaries and nothing
   gets switched;
 - a scanner profile that types the fields separated by a visible character
-  (`field` actions interleaved with `text ";"`, like `lek-wtyczka` in the default
+  (`field` actions interleaved with `text ";"`, like `medicine-extension` in the default
   configuration) plus `parse.type: "delimited"` with a prefix;
 - or set `parse.gsChar` to the character that separates the fields in the code.
 
@@ -391,7 +391,7 @@ test vectors.
 
 ## Settings
 
-In **Profile formularzy** → JSON, the `settings` section:
+In **Form profiles** → JSON, the `settings` section:
 
 | Key | Default | Meaning |
 |---|---|---|

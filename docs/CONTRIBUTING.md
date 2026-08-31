@@ -14,12 +14,25 @@ all welcome.
 
 ## A note on language
 
-Documentation is in English. **Source code, code comments and the user interfaces
-are in Polish** (identifiers like `Nagrywarka`, `OknoNauki`, `Krok.Tryb`). That is
-a deliberate, historical choice: keep new code consistent with the file you are
-editing rather than mixing two languages inside one module. Translating the
-interfaces is on the [roadmap](roadmap.md) and will be one coordinated change,
-not a file-by-file drift.
+Documentation, the user interfaces and the configuration formats are in English.
+**Source code identifiers and code comments are in Polish** (`Nagrywarka`,
+`OknoNauki`, `Krok.Tryb`): a deliberate, historical choice, so keep new code
+consistent with the file you are editing rather than mixing two languages inside
+one module.
+
+Interface strings never sit in the code. They live in one dictionary per
+component and each component has an English and a Polish set:
+
+| Component | Dictionary | Where the language is stored |
+|---|---|---|
+| configurator | `configurator/src/i18n.ts` | `localStorage`, key `mysttic.lang` |
+| browser extension | `browser-extension/src/i18n.js` | `chrome.storage.local`, key `lang` |
+| desktop agent | `desktop-agent/src/CzytnikAgent/Teksty.cs` | the profiles file, field `lang` |
+
+English is the default everywhere. Adding a string means adding it to both sets;
+a missing Polish key silently falls back to English. Log lines and the agent's
+diagnostic CLI output are English only, they are read by whoever is servicing the
+installation, not by the operator.
 
 ## Repository layout
 
@@ -114,24 +127,24 @@ device keeps one production configuration throughout; nothing is switched betwee
 tests.
 
 Preparation: plug the scanner in, open `configurator.html` from the `MYSTTIC`
-disk, connect, tick `pracownik-tab` and `gs1-datamatrix` on the **Profile** tab
-and click **Zapisz trwale** (every profile is disabled out of the factory).
+disk, connect, tick `employee-tab` and `gs1-datamatrix` on the **Profiles** tab
+and click **Save permanently** (every profile is disabled out of the factory).
 Install the extension (`chrome://extensions` → Developer mode → Load unpacked →
 `browser-extension/`) and enable "Allow access to file URLs". Then open
 `tests.html` from the disk.
 
 | # | Test | Expected result |
 |---|---|---|
-| 1 | form A, click "Imię", scan | fields filled in order (JAN/KOWALSKI/12345/IT), Enter submits |
+| 1 | form A, click "First name", scan | fields filled in order (JAN/KOWALSKI/12345/IT), Enter submits |
 | 2 | form B, click nothing, scan | values land by name despite the shuffled order; decoy fields stay empty |
 | 3 | GS1 form, click the first field, scan | GTIN, date `YYYY-MM-DD`, batch, serial, in order |
 | 4 | form C (employee card), scan without clicking | same data as test 1, but filled BY NAME; the page-state panel shows 4/4 |
-| 5 | form C, *Ustawienia* view, click a field, scan | badge goes out, TABs behave like an ordinary keyboard |
+| 5 | form C, *Settings* view, click a field, scan | badge goes out, TABs behave like an ordinary keyboard |
 | 6 | form C (medicine), scan the DataMatrix | serial `K7L9XW24MQ1R`, date `2027-10-31` (from `271000`), GTIN and batch, by name |
 | 7 | back on test 4, scan the MEDICINE code | nothing is filled: profiles do not fire across pages |
 
 Before a production rollout it is worth adding: 100 consecutive scans without a
-reset, a power loss during "Zapisz trwale", the target USB cable, TAB and ENTER
+reset, a power loss during "Save permanently", the target USB cable, TAB and ENTER
 timing in the real application, GS1 codes with the AIs in different orders, and
 learning mode on the customer's own form.
 

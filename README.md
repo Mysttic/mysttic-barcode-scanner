@@ -49,7 +49,7 @@ a small read-only disk it exposes over USB.
 
 ## Start here
 
-**[Documentation](docs/README.md)** — nine pages, starting with
+**[Documentation](docs/README.md)** — eight pages, starting with
 [Getting started](docs/getting-started.md): what to buy, how to wire it, how to
 flash it and how to make the first scan land in a form.
 
@@ -63,5 +63,5 @@ Apache License 2.0, see [LICENSE](LICENSE) and [NOTICE](NOTICE). Components from
 other projects that ship in the release package are listed in
 [third-party notices](docs/THIRD-PARTY-NOTICES.md).
 
-The documentation is in English; the **user interfaces are still in Polish**, and
-translating them is on the [roadmap](docs/roadmap.md).
+The documentation and the interfaces are in English. The configurator, the
+extension and the agent each offer Polish as a second language.

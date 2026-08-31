@@ -4,8 +4,8 @@
 // Typy parsowania (pole parse.type profilu formularza):
 //   delimited - kod ciety separatorem, nazwy kolejnych segmentow ("_" = pomin)
 //   regex     - wzorzec z grupami + mapa pole->numer grupy (jak w urzadzeniu)
-//   gs1       - parser GS1 (AI 01/17/10/21), pola gtin/dataWaznosci/
-//               dataWaznosciISO/partia/numerSeryjny/aim
+//   gs1       - parser GS1 (AI 01/17/10/21), pola gtin/expiry/
+//               expiryISO/batch/serial/aim
 //
 // UWAGA GS1 przez klawiature: firmware filtruje znaki niedrukowalne, wiec
 // separator GS (0x1D) NIE przechodzi przez HID. Dla kodow GS1 albo ustaw
@@ -16,8 +16,8 @@
 
   var GS = String.fromCharCode(0x1d);
   var DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  var FIXED = { "01": ["gtin", 14, true], "17": ["dataWaznosci", 6, true] };
-  var VARIABLE = { "10": ["partia", 20], "21": ["numerSeryjny", 20] };
+  var FIXED = { "01": ["gtin", 14, true], "17": ["expiry", 6, true] };
+  var VARIABLE = { "10": ["batch", 20], "21": ["serial", 20] };
 
   function isDigits(text) {
     return text.length > 0 && /^[0-9]+$/.test(text);
@@ -67,7 +67,7 @@
         var fixed = FIXED[ai];
         name = fixed[0];
         value = raw.slice(i, i + fixed[1]);
-        if (value.length < fixed[1]) return { error: "AI " + ai + ": oczekiwano " + fixed[1] + " znaków" };
+        if (value.length < fixed[1]) return { error: MBS_I18N.t("parse.aiLength", { ai: ai, n: fixed[1] }) };
         if (fixed[2] && !isDigits(value)) return { error: "AI " + ai + ": oczekiwano samych cyfr" };
         i += fixed[1];
       } else if (Object.prototype.hasOwnProperty.call(VARIABLE, ai)) {
@@ -77,17 +77,17 @@
         if (end < 0) end = raw.length;
         value = raw.slice(i, end);
         if (!value) return { error: "AI " + ai + ": puste pole" };
-        if (value.length > variable[1]) return { error: "AI " + ai + ": za długie (>" + variable[1] + ")" };
+        if (value.length > variable[1]) return { error: MBS_I18N.t("parse.aiTooLong", { ai: ai, n: variable[1] }) };
         i = end;
       } else {
-        return { error: "nieobsługiwany AI '" + ai + "' na pozycji " + (i - 2) };
+        return { error: MBS_I18N.t("parse.aiUnsupported", { ai: ai, pos: i - 2 }) };
       }
       fields[name] = value;
     }
     if (Object.keys(fields).length === 0) return { error: "pusty kod" };
-    if (fields.dataWaznosci) {
-      var iso = dateToIso(fields.dataWaznosci);
-      if (iso) fields.dataWaznosciISO = iso;
+    if (fields.expiry) {
+      var iso = dateToIso(fields.expiry);
+      if (iso) fields.expiryISO = iso;
     }
     if (head.aim) fields.aim = head.aim;
     return { fields: fields };
@@ -96,15 +96,15 @@
   function parseDelimited(text, spec) {
     var sep = spec.separator || ";";
     var names = spec.fields || [];
-    if (!names.length) return { error: "profil nie ma listy pól (parse.fields)" };
+    if (!names.length) return { error: MBS_I18N.t("parse.noFields") };
     var parts = text.split(sep);
     if (parts.length < names.length) {
-      return { error: "kod ma " + parts.length + " segmentów, profil oczekuje " + names.length };
+      return { error: MBS_I18N.t("parse.segments", { got: parts.length, want: names.length }) };
     }
     // Ramka bez prefiksu (np. sekwencja TAB-ow z urzadzenia) nie ma znacznika
     // "to nasze" - jedyna kotwica to DOKLADNA liczba segmentow.
     if (!spec.prefix && parts.length !== names.length) {
-      return { error: "kod ma " + parts.length + " segmentów, profil oczekuje dokładnie " + names.length };
+      return { error: MBS_I18N.t("parse.segmentsExact", { got: parts.length, want: names.length }) };
     }
     var fields = {};
     for (var i = 0; i < names.length; i += 1) {
@@ -122,7 +122,7 @@
       try {
         re = new RegExp(patterns[name2]);
       } catch (e) {
-        return { error: "błędny wzorzec segmentu " + name2 };
+        return { error: MBS_I18N.t("parse.badSegment", { name: name2 }) };
       }
       if (!re.test(fields[name2])) {
         return { error: "segment " + name2 + " nie pasuje do wzorca profilu" };
@@ -137,7 +137,7 @@
     try {
       re = new RegExp(pattern);
     } catch (e) {
-      return { error: "błędny wyraz regularny: " + e.message };
+      return { error: MBS_I18N.t("parse.badRegex") + e.message };
     }
     var m = re.exec(text);
     if (!m) return { error: "kod nie pasuje do wzorca profilu" };
@@ -162,7 +162,7 @@
   function parseFrame(text, spec) {
     if (typeof text !== "string" || !text) return { error: "pusta ramka" };
     if (!spec || !spec.type) return { error: "profil bez parse.type" };
-    if (!matchesPrefix(text, spec)) return { error: "ramka nie zaczyna się od '" + spec.prefix + "'" };
+    if (!matchesPrefix(text, spec)) return { error: MBS_I18N.t("parse.prefix", { prefix: spec.prefix }) };
     if (spec.type === "delimited") return parseDelimited(text, spec);
     if (spec.type === "regex") return parseRegex(text, spec);
     if (spec.type === "gs1") return parseGs1(text, spec.gsChar);

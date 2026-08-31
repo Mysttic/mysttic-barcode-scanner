@@ -3,6 +3,49 @@
 Every notable change to the project. The release version is defined by
 [VERSION.md](VERSION.md).
 
+## 2.0.0 — 2026-08-31
+
+English interfaces and English configuration formats. **This release changes the
+configuration format**, so profiles saved with 1.x need editing, see "Migration"
+at the end of this entry.
+
+- **The interfaces are in English.** The configurator, the browser extension and
+  the desktop agent were translated and each carries a language selector with
+  Polish as the second option; English is the default everywhere. Every string
+  moved out of the code into one dictionary per component
+  (`configurator/src/i18n.ts`, `browser-extension/src/i18n.js`,
+  `desktop-agent/src/CzytnikAgent/Teksty.cs`). The choice is remembered in
+  `localStorage`, in `chrome.storage.local` and in the agent's profiles file
+  respectively.
+- **The demo forms, the demo application and the on-device documentation are in
+  English** as well, and so are the validation messages the firmware sends back
+  to the configurator.
+- **GS1 field names are English:** `dataWaznosci` → `expiry`, `dataWaznosciISO`
+  → `expiryISO`, `partia` → `batch`, `numerSeryjny` → `serial` (`gtin` and `aim`
+  were already). All four implementations changed together: the C firmware, the
+  CircuitPython prototype, the extension and the agent.
+- **The agent's profile file has English keys and values.** `Wersja` →
+  `version`, `Wlaczony` → `enabled`, `Ustawienia` → `settings`, `Profile` →
+  `profiles`, `Kroki` → `steps`, `Akcja` → `action`, `Cel` → `target`,
+  `Wartosc` → `value`, `Tryb` → `mode`, and the values `pole/tekst/klawisz/klik/
+  pauza` → `field/text/key/click/pause`, `wpisz/wybierz` → `type/select`.
+- The bundled profiles were renamed with them: `pracownik-tab` → `employee-tab`,
+  `lek-wtyczka` → `medicine-extension`, `demo-prefiks-P` → `demo-prefix-P`, and
+  the demo frame prefix `LEK;` → `MED;`.
+- All 26 documentation screenshots were retaken against the English interfaces,
+  and the pages no longer carry Polish labels in brackets.
+- The workflow step names shown in GitHub Actions are in English.
+- Source identifiers and code comments stay in Polish, deliberately; see the
+  note on language in [CONTRIBUTING](docs/CONTRIBUTING.md).
+
+**Migration.** A scanner keeps working until you save a configuration that
+references the old field names; open the configurator, replace them in the
+action sequences and save. For the desktop agent the simplest route is to teach
+the profile again, or rename the keys in
+`%APPDATA%\MystticBarcodeScanner\profile.json` by the table above. Browser
+extension profiles taught before this release keep working, including date
+patterns written with the Polish tokens (`RRRR`).
+
 ## 1.2.1 — 2026-08-31
 
 Documentation only; the firmware, the extension and the agent are unchanged.

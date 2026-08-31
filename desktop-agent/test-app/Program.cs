@@ -23,21 +23,21 @@ internal static class Program
 
 public class GlowneOkno : Form
 {
-    private readonly TabControl _zakladki = new() { Name = "zakladki", Dock = DockStyle.Fill };
+    private readonly TabControl _zakladki = new() { Name = "tabs", Dock = DockStyle.Fill };
     private readonly EkranLogowania _logowanie = new();
     private readonly EkranPracownika _pracownik = new();
 
     public GlowneOkno(bool kiosk)
     {
-        Text = "Aplikacja testowa - system kadrowy";
-        Name = "oknoGlowne";
+        Text = "Demo application - HR system";
+        Name = "mainWindow";
         Width = 900;
         Height = 640;
         StartPosition = FormStartPosition.CenterScreen;
 
-        var tabLogowanie = new TabPage("Logowanie") { Name = "tabLogowanie" };
+        var tabLogowanie = new TabPage("Sign in") { Name = "tabSignIn" };
         tabLogowanie.Controls.Add(_logowanie);
-        var tabPracownik = new TabPage("Karta pracownika") { Name = "tabPracownik" };
+        var tabPracownik = new TabPage("Employee card") { Name = "tabEmployee" };
         tabPracownik.Controls.Add(_pracownik);
 
         _zakladki.TabPages.Add(tabLogowanie);
@@ -59,7 +59,7 @@ public class GlowneOkno : Form
     private void AktualizujTytul()
     {
         var nazwa = _zakladki.SelectedTab?.Text ?? "";
-        Text = $"Aplikacja testowa - {nazwa}";
+        Text = $"Demo application - {nazwa}";
     }
 }
 
@@ -68,7 +68,7 @@ public class EkranPodstawowy : UserControl
 {
     protected readonly TextBox Podglad = new()
     {
-        Name = "podgladStanu",
+        Name = "statePreview",
         Multiline = true,
         ReadOnly = true,
         ScrollBars = ScrollBars.Vertical,
@@ -109,10 +109,10 @@ public class EkranPodstawowy : UserControl
 public class EkranLogowania : EkranPodstawowy
 {
     private readonly TextBox _login = Pole("txtLogin", 20);
-    private readonly TextBox _haslo = Pole("txtHaslo", 80, "hasla agent NIE wypelnia");
+    private readonly TextBox _haslo = Pole("txtPassword", 80, "the agent does NOT fill passwords");
     private readonly ComboBox _oddzial = new()
     {
-        Name = "cmbOddzial",
+        Name = "cmbBranch",
         Left = 24,
         Top = 162,
         Width = 420,
@@ -123,27 +123,27 @@ public class EkranLogowania : EkranPodstawowy
     public EkranLogowania()
     {
         _haslo.UseSystemPasswordChar = true;
-        _oddzial.Items.AddRange(new object[] { "", "Centrala", "Magazyn", "Produkcja" });
+        _oddzial.Items.AddRange(new object[] { "", "Head office", "Warehouse", "Production" });
         _oddzial.SelectedIndex = 0;
 
         Controls.Add(Etykieta("Login", 20));
         Controls.Add(_login);
-        Controls.Add(Etykieta("Haslo (pulapka)", 80));
+        Controls.Add(Etykieta("Password (decoy)", 80));
         Controls.Add(_haslo);
-        Controls.Add(Etykieta("Oddzial", 140));
+        Controls.Add(Etykieta("Branch", 140));
         Controls.Add(_oddzial);
 
         var zaloguj = new Button
         {
-            Name = "btnZaloguj",
-            Text = "Zaloguj",
+            Name = "btnSignIn",
+            Text = "Sign in",
             Left = 24,
             Top = 200,
             Width = 120,
             Height = 32,
         };
-        var status = new Label { Name = "lblStatusLogowania", Left = 160, Top = 206, Width = 300, Text = "" };
-        zaloguj.Click += (_, _) => status.Text = $"Zalogowano: {_login.Text} / {_oddzial.Text}";
+        var status = new Label { Name = "lblSignInStatus", Left = 160, Top = 206, Width = 300, Text = "" };
+        zaloguj.Click += (_, _) => status.Text = $"Signed in: {_login.Text} / {_oddzial.Text}";
         Controls.Add(zaloguj);
         Controls.Add(status);
 
@@ -154,10 +154,10 @@ public class EkranLogowania : EkranPodstawowy
     }
 
     private void Odswiez() =>
-        Podglad.Text = "stan ekranu logowania:\r\n" +
-                       $"  login   = \"{_login.Text}\"\r\n" +
-                       $"  oddzial = \"{_oddzial.Text}\"\r\n" +
-                       $"  haslo   = {(_haslo.Text.Length > 0 ? "(cos wpisano!)" : "(puste - poprawnie)")}";
+        Podglad.Text = "sign-in screen state:\r\n" +
+                       $"  login    = \"{_login.Text}\"\r\n" +
+                       $"  branch   = \"{_oddzial.Text}\"\r\n" +
+                       $"  password = {(_haslo.Text.Length > 0 ? "(something was typed!)" : "(empty - correct)")}";
 }
 
 /// <summary>Karta pracownika: pola w innej kolejnosci niz dane w kodzie.</summary>
@@ -165,24 +165,24 @@ public class EkranPracownika : EkranPodstawowy
 {
     private readonly ComboBox _dzial = new()
     {
-        Name = "cmbDzial",
+        Name = "cmbDepartment",
         Left = 24,
         Top = 42,
         Width = 420,
         DropDownStyle = ComboBoxStyle.DropDownList,
         Font = new Font("Segoe UI", 10f),
     };
-    private readonly TextBox _email = Pole("txtEmail", 80, "pulapka - skan tego nie dotyczy");
-    private readonly TextBox _numer = Pole("txtNumer", 140);
-    private readonly TextBox _imie = Pole("txtImie", 200);
-    private readonly TextBox _telefon = Pole("txtTelefon", 260, "pulapka - skan tego nie dotyczy");
-    private readonly TextBox _nazwisko = Pole("txtNazwisko", 320);
+    private readonly TextBox _email = Pole("txtEmail", 80, "decoy - the scan does not touch this");
+    private readonly TextBox _numer = Pole("txtNumber", 140);
+    private readonly TextBox _imie = Pole("txtFirstName", 200);
+    private readonly TextBox _telefon = Pole("txtPhone", 260, "decoy - the scan does not touch this");
+    private readonly TextBox _nazwisko = Pole("txtLastName", 320);
     // Pole z podpowiedziami: UI Automation raportuje je jako ComboBox, ale nie
     // jest lista wyboru - mozna wpisac dowolny tekst (tak dziala np. pole
     // wyszukiwania w aplikacjach Electron).
     private readonly ComboBox _stanowisko = new()
     {
-        Name = "cmbStanowisko",
+        Name = "cmbPosition",
         Left = 24,
         Top = 402,
         Width = 420,
@@ -196,33 +196,33 @@ public class EkranPracownika : EkranPodstawowy
         _dzial.Items.AddRange(new object[] { "", "HR", "IT", "FIN" });
         _dzial.SelectedIndex = 0;
 
-        Controls.Add(Etykieta("Dzial", 20));
+        Controls.Add(Etykieta("Department", 20));
         Controls.Add(_dzial);
-        Controls.Add(Etykieta("Adres e-mail (pulapka)", 80));
+        Controls.Add(Etykieta("E-mail address (decoy)", 80));
         Controls.Add(_email);
-        Controls.Add(Etykieta("Numer pracownika", 140));
+        Controls.Add(Etykieta("Employee number", 140));
         Controls.Add(_numer);
-        Controls.Add(Etykieta("Imie", 200));
+        Controls.Add(Etykieta("First name", 200));
         Controls.Add(_imie);
-        Controls.Add(Etykieta("Telefon (pulapka)", 260));
+        Controls.Add(Etykieta("Phone (decoy)", 260));
         Controls.Add(_telefon);
-        Controls.Add(Etykieta("Nazwisko", 320));
+        Controls.Add(Etykieta("Last name", 320));
         Controls.Add(_nazwisko);
 
-        _stanowisko.Items.AddRange(new object[] { "Specjalista", "Kierownik" });
-        Controls.Add(Etykieta("Stanowisko (pole z podpowiedziami)", 380));
+        _stanowisko.Items.AddRange(new object[] { "Specialist", "Manager" });
+        Controls.Add(Etykieta("Position (a box with suggestions)", 380));
         Controls.Add(_stanowisko);
 
         var zapisz = new Button
         {
-            Name = "btnZapisz",
-            Text = "Zapisz",
+            Name = "btnSave",
+            Text = "Save",
             Left = 24,
             Top = 420,
             Width = 120,
             Height = 30,
         };
-        zapisz.Click += (_, _) => _status.Text = "Zapisano karte pracownika";
+        zapisz.Click += (_, _) => _status.Text = "Employee card saved";
         Controls.Add(zapisz);
         Controls.Add(_status);
 
@@ -239,18 +239,18 @@ public class EkranPracownika : EkranPodstawowy
     {
         var wypelnione = new[] { _imie.Text, _nazwisko.Text, _numer.Text, _dzial.Text }.Count(t => t.Length > 0);
         var sb = new StringBuilder();
-        sb.AppendLine("stan aplikacji (to trafiloby do bazy):");
-        sb.AppendLine($"  imie     = \"{_imie.Text}\"");
-        sb.AppendLine($"  nazwisko = \"{_nazwisko.Text}\"");
-        sb.AppendLine($"  numer    = \"{_numer.Text}\"");
-        sb.AppendLine($"  dzial    = \"{_dzial.Text}\"");
-        sb.AppendLine($"  stanowisko = \"{_stanowisko.Text}\"");
+        sb.AppendLine("application state (this is what would go to the database):");
+        sb.AppendLine($"  firstName  = \"{_imie.Text}\"");
+        sb.AppendLine($"  lastName   = \"{_nazwisko.Text}\"");
+        sb.AppendLine($"  number     = \"{_numer.Text}\"");
+        sb.AppendLine($"  department = \"{_dzial.Text}\"");
+        sb.AppendLine($"  position   = \"{_stanowisko.Text}\"");
         sb.AppendLine();
         sb.AppendLine(wypelnione == 4
-            ? "OK: aplikacja zobaczyla wszystkie 4 wartosci"
-            : $"wypelnione: {wypelnione}/4");
+            ? "OK: the application saw all 4 values"
+            : $"filled in: {wypelnione}/4");
         if (_email.Text.Length > 0 || _telefon.Text.Length > 0)
-            sb.AppendLine("UWAGA: pole-pulapka nie jest puste!");
+            sb.AppendLine("WARNING: a decoy box is not empty!");
         Podglad.Text = sb.ToString();
     }
 }

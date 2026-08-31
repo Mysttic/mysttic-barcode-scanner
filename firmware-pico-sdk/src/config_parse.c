@@ -75,9 +75,9 @@ static int obj_get(const jdoc_t *d, int obj, const char *key) {
 }
 
 static const char *bad_pattern(const char *p) {
-  if (!p[0]) return "pusty wzorzec";
-  if (strchr(p, '{') || strchr(p, '}')) return "kwantyfikatory {m,n} niewspierane";
-  if (strchr(p, '|')) return "alternatywa | niewspierana w wersji C";
+  if (!p[0]) return "empty pattern";
+  if (strchr(p, '{') || strchr(p, '}')) return "{m,n} quantifiers are not supported";
+  if (strchr(p, '|')) return "the | alternative is not supported in the C build";
   return NULL;
 }
 
@@ -85,19 +85,19 @@ static const char *parse_profile(const jdoc_t *d, int obj, cfg_profile_t *p) {
   memset(p, 0, sizeof(*p));
   int v;
 
-  if ((v = obj_get(d, obj, "name")) < 0) return "profil bez nazwy";
+  if ((v = obj_get(d, obj, "name")) < 0) return "profile without a name";
   tok_copy(d, v, p->name, sizeof(p->name));
 
   p->enabled = (v = obj_get(d, obj, "enabled")) >= 0 && tok_true(d, v);
 
   int det = obj_get(d, obj, "detect");
-  if (det < 0 || (v = obj_get(d, det, "pattern")) < 0) return "profil bez detect.pattern";
+  if (det < 0 || (v = obj_get(d, det, "pattern")) < 0) return "profile without detect.pattern";
   tok_copy(d, v, p->detect_pattern, sizeof(p->detect_pattern));
   const char *pe = bad_pattern(p->detect_pattern);
   if (pe) { snprintf(err_buf, sizeof(err_buf), "%s: detect: %s", p->name, pe); return err_buf; }
 
   int par = obj_get(d, obj, "parse");
-  if (par < 0) return "profil bez parse";
+  if (par < 0) return "profile without parse";
   char ptype[16] = "";
   if ((v = obj_get(d, par, "type")) >= 0) tok_copy(d, v, ptype, sizeof(ptype));
   if (strcmp(ptype, "gs1") == 0) {
@@ -116,7 +116,7 @@ static const char *parse_profile(const jdoc_t *d, int obj, cfg_profile_t *p) {
     for (int k = 0; k < d->t[fields].size && p->field_count < CFG_MAX_FIELDS; k++) {
       tok_copy(d, fi, p->fields[p->field_count].name, sizeof(p->fields[0].name));
       p->fields[p->field_count].group = (int)tok_int(d, fi + 1);
-      if (p->fields[p->field_count].group < 1) return "numer grupy < 1";
+      if (p->fields[p->field_count].group < 1) return "group number must be >= 1";
       p->field_count++;
       fi = tok_skip(d, fi + 1);
     }
@@ -125,10 +125,10 @@ static const char *parse_profile(const jdoc_t *d, int obj, cfg_profile_t *p) {
   }
 
   int out = obj_get(d, obj, "output");
-  if (out < 0 || d->t[out].type != JSMN_ARRAY || d->t[out].size == 0) return "profil bez output";
+  if (out < 0 || d->t[out].type != JSMN_ARRAY || d->t[out].size == 0) return "profile without output";
   int oi = out + 1;
   for (int k = 0; k < d->t[out].size; k++) {
-    if (p->output_count >= CFG_MAX_ACTIONS) return "za duzo akcji w output";
+    if (p->output_count >= CFG_MAX_ACTIONS) return "too many actions in output";
     char atype[8] = "";
     if ((v = obj_get(d, oi, "type")) >= 0) tok_copy(d, v, atype, sizeof(atype));
     cfg_action_t *a = &p->output[p->output_count];
@@ -141,7 +141,7 @@ static const char *parse_profile(const jdoc_t *d, int obj, cfg_profile_t *p) {
       if ((v = obj_get(d, oi, "key")) < 0) return "akcja key bez key";
       tok_copy(d, v, a->value, sizeof(a->value));
       if (!is_known_key(a->value)) {
-        snprintf(err_buf, sizeof(err_buf), "%s: nieznany klawisz %s", p->name, a->value);
+        snprintf(err_buf, sizeof(err_buf), "%s: unknown key %s", p->name, a->value);
         return err_buf;
       }
     } else if (strcmp(atype, "text") == 0) {
@@ -179,20 +179,20 @@ void config_defaults(config_t *cfg) {
 }
 
 const char *config_parse(const char *json, size_t len, config_t *cfg) {
-  if (len >= CFG_RAW_JSON_MAX) return "konfiguracja za duza";
+  if (len >= CFG_RAW_JSON_MAX) return "configuration too large";
 
   static jsmntok_t tokens[MAX_TOKENS];
   jsmn_parser parser;
   jsmn_init(&parser);
   int n = jsmn_parse(&parser, json, len, tokens, MAX_TOKENS);
-  if (n < 1 || tokens[0].type != JSMN_OBJECT) return "bledny JSON";
+  if (n < 1 || tokens[0].type != JSMN_OBJECT) return "malformed JSON";
 
   jdoc_t d = {.js = json, .t = tokens, .count = n};
   config_defaults(cfg);
   int v;
 
   if ((v = obj_get(&d, 0, "version")) < 0 || tok_int(&d, v) != 1)
-    return "nieobslugiwana wersja konfiguracji";
+    return "unsupported configuration version";
 
   int dev = obj_get(&d, 0, "device");
   if (dev >= 0) {
@@ -225,7 +225,7 @@ const char *config_parse(const char *json, size_t len, config_t *cfg) {
   int baud_ok = 0;
   for (size_t i = 0; i < sizeof(BAUDS) / sizeof(BAUDS[0]); i++)
     if (BAUDS[i] == cfg->baudrate) baud_ok = 1;
-  if (!baud_ok) return "niedozwolony baudrate";
+  if (!baud_ok) return "baudrate not allowed";
   if (cfg->duplicate_block_ms < 0 || cfg->duplicate_block_ms > 10000) return "duplicateBlockMs poza 0-10000";
 
   int out = obj_get(&d, 0, "output");
@@ -240,7 +240,7 @@ const char *config_parse(const char *json, size_t len, config_t *cfg) {
     if ((v = obj_get(&d, out, "splitAt")) >= 0) cfg->split_at = (int)tok_int(&d, v);
     if ((v = obj_get(&d, out, "suffixKey")) >= 0) {
       tok_copy(&d, v, cfg->suffix_key, sizeof(cfg->suffix_key));
-      if (cfg->suffix_key[0] && !is_known_key(cfg->suffix_key)) return "nieznany suffixKey";
+      if (cfg->suffix_key[0] && !is_known_key(cfg->suffix_key)) return "unknown suffixKey";
     }
     if ((v = obj_get(&d, out, "prefixText")) >= 0) tok_copy(&d, v, cfg->prefix_text, sizeof(cfg->prefix_text));
     if ((v = obj_get(&d, out, "suffixText")) >= 0) tok_copy(&d, v, cfg->suffix_text, sizeof(cfg->suffix_text));
@@ -256,13 +256,13 @@ const char *config_parse(const char *json, size_t len, config_t *cfg) {
   if (profiles >= 0 && d.t[profiles].type == JSMN_ARRAY) {
     int pi = profiles + 1;
     for (int k = 0; k < d.t[profiles].size; k++) {
-      if (cfg->profile_count >= CFG_MAX_PROFILES) return "za duzo profili (max 6)";
+      if (cfg->profile_count >= CFG_MAX_PROFILES) return "too many profiles (max 6)";
       const char *pe = parse_profile(&d, pi, &cfg->profiles[cfg->profile_count]);
       if (pe) return pe;
       // unikalnosc nazw
       for (int q = 0; q < cfg->profile_count; q++)
         if (strcmp(cfg->profiles[q].name, cfg->profiles[cfg->profile_count].name) == 0)
-          return "zdublowana nazwa profilu";
+          return "duplicate profile name";
       cfg->profile_count++;
       pi = tok_skip(&d, pi);
     }

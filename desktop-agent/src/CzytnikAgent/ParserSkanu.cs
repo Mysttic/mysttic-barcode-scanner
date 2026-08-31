@@ -39,30 +39,30 @@ public static class ParserSkanu
 
     public static WynikParsowania Parsuj(string ramka, Parsowanie spec)
     {
-        if (string.IsNullOrEmpty(ramka)) return WynikParsowania.Zle("pusta ramka");
+        if (string.IsNullOrEmpty(ramka)) return WynikParsowania.Zle("empty frame");
         if (!string.IsNullOrEmpty(spec.Prefiks) && !ramka.StartsWith(spec.Prefiks, StringComparison.Ordinal))
-            return WynikParsowania.Zle($"ramka nie zaczyna sie od '{spec.Prefiks}'");
+            return WynikParsowania.Zle($"the frame does not start with '{spec.Prefiks}'");
 
         return spec.Typ switch
         {
             "delimited" => Delimited(ramka, spec),
             "regex" => Regexem(ramka, spec),
             "gs1" => Gs1(ramka, spec),
-            _ => WynikParsowania.Zle($"nieznany typ parsowania: {spec.Typ}"),
+            _ => WynikParsowania.Zle($"unknown parsing type: {spec.Typ}"),
         };
     }
 
     private static WynikParsowania Delimited(string ramka, Parsowanie spec)
     {
-        if (spec.Pola.Count == 0) return WynikParsowania.Zle("profil nie ma listy pol");
+        if (spec.Pola.Count == 0) return WynikParsowania.Zle("the profile has no field list");
         var separator = string.IsNullOrEmpty(spec.Separator) ? ";" : spec.Separator;
         var czesci = ramka.Split(separator);
         if (czesci.Length < spec.Pola.Count)
-            return WynikParsowania.Zle($"kod ma {czesci.Length} segmentow, profil oczekuje {spec.Pola.Count}");
+            return WynikParsowania.Zle($"the code has {czesci.Length} segments, the profile expects {spec.Pola.Count}");
         // Ramka bez prefiksu nie ma znacznika "to nasze" - jedyna kotwica to
         // DOKLADNA liczba segmentow (tak samo jak we wtyczce).
         if (string.IsNullOrEmpty(spec.Prefiks) && czesci.Length != spec.Pola.Count)
-            return WynikParsowania.Zle($"kod ma {czesci.Length} segmentow, profil oczekuje dokladnie {spec.Pola.Count}");
+            return WynikParsowania.Zle($"the code has {czesci.Length} segments, the profile expects exactly {spec.Pola.Count}");
 
         var pola = new Dictionary<string, string>();
         for (var i = 0; i < spec.Pola.Count; i++)
@@ -81,7 +81,7 @@ public static class ParserSkanu
         catch (ArgumentException e) { return WynikParsowania.Zle($"bledny wzorzec: {e.Message}"); }
 
         var m = re.Match(ramka);
-        if (!m.Success) return WynikParsowania.Zle("kod nie pasuje do wzorca profilu");
+        if (!m.Success) return WynikParsowania.Zle("the code does not match the profile pattern");
 
         var pola = new Dictionary<string, string>();
         foreach (var (nazwa, grupa) in spec.Grupy)
@@ -112,7 +112,7 @@ public static class ParserSkanu
                 case "01":
                 case "17":
                     var dlugosc = ai == "01" ? 14 : 6;
-                    nazwa = ai == "01" ? "gtin" : "dataWaznosci";
+                    nazwa = ai == "01" ? "gtin" : "expiry";
                     if (i + dlugosc > tekst.Length)
                         return WynikParsowania.Zle($"AI {ai}: oczekiwano {dlugosc} znakow");
                     wartosc = tekst.Substring(i, dlugosc);
@@ -121,25 +121,25 @@ public static class ParserSkanu
                     break;
                 case "10":
                 case "21":
-                    nazwa = ai == "10" ? "partia" : "numerSeryjny";
+                    nazwa = ai == "10" ? "batch" : "serial";
                     var koniec = tekst.IndexOf(separator, i);
                     if (koniec < 0) koniec = tekst.Length;
                     wartosc = tekst[i..koniec];
-                    if (wartosc.Length == 0) return WynikParsowania.Zle($"AI {ai}: puste pole");
+                    if (wartosc.Length == 0) return WynikParsowania.Zle($"AI {ai}: empty field");
                     if (wartosc.Length > 20) return WynikParsowania.Zle($"AI {ai}: za dlugie (>20)");
                     i = koniec;
                     break;
                 default:
-                    return WynikParsowania.Zle($"nieobslugiwany AI '{ai}' na pozycji {i - 2}");
+                    return WynikParsowania.Zle($"unsupported AI '{ai}' at position {i - 2}");
             }
             pola[nazwa] = wartosc;
         }
 
-        if (pola.Count == 0) return WynikParsowania.Zle("pusty kod");
-        if (pola.TryGetValue("dataWaznosci", out var data))
+        if (pola.Count == 0) return WynikParsowania.Zle("empty code");
+        if (pola.TryGetValue("expiry", out var data))
         {
             var iso = DataNaIso(data);
-            if (iso != null) pola["dataWaznosciISO"] = iso;
+            if (iso != null) pola["expiryISO"] = iso;
         }
         if (aim != null) pola["aim"] = aim;
         return WynikParsowania.Ok(pola);

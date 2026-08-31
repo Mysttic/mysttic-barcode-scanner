@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Test GS1 — kod apteczny/przemyslowy</title>
+<title>Test GS1 - pharmacy / industrial code</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; }
   .wrap { max-width: 860px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
@@ -22,21 +22,21 @@
 <body>
 <div class="wrap">
   <form class="card" onsubmit="event.preventDefault(); document.querySelector('.ok').style.display='block';">
-    <h1>Przyjęcie towaru — kod GS1</h1>
-    <p class="hint">Profil <b>gs1-datamatrix</b> w czytniku rozbija kod GS1 na pola:
-    GTIN → data ważności (przeliczona na ISO) → partia → numer seryjny, rozdzielone TAB-ami.
-    <b>Kliknij w pole „GTIN" i zeskanuj kod obok.</b></p>
-    <label>GTIN (14 cyfr)</label><input name="gtin" autofocus>
-    <label>Data ważności</label><input name="data">
-    <label>Numer partii (LOT)</label><input name="partia">
-    <label>Numer seryjny</label><input name="serial">
-    <button type="submit">Przyjmij</button>
-    <div class="ok">✔ Przyjęto (ENTER z czytnika)</div>
+    <h1>Goods receipt - GS1 code</h1>
+    <p class="hint">The <b>gs1-datamatrix</b> profile in the scanner splits a GS1 code into
+    fields: GTIN → expiry date (converted to ISO) → batch → serial number, separated by TABs.
+    <b>Click the "GTIN" box and scan the code next to it.</b></p>
+    <label>GTIN (14 digits)</label><input name="gtin" autofocus>
+    <label>Expiry date</label><input name="date">
+    <label>Batch number (LOT)</label><input name="batch">
+    <label>Serial number</label><input name="serial">
+    <button type="submit">Receive</button>
+    <div class="ok">✔ Received (ENTER from the scanner)</div>
   </form>
   <div class="card qr">
-    <h1>Kod do zeskanowania</h1>
+    <h1>Code to scan</h1>
     <img alt="QR GS1" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAAEYAQAAAACv9dQhAAABzUlEQVR4nO1Zwa6EMAgE4v//8rww0OpJLxuKzxJX3Uqyk3E60K5CHsOeU2Tn3Ic9PPfYOf+Pn0NENG6hUOHBOTdG+2G2Yn4k+XBiVCTOGKP9MFs1P0I+eAM/kjLN0W6YbVGOhoqGgl6BuUY/Gek8bkKdMVs5P5Dr7FIEQ1iAxzryo1f9pIbOUfk6P5jfvMRTOi4hWYHHOvY/8I9Xdg7hdCDwWTfMVpwDpV5cMs4Ue6B8rCvwdMtR/6hXdu+eTwtC3nTEXJqDceJME0ApJslp1hJz6fxSgAqimPw6yjt+/Vtvy9GQTVxmzdKzlKEfZivO0XRltx7KKAZktNEdMZfqR0I5QUnucKRH69aPeOkK96ErY7RCmmW+2zu1JetTRPPDTtEr/elG3TDbgvUFpulwONYXGr7dDbOt2B+TKFZuzhRQbCjK1/3nmHtisQJzSqJw0Xt2/4OTK24bDuVEJy3V78sa/38hrGNZwMZaQ/phtuoceAyfHiJipV+Dp6M/Y06rrGBr8HTOQe48sy8kUfp5fz6uZA3HIU0s7vza+Z3W5CCdZvaK7IM0N6F7Yq7JkSs1tORwoNxshUc3zLao/3kLZts5t2H3jxk75z5+xc8fa8bAJ4+B8r4AAAAASUVORK5CYII=">
-    <p class="hint">Zawartość (GS = niewidoczny separator 0x1D):<br>
+    <p class="hint">Contents (GS = the invisible 0x1D separator):<br>
     <code>01 05901234123457</code><br><code>17 271231</code><br>
     <code>10 LOT42 [GS]</code><br><code>21 SN0007</code></p>
   </div>

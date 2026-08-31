@@ -114,7 +114,7 @@ static void handle_line(const char *line) {
   long rid = -1;
   extract_int(line, "requestId", &rid);
   if (extract_string(line, "cmd", cmd, sizeof(cmd)) != 0) {
-    reply_error(rid, "bledny JSON lub brak cmd");
+    reply_error(rid, "malformed JSON or no cmd");
     return;
   }
 
@@ -132,7 +132,7 @@ static void handle_line(const char *line) {
     const char *cj;
     size_t cl;
     if (extract_object(line, "config", &cj, &cl) != 0) {
-      reply_error(rid, "brak pola config");
+      reply_error(rid, "no config field");
       return;
     }
     static config_t candidate;  // duza - statycznie
@@ -152,7 +152,7 @@ static void handle_line(const char *line) {
     char mode[12];
     if (extract_string(line, "mode", mode, sizeof(mode)) != 0 ||
         (strcmp(mode, "hid") != 0 && strcmp(mode, "test") != 0)) {
-      reply_error(rid, "mode: dozwolone hid/test");
+      reply_error(rid, "mode: hid or test");
       return;
     }
     app_state.test_mode = (strcmp(mode, "test") == 0);
@@ -171,12 +171,12 @@ static void handle_line(const char *line) {
     reply_simple(rid, "\"rebooting\": true");
     app_state.pending_reset = RESET_BOOTLOADER;
   } else if (strcmp(cmd, "hidTest") == 0) {
-    output_hid_queue_text("barcode-reader C firmware test 123");
+    output_hid_queue_text("Mysttic Barcode Scanner test 123");
     output_hid_queue_key(0x28 /* HID_KEY_ENTER */);
     reply_simple(rid, "\"queued\": true");
   } else {
     char err[64];
-    snprintf(err, sizeof(err), "nieznana komenda: %.32s", cmd);
+    snprintf(err, sizeof(err), "unknown command: %.32s", cmd);
     reply_error(rid, err);
   }
 }
@@ -193,7 +193,7 @@ void protocol_cdc_task(void) {
       line_buf[line_len++] = (char)ch;
     } else {
       line_len = 0;
-      cdc_send_line("{\"ok\": false, \"error\": \"wiadomosc za dluga\"}");
+      cdc_send_line("{\"ok\": false, \"error\": \"message too long\"}");
     }
   }
 }

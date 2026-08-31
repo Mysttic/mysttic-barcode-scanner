@@ -29,6 +29,25 @@ internal static class Native
     /// (Windows chroni przed kradzieza fokusu), wiec na czas wywolania
     /// podpinamy sie do watku biezacego okna pierwszoplanowego.
     /// </summary>
+    /// <summary>
+    /// Wyciaga okno na wierzch i czeka, az system faktycznie je uaktywni.
+    /// Windows potrafi odmowic zmiany aktywnego okna (foreground lock), a wtedy
+    /// klawisze wyslane zaraz potem trafiaja gdzie indziej - stad potwierdzenie
+    /// odczytem i zwracany wynik.
+    /// </summary>
+    internal static bool NaWierzchIPoczekaj(IntPtr hWnd, int limitMs = 2000)
+    {
+        NaWierzch(hWnd);
+        var koniec = Environment.TickCount64 + limitMs;
+        while (Environment.TickCount64 < koniec)
+        {
+            if (GetForegroundWindow() == hWnd) return true;
+            Thread.Sleep(50);
+            NaWierzch(hWnd);
+        }
+        return GetForegroundWindow() == hWnd;
+    }
+
     internal static void NaWierzch(IntPtr hWnd)
     {
         if (hWnd == IntPtr.Zero) return;

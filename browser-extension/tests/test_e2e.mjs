@@ -23,7 +23,7 @@ const EXT = process.env.EXT_DIR || join(ROOT, "browser-extension");
 const PYTHON = process.platform === "win32" ? "python" : "python3";
 const PORT = 8137;
 const KOD = "PRC;JAN;KOWALSKI;12345;IT";
-// To samo, co WYPISUJE produkcyjny profil pracownik-tab w czytniku:
+// To samo, co WYPISUJE produkcyjny profil employee-tab w czytniku:
 const RAMKA_PRAC = "JAN\tKOWALSKI\t12345\tIT";
 
 let passed = 0;
@@ -72,44 +72,44 @@ try {
   const page = await context.newPage();
 
   // --- 1. rozpoznany formularz: przechwycenie SEKWENCJI TAB-OWEJ ----------
-  // Czytnik zostaje w produkcyjnej konfiguracji (profil pracownik-tab wlaczony)
+  // Czytnik zostaje w produkcyjnej konfiguracji (profil employee-tab wlaczony)
   // - wtyczka przechwytuje TAB-y i rozklada pola po nazwach.
-  await page.goto(`http://127.0.0.1:${PORT}/forms/form-c-extension.html#/pracownik`);
-  await page.waitForSelector("input[name=imie]");
+  await page.goto(`http://127.0.0.1:${PORT}/forms/form-c-extension.html#/employee`);
+  await page.waitForSelector("input[name=firstName]");
   await page.waitForTimeout(600); // content script wstaje i dopasowuje profil
   await skanuj(page, RAMKA_PRAC);
 
-  check("imie", await page.inputValue("input[name=imie]"), "JAN");
-  check("nazwisko", await page.inputValue("input[name=nazwisko]"), "KOWALSKI");
-  check("numer", await page.inputValue("input[name=numer]"), "12345");
-  check("dzial (select po wartosci)", await page.inputValue("select[name=dzial]"), "IT");
+  check("firstName", await page.inputValue("input[name=firstName]"), "JAN");
+  check("lastName", await page.inputValue("input[name=lastName]"), "KOWALSKI");
+  check("number", await page.inputValue("input[name=number]"), "12345");
+  check("department (select po wartosci)", await page.inputValue("select[name=department]"), "IT");
   check("pulapka e-mail nietknieta", await page.inputValue("input[name=email]"), "");
-  check("pulapka telefon nietknieta", await page.inputValue("input[name=telefon]"), "");
+  check("pulapka telefon nietknieta", await page.inputValue("input[name=phone]"), "");
 
   // Najwazniejsze: czy STRONA zobaczyla wartosci (zdarzenia input/change),
   // czy tylko my podmienilismy .value.
   const stanStrony = await page.evaluate(() => globalThis.model);
-  check("stan strony po skanie", stanStrony, { imie: "JAN", nazwisko: "KOWALSKI", numer: "12345", dzial: "IT" });
+  check("stan strony po skanie", stanStrony, { firstName: "JAN", lastName: "KOWALSKI", number: "12345", department: "IT" });
 
   // --- 2. widok bez profilu ----------------------------------------------
   // Wtyczka spi, wiec TAB-y z czytnika NORMALNIE skacza po polach - dokladnie
   // tak, jak bez wtyczki (wariant A bez regresji).
-  await page.click("#nav-ustawienia");
-  await page.waitForSelector("input[name=motyw]");
+  await page.click("#nav-settings");
+  await page.waitForSelector("input[name=theme]");
   await page.waitForTimeout(800); // SPA: wtyczka musi zauwazyc zmiane widoku
-  await page.click("input[name=motyw]");
+  await page.click("input[name=theme]");
   await skanuj(page, "JAN\tKOWALSKI"); // 2 segmenty - tyle, ile pol ma ten widok
-  check("bez profilu TAB-y dzialaja normalnie (pole 1)", await page.inputValue("input[name=motyw]"), "JAN");
-  check("bez profilu TAB-y dzialaja normalnie (pole 2)", await page.inputValue("input[name=jezyk]"), "KOWALSKI");
+  check("bez profilu TAB-y dzialaja normalnie (pole 1)", await page.inputValue("input[name=theme]"), "JAN");
+  check("bez profilu TAB-y dzialaja normalnie (pole 2)", await page.inputValue("input[name=language]"), "KOWALSKI");
 
   // --- 3. obcy kod na rozpoznanym formularzu ------------------------------
-  await page.click("#nav-pracownik");
+  await page.click("#nav-employee");
   await page.waitForSelector("input[name=email]");
   await page.waitForTimeout(800);
   await page.click("input[name=email]");
   await skanuj(page, "EMP;ANNA;NOWAK;67890;HR");
   check("obcy kod oddany stronie", await page.inputValue("input[name=email]"), "EMP;ANNA;NOWAK;67890;HR");
-  check("obcy kod nie wypelnil pol", await page.inputValue("input[name=imie]"), "");
+  check("obcy kod nie wypelnil pol", await page.inputValue("input[name=firstName]"), "");
 
   // --- 4. przelaczanie profili: druga strona = drugi profil ----------------
   // Produkcyjny profil gs1-datamatrix w czytniku wypisuje sekwencje TAB-owa -
@@ -121,21 +121,21 @@ try {
 
   // Najpierw krzyzowo: ramka PRACOWNIKA na stronie LEKU ma zostac odrzucona
   // (wzorce segmentow) i oddana stronie - profile nie strzelaja na krzyz.
-  await page.click("input[name=nazwa]");
+  await page.click("input[name=name]");
   await skanuj(page, RAMKA_PRAC);
   check("lek: ramka pracownika nie wypelnia pol leku", await page.inputValue("input[name=gtin]"), "");
-  check("lek: ramka pracownika oddana stronie", (await page.inputValue("input[name=nazwa]")).startsWith("JAN"), true);
+  check("lek: ramka pracownika oddana stronie", (await page.inputValue("input[name=name]")).startsWith("JAN"), true);
 
   await page.click("body");
   await skanuj(page, RAMKA_LEK);
 
   check("lek: gtin", await page.inputValue("input[name=gtin]"), "05909991055172");
-  check("lek: data waznosci (dzien 00 -> koniec miesiaca)", await page.inputValue("input[name=dataWaznosci]"), "2027-10-31");
-  check("lek: partia", await page.inputValue("input[name=partia]"), "A23G05");
-  check("lek: numer seryjny", await page.inputValue("input[name=numerSeryjny]"), "K7L9XW24MQ1R");
+  check("lek: data waznosci (dzien 00 -> koniec miesiaca)", await page.inputValue("input[name=expiry]"), "2027-10-31");
+  check("lek: batch", await page.inputValue("input[name=batch]"), "A23G05");
+  check("lek: numer seryjny", await page.inputValue("input[name=serial]"), "K7L9XW24MQ1R");
   const stanLek = await page.evaluate(() => globalThis.model);
   check("lek: stan strony po skanie", stanLek,
-    { gtin: "05909991055172", dataWaznosci: "2027-10-31", partia: "A23G05", numerSeryjny: "K7L9XW24MQ1R" });
+    { gtin: "05909991055172", expiry: "2027-10-31", batch: "A23G05", serial: "K7L9XW24MQ1R" });
 
   // --- 5. wartosc wychodzaca w formacie formularza -------------------------
   // Ten sam skan, ale profil dostraja wartosci: data ma trafic jako
@@ -153,17 +153,17 @@ try {
             id: "e2e-formaty",
             name: "Formaty (e2e)",
             enabled: true,
-            match: { urlPattern: "*form-c-medicine.html*", requiredFields: ["gtin", "dataWaznosci"] },
+            match: { urlPattern: "*form-c-medicine.html*", requiredFields: ["gtin", "expiry"] },
             parse: {
               type: "delimited",
               separator: "\t",
-              fields: ["gtin", "dataWaznosci", "partia", "numerSeryjny"],
+              fields: ["gtin", "expiry", "batch", "serial"],
               segmentPatterns: { gtin: "^[0-9]{14}$" },
             },
             fields: {
               gtin: { selector: "input[name=gtin]", transform: ["gtin13"] },
-              dataWaznosci: { selector: "input[name=dataWaznosci]", format: "dd-mm-yy" },
-              partia: "input[name=partia]",
+              expiry: { selector: "input[name=expiry]", format: "dd-mm-yy" },
+              batch: "input[name=batch]",
             },
             after: { action: "none" },
           },
@@ -176,11 +176,11 @@ try {
   await page.waitForTimeout(700);
   await skanuj(page, RAMKA_LEK);
 
-  check("formaty: wlasny wzorzec dd-mm-yy", await page.inputValue("input[name=dataWaznosci]"), "31-10-27");
+  check("formaty: wlasny wzorzec dd-mm-yy", await page.inputValue("input[name=expiry]"), "31-10-27");
   check("formaty: GTIN-14 -> EAN-13", await page.inputValue("input[name=gtin]"), "5909991055172");
-  check("formaty: partia bez przeksztalcen", await page.inputValue("input[name=partia]"), "A23G05");
+  check("formaty: batch bez przeksztalcen", await page.inputValue("input[name=batch]"), "A23G05");
   const stanFormaty = await page.evaluate(() => globalThis.model);
-  check("formaty: strona widzi przeliczone wartosci", stanFormaty.dataWaznosci, "31-10-27");
+  check("formaty: strona widzi przeliczone wartosci", stanFormaty.expiry, "31-10-27");
 } finally {
   if (context) await context.close();
   serwer.kill();

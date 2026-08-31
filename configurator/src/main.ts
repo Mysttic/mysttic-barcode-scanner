@@ -3,6 +3,7 @@ import "./style.css";
 import { Action, Config, KEY_NAMES, Profile, configSchema } from "./schema";
 import { DeviceLink } from "./serial";
 import { formatFields, formatSequence, parseFields, parseSequence } from "./sequence";
+import { applyI18n, getLang, setLang, t, type Lang } from "./i18n";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 
@@ -15,7 +16,7 @@ const elDevInfo = $("dev-info");
 const elApp = $("app");
 
 function setConnected(on: boolean): void {
-  elStatus.textContent = on ? "połączony" : "rozłączony";
+  elStatus.textContent = on ? t("conn.connected") : t("conn.disconnected");
   elStatus.className = "badge " + (on ? "on" : "off");
   $("btn-connect").hidden = on;
   $("btn-disconnect").hidden = !on;
@@ -25,19 +26,19 @@ function setConnected(on: boolean): void {
 
 $("btn-connect").addEventListener("click", async () => {
   if (!("serial" in navigator)) {
-    alert("Ta przeglądarka nie ma WebSerial — użyj Chrome lub Edge.");
+    alert(t("conn.noWebSerial"));
     return;
   }
   try {
     await link.connect();
     const pong = await link.command("ping");
-    const fw = String(pong.fw ?? "(starsze niż 0.9.0)");
-    elDevInfo.textContent = `firmware ${fw} | protokół v${pong.version} | tryb: ${pong.mode}`;
+    const fw = String(pong.fw ?? t("conn.olderThan"));
+    elDevInfo.textContent = t("conn.info", { fw, version: String(pong.version), mode: String(pong.mode) });
     $("fw-version").textContent = fw;
     setConnected(true);
     await reloadFromDevice();
   } catch (e) {
-    alert("Nie udało się połączyć: " + (e as Error).message);
+    alert(t("conn.failed") + (e as Error).message);
     await link.disconnect();
   }
 });
@@ -51,14 +52,16 @@ link.onEvent = (obj) => {
     const div = document.createElement("div");
     div.className = "scan-entry";
     const fields = obj.fields && Object.keys(obj.fields as object).length
-      ? " | pola: " + JSON.stringify(obj.fields)
+      ? t("test.fields") + JSON.stringify(obj.fields)
       : "";
-    const profile = obj.profile ? ` | profil: <span class="p">${obj.profile}</span>` : " | bez profilu";
+    const profile = obj.profile
+      ? `${t("test.profile")}<span class="p">${escapeHtml(String(obj.profile))}</span>`
+      : t("test.noProfile");
     let text = "";
     try {
       text = atob(String(obj.rawBase64));
     } catch {
-      text = "(nie-ASCII) " + String(obj.hex);
+      text = t("test.nonAscii") + String(obj.hex);
     }
     div.innerHTML = `<b>${escapeHtml(text)}</b>${profile}${escapeHtml(fields)}`;
     elTestLog.prepend(div);
@@ -75,14 +78,19 @@ $("chk-testmode").addEventListener("change", async (ev) => {
     await link.command("setMode", { mode: on ? "test" : "hid" });
     if (on) elTestLog.textContent = "";
   } catch (e) {
-    alert("Błąd przełączania trybu: " + (e as Error).message);
+    alert(t("test.modeError") + (e as Error).message);
   }
 });
 
 // ---------- urzadzenie ----------
 const selSuffix = $("dev-suffix") as unknown as HTMLSelectElement;
-selSuffix.innerHTML =
-  '<option value="">brak</option>' + KEY_NAMES.map((k) => `<option>${k}</option>`).join("");
+function fillSuffixOptions(): void {
+  const keep = selSuffix.value;
+  selSuffix.innerHTML =
+    `<option value="">${t("device.none")}</option>` + KEY_NAMES.map((k) => `<option>${k}</option>`).join("");
+  selSuffix.value = keep;
+}
+fillSuffixOptions();
 
 // ---------- profile ----------
 const elProfiles = $("profiles-list");
@@ -98,25 +106,26 @@ function addProfileRow(p: Profile): void {
   root.className = "profile-card" + (p.enabled ? "" : " disabled");
   root.innerHTML = `
     <div class="profile-head">
-      <label class="switch"><input type="checkbox" class="p-enabled"> włączony</label>
-      <input type="text" class="p-name" placeholder="nazwa profilu" />
+      <label class="switch"><input type="checkbox" class="p-enabled"> <span data-i18n="profile.enabled"></span></label>
+      <input type="text" class="p-name" data-i18n-ph="profile.namePlaceholder" />
       <span class="spacer"></span>
-      <button class="p-del">Usuń</button>
+      <button class="p-del" data-i18n="profile.delete"></button>
     </div>
     <div class="grid">
-      <label>Typ parsowania
+      <label><span data-i18n="profile.parseType"></span>
         <select class="p-ptype">
-          <option value="regexGroups">regex z grupami</option>
-          <option value="gs1">GS1 (AI 01/17/10/21)</option>
+          <option value="regexGroups" data-i18n="profile.parseType.regexGroups"></option>
+          <option value="gs1" data-i18n="profile.parseType.gs1"></option>
         </select>
       </label>
-      <label>Wykrywanie (regex) <input type="text" class="p-detect" /></label>
-      <label>Parsowanie (regex z grupami) <input type="text" class="p-parse" /></label>
-      <label>Pola (nazwa=grupa, po przecinku) <input type="text" class="p-fields" /></label>
-      <label>Sekwencja akcji <input type="text" class="p-seq" /></label>
+      <label><span data-i18n="profile.detect"></span> <input type="text" class="p-detect" /></label>
+      <label><span data-i18n="profile.parse"></span> <input type="text" class="p-parse" /></label>
+      <label><span data-i18n="profile.fields"></span> <input type="text" class="p-fields" /></label>
+      <label><span data-i18n="profile.sequence"></span> <input type="text" class="p-seq" /></label>
     </div>
-    <div class="hint p-gs1hint" hidden>Pola GS1: {gtin} {dataWaznosci} {dataWaznosciISO} {partia} {numerSeryjny}</div>
+    <div class="hint p-gs1hint" hidden data-i18n="profile.gs1hint"></div>
     <div class="field-error p-err"></div>`;
+  applyI18n(root);
   const q = <T extends HTMLElement>(cls: string): T => root.querySelector("." + cls) as T;
   (q<HTMLInputElement>("p-enabled")).checked = p.enabled;
   (q<HTMLInputElement>("p-name")).value = p.name;
@@ -170,7 +179,10 @@ function addProfileRow(p: Profile): void {
         output: seqRes.actions as Action[],
       };
       q("p-err").textContent = errors.join("; ");
-      return { profile: errors.length ? null : profile, errors: errors.map((e) => `${name || "profil"}: ${e}`) };
+      return {
+        profile: errors.length ? null : profile,
+        errors: errors.map((e) => `${name || t("profile.unnamed")}: ${e}`),
+      };
     },
   };
   profileRows.push(row);
@@ -179,7 +191,7 @@ function addProfileRow(p: Profile): void {
 
 $("btn-add-profile").addEventListener("click", () => {
   addProfileRow({
-    name: "nowy-profil",
+    name: t("profile.new"),
     enabled: false,
     detect: { type: "regex", pattern: "^.*$" },
     parse: { type: "regexGroups", pattern: "^(.*)$", fields: { kod: 1 } },
@@ -204,7 +216,7 @@ function uiFromConfig(cfg: Config): void {
 }
 
 function configFromUi(): { cfg: Config | null; errors: string[] } {
-  if (!config) return { cfg: null, errors: ["brak konfiguracji bazowej"] };
+  if (!config) return { cfg: null, errors: [t("msg.noBaseConfig")] };
   const errors: string[] = [];
   const profiles: Profile[] = [];
   for (const row of profileRows) {
@@ -261,7 +273,7 @@ async function reloadFromDevice(): Promise<void> {
   const resp = await link.command("getConfig");
   const parsed = configSchema.safeParse(resp.config);
   if (!parsed.success) {
-    showValidation(["konfiguracja z urządzenia nie przeszła walidacji:", ...parsed.error.issues.map((i) => i.message)]);
+    showValidation([t("msg.deviceConfigInvalid"), ...parsed.error.issues.map((i) => i.message)]);
     return;
   }
   config = parsed.data;
@@ -287,7 +299,7 @@ async function applyToDevice(): Promise<Config | null> {
 
 $("btn-apply").addEventListener("click", async () => {
   const cfg = await applyToDevice();
-  if (cfg) showValidation(["✔ zastosowano (do restartu)"]);
+  if (cfg) showValidation([t("msg.applied")]);
 });
 
 $("btn-save").addEventListener("click", async () => {
@@ -301,7 +313,7 @@ $("btn-save").addEventListener("click", async () => {
   // weryfikacja: pobierz ponownie i porownaj NIEZALEZNIE od kolejnosci kluczy
   const back = await link.command("getConfig");
   const same = canonical(back.config) === canonical(cfg);
-  showValidation([same ? "✔ zapisano trwale i zweryfikowano" : "⚠ zapisano, ale odczyt różni się od wysłanego"]);
+  showValidation([same ? t("msg.saved") : t("msg.savedMismatch")]);
 });
 
 $("btn-export").addEventListener("click", () => {
@@ -328,15 +340,15 @@ $("file-import").addEventListener("change", async (ev) => {
     }
     config = parsed.data;
     uiFromConfig(config);
-    showValidation(["✔ zaimportowano — kliknij Zastosuj albo Zapisz trwale"]);
+    showValidation([t("msg.imported")]);
   } catch (e) {
-    showValidation(["błąd importu: " + (e as Error).message]);
+    showValidation([t("msg.importError") + (e as Error).message]);
   }
   (ev.target as HTMLInputElement).value = "";
 });
 
 $("btn-factory").addEventListener("click", async () => {
-  if (!confirm("Przywrócić ustawienia fabryczne (czyści NVM)?")) return;
+  if (!confirm(t("service.factoryConfirm"))) return;
   await link.command("factoryReset");
   await reloadFromDevice();
 });
@@ -347,14 +359,13 @@ $("btn-reboot").addEventListener("click", async () => {
 });
 
 const bootloaderFlow = async (): Promise<void> => {
-  if (!confirm("Urządzenie zrestartuje się jako dysk RPI-RP2 (wgrywanie firmware). Kontynuować?")) return;
+  if (!confirm(t("service.bootloaderConfirm"))) return;
   await link.command("rebootBootloader").catch(() => undefined);
   await link.disconnect();
 };
 $("btn-bootloader").addEventListener("click", () => void bootloaderFlow());
 $("btn-update-bootloader").addEventListener("click", () => void bootloaderFlow());
 
-// Adres wydan - podmien po opublikowaniu repo na GitHubie.
 const RELEASES_URL = "https://github.com/Mysttic/mysttic-barcode-scanner/releases";
 ($("fw-releases") as HTMLAnchorElement).href = RELEASES_URL;
 
@@ -369,3 +380,12 @@ document.querySelectorAll<HTMLButtonElement>("#tabs .tab").forEach((btn) => {
 });
 
 setConnected(false);
+
+// ---------- jezyk ----------
+const selLang = $("sel-lang") as unknown as HTMLSelectElement;
+selLang.value = getLang();
+selLang.addEventListener("change", () => {
+  setLang(selLang.value as Lang);
+  fillSuffixOptions();
+});
+applyI18n();

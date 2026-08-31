@@ -61,6 +61,18 @@ def agent(*args, timeout=60):
     return (wynik.stdout or "") + (wynik.stderr or "")
 
 
+def wyslij(*args, proby=3):
+    """Symuluje skan. Windows potrafi odmowic zmiany aktywnego okna, a wtedy
+    znaki poleca w inne miejsce - agent wypisuje wtedy blad, wiec powtarzamy."""
+    for numer in range(proby):
+        wyjscie = agent("--wyslij", *args)
+        if "could not bring the window" not in wyjscie:
+            return wyjscie
+        time.sleep(1.0)
+        print(f"  [..] okno nie przeszlo na wierzch, powtorka {numer + 1}/{proby}")
+    return wyjscie
+
+
 def main():
     if not APLIKACJA.exists() or not AGENT.exists():
         sys.exit("Najpierw zbuduj projekty:\n"
@@ -77,54 +89,54 @@ def main():
         print("\n1. Rozpoznanie okna")
         wyjscie = agent("--okno", "--proces", "MystticDemoApp")
         sprawdz("agent widzi proces aplikacji", "MystticDemoApp" in wyjscie)
-        sprawdz("agent czyta tytul okna", "Karta pracownika" in wyjscie, wyjscie.strip()[:120])
+        sprawdz("agent czyta tytul okna", "Employee card" in wyjscie, wyjscie.strip()[:120])
 
         print("\n2. UI Automation widzi pola po identyfikatorach")
         drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
-        for pole in ["txtImie", "txtNazwisko", "txtNumer", "cmbDzial", "cmbStanowisko"]:
+        for pole in ["txtFirstName", "txtLastName", "txtNumber", "cmbDepartment", "cmbPosition"]:
             sprawdz(f"kontrolka {pole} widoczna", f'id="{pole}"' in drzewo)
 
         print("\n3. Skan wypelnia formularz (makro z profilu)")
-        wynik = agent("--symuluj", "PRC;JAN;KOWALSKI;12345;IT;Specjalista",
+        wynik = agent("--symuluj", "PRC;JAN;KOWALSKI;12345;IT;Specialist",
                       "--proces", "MystticDemoApp",
                       "--profile", str(PROFILE),
-                      "--sprawdz", "podgladStanu")
-        sprawdz("profil dopasowany", "profil: Karta pracownika" in wynik)
-        sprawdz("wszystkie kroki makra udane", "kroki: 5/5" in wynik,
-                re.search(r"kroki: \d+/\d+", wynik).group(0) if "kroki:" in wynik else wynik[-200:])
-        for pole, wartosc in [("imie", "JAN"), ("nazwisko", "KOWALSKI"),
-                              ("numer", "12345"), ("dzial", "IT")]:
+                      "--sprawdz", "statePreview")
+        sprawdz("profil dopasowany", "profile: Employee card" in wynik)
+        sprawdz("wszystkie kroki makra udane", "steps: 5/5" in wynik,
+                re.search(r"steps: \d+/\d+", wynik).group(0) if "steps:" in wynik else wynik[-200:])
+        for pole, wartosc in [("firstName", "JAN"), ("lastName", "KOWALSKI"),
+                              ("number", "12345"), ("department", "IT")]:
             sprawdz(f"aplikacja zobaczyla {pole}={wartosc}",
                     re.search(rf'{pole}\s*=\s*"{wartosc}"', wynik) is not None)
         sprawdz("panel stanu potwierdza komplet",
-                "zobaczyla wszystkie 4 wartosci" in wynik)
+                "saw all 4 values" in wynik)
         # pole z podpowiedziami (edytowalna lista): wartosc spoza listy musi
         # trafic do aplikacji, a nie tylko wygladac na wpisana
         # wartosc jest TAKZE pozycja listy, ale profil uczono wpisywaniem -
         # agent ma wpisac tekst, nie polegac na wyborze z listy
         sprawdz("pole z podpowiedziami wypelnione trybem \"wpisz\"",
-                re.search(r'stanowisko = "Specjalista"', wynik) is not None,
-                next((w for w in wynik.splitlines() if "stanowisko" in w), ""))
+                re.search(r'position   = "Specialist"', wynik) is not None,
+                next((w for w in wynik.splitlines() if "position" in w), ""))
 
         print("\n4. Pola-pulapki pozostaly puste")
         drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
-        for pole in ["txtEmail", "txtTelefon"]:
+        for pole in ["txtEmail", "txtPhone"]:
             wiersz = next((w for w in drzewo.splitlines() if f'id="{pole}"' in w), "")
-            sprawdz(f"{pole} nietkniete", 'wartosc=""' in wiersz, wiersz.strip())
+            sprawdz(f"{pole} nietkniete", 'value=""' in wiersz, wiersz.strip())
 
         print("\n5. Obcy kod nie jest wykonywany")
         wynik = agent("--symuluj", "EMP;ANNA;NOWAK;67890;HR",
                       "--proces", "MystticDemoApp",
                       "--profile", str(PROFILE))
-        sprawdz("ramka spoza profilu odrzucona", "NIE SPARSOWANO" in wynik,
+        sprawdz("ramka spoza profilu odrzucona", "NOT PARSED" in wynik,
                 wynik.strip().splitlines()[-1] if wynik.strip() else "")
 
         print("\n6. Profil nie dziala na innym oknie")
-        wynik = agent("--symuluj", "PRC;JAN;KOWALSKI;12345;IT;Specjalista",
+        wynik = agent("--symuluj", "PRC;JAN;KOWALSKI;12345;IT;Specialist",
                       "--proces", "explorer",
                       "--profile", str(PROFILE))
         sprawdz("brak profilu dla obcej aplikacji",
-                "BRAK PROFILU" in wynik or "nie znaleziono okna" in wynik,
+                "NO PROFILE" in wynik or "no window found" in wynik,
                 wynik.strip().splitlines()[-1] if wynik.strip() else "")
 
         print("\n7. Pelna sciezka: agent w tle przechwytuje skan z klawiatury")
@@ -140,18 +152,18 @@ def main():
         tray = subprocess.Popen([str(AGENT), "--profile", str(PROFILE)])
         time.sleep(3.5)
         try:
-            agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--proces", "MystticDemoApp")
-            tresc = czekaj_na_log(log, "cmbStanowisko")
-            sprawdz("agent zobaczyl ramke ze skanu", 'ramka "PRC;JAN;KOWALSKI;12345;IT;Specjalista"' in tresc,
+            wyslij("PRC;JAN;KOWALSKI;12345;IT;Specialist", "--proces", "MystticDemoApp")
+            tresc = czekaj_na_log(log, "cmbPosition")
+            sprawdz("agent zobaczyl ramke ze skanu", 'frame "PRC;JAN;KOWALSKI;12345;IT;Specialist"' in tresc,
                     tresc.strip().splitlines()[-1] if tresc.strip() else "log pusty")
             sprawdz("agent wykonal makro", tresc.count("[OK]") >= 4,
                     f"[OK] w logu: {tresc.count('[OK]')}")
 
             drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
             sprawdz("aplikacja wypelniona po przechwyconym skanie",
-                    "zobaczyla wszystkie 4 wartosci" in drzewo)
+                    "saw all 4 values" in drzewo)
             wiersz = next((w for w in drzewo.splitlines() if 'id="txtEmail"' in w), "")
-            sprawdz("znaki skanu nie wyciekly do pol aplikacji", 'wartosc=""' in wiersz, wiersz.strip())
+            sprawdz("znaki skanu nie wyciekly do pol aplikacji", 'value=""' in wiersz, wiersz.strip())
 
             print("\n8. Skan w stylu prawdziwego czytnika (Shift + wielkie litery)")
             # czytnik HID wysyla Shift przed kazda wielka litera - modyfikatory
@@ -165,14 +177,14 @@ def main():
             # okno musi byc gotowe (UIA je widzi), zanim zaczniemy wysylac klawisze
             agent("--okno", "--proces", "MystticDemoApp")
 
-            agent("--wyslij", "PRC;JAN;KOWALSKI;12345;IT;Specjalista", "--hid", "--proces", "MystticDemoApp")
-            tresc = czekaj_na_log(log, "cmbStanowisko")
+            wyslij("PRC;JAN;KOWALSKI;12345;IT;Specialist", "--hid", "--proces", "MystticDemoApp")
+            tresc = czekaj_na_log(log, "cmbPosition")
             sprawdz("ramka HID odczytana z zachowaniem wielkich liter",
-                    'ramka "PRC;JAN;KOWALSKI;12345;IT;Specjalista"' in tresc,
+                    'frame "PRC;JAN;KOWALSKI;12345;IT;Specialist"' in tresc,
                     tresc.strip().splitlines()[-1] if tresc.strip() else "log pusty")
             drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
             sprawdz("formularz wypelniony po skanie HID",
-                    "zobaczyla wszystkie 4 wartosci" in drzewo)
+                    "saw all 4 values" in drzewo)
         finally:
             tray.terminate()
             subprocess.run(["taskkill", "/F", "/IM", "MystticBarcodeAgent.exe"], capture_output=True, check=False)
@@ -181,10 +193,10 @@ def main():
         # agent startuje bez profili, plik zmienia sie w trakcie pracy
         goracy = ROOT / "test-app" / "profile" / "_test-hot.json"
         goracy.write_text(json.dumps({
-            "Wersja": 1, "Wlaczony": True,
-            "Ustawienia": {"OdstepSkanuMs": 60, "MinDlugoscRamki": 3,
-                           "PauzaKrokuMs": 40, "WeryfikujOdczytem": True},
-            "Profile": [],
+            "version": 1, "lang": "en", "enabled": True,
+            "settings": {"scanGapMs": 60, "minFrameLength": 3,
+                         "stepPauseMs": 40, "verifyByReadback": True},
+            "profiles": [],
         }), encoding="utf-8")
 
         proces.terminate()
@@ -197,19 +209,21 @@ def main():
         time.sleep(3.5)
         try:
             profil = json.loads(PROFILE.read_text(encoding="utf-8"))
-            profil["Profile"][0]["Nazwa"] = "Dodany na goraco"
+            profil["profiles"][0]["name"] = "Added while running"
             goracy.write_text(json.dumps(profil, ensure_ascii=False, indent=2), encoding="utf-8")
             time.sleep(2)
 
             tresc = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
-            sprawdz("agent zauwazyl zmiane pliku profili", "przeladowano profile" in tresc,
+            sprawdz("agent zauwazyl zmiane pliku profili", "profiles reloaded" in tresc,
                     tresc.strip().splitlines()[-1] if tresc.strip() else "log pusty")
 
-            agent("--wyslij", "PRC;ANNA;NOWAK;67890;HR;Kierownik", "--hid", "--proces", "MystticDemoApp")
-            czekaj_na_log(log, "cmbStanowisko")
+            # tak jak w kroku 8: okno musi byc gotowe, zanim polecimy klawiszami
+            agent("--okno", "--proces", "MystticDemoApp")
+            wyslij("PRC;ANNA;NOWAK;67890;HR;Manager", "--hid", "--proces", "MystticDemoApp")
+            czekaj_na_log(log, "cmbPosition")
             drzewo = agent("--drzewo", "--proces", "MystticDemoApp")
             sprawdz("skan dziala nowym profilem bez restartu",
-                    'imie     = "ANNA"' in drzewo and 'dzial    = "HR"' in drzewo,
+                    'firstName  = "ANNA"' in drzewo and 'department = "HR"' in drzewo,
                     "\n".join(w for w in drzewo.splitlines() if "=" in w and '"' in w)[:200])
         finally:
             tray.terminate()

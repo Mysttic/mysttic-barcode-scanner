@@ -77,7 +77,7 @@ def cmd_get_config(request):
 def cmd_set_config(request):
     data = request.get("config")
     if not isinstance(data, dict):
-        return {"ok": False, "error": "brak pola config"}
+        return {"ok": False, "error": "no config field"}
     merged = config_store._merge(config_store.DEFAULTS, data)
     errors = config_store.validate(merged)
     if errors:
@@ -186,5 +186,5 @@ while True:
                 hid.run_actions(actions)
                 led.value = not led.value
             else:
-                print("Pusta/nie-ASCII ramka - pominieta")
+                print("Empty or non-ASCII frame, skipped")
     time.sleep(0.005)

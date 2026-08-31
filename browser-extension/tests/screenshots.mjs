@@ -15,7 +15,7 @@ const EXT = join(ROOT, "browser-extension");
 const IMG = join(ROOT, "docs", "img");
 const PYTHON = process.platform === "win32" ? "python" : "python3";
 const PORT = 8138;
-// Sekwencja TAB-owa, ktora WYPISUJE produkcyjny profil pracownik-tab czytnika:
+// Sekwencja TAB-owa, ktora WYPISUJE produkcyjny profil employee-tab czytnika:
 const RAMKA = "JAN\tKOWALSKI\t12345\tIT";
 const STRONA = `http://127.0.0.1:${PORT}/forms/form-c-extension.html`;
 
@@ -61,8 +61,8 @@ try {
   const extId = new URL(worker.url()).host;
 
   const page = context.pages()[0] || (await context.newPage());
-  await page.goto(`${STRONA}#/pracownik`);
-  await page.waitForSelector("input[name=imie]");
+  await page.goto(`${STRONA}#/employee`);
+  await page.waitForSelector("input[name=firstName]");
   await page.waitForTimeout(700);
 
   // 1-2. rozpoznany formularz: przed i po skanie
@@ -72,7 +72,7 @@ try {
 
   // 3-6. tryb nauki, krok po kroku
   await page.reload();
-  await page.waitForSelector("input[name=imie]");
+  await page.waitForSelector("input[name=firstName]");
   await page.waitForTimeout(700);
 
   // Bez uprawnienia "tabs" nie da sie filtrowac po adresie - bierzemy aktywna
@@ -87,7 +87,7 @@ try {
 
   await skanuj(page, RAMKA);
   await page.waitForTimeout(300);
-  const nazwy = ["imie", "nazwisko", "numer", "dzial"];
+  const nazwy = ["firstName", "lastName", "number", "department"];
   for (let i = 0; i < nazwy.length; i += 1) {
     await page.fill(`input[data-idx="${i}"]`, nazwy[i]);
   }
@@ -95,11 +95,11 @@ try {
 
   await page.click('button[data-act="names"]');
   await page.waitForTimeout(300);
-  await page.hover("input[name=imie]"); // podswietlenie pola pod kursorem
+  await page.hover("input[name=firstName]"); // podswietlenie pola pod kursorem
   await page.waitForTimeout(200);
   await shot(page, "learn-3-fields");
 
-  for (const selektor of ["input[name=imie]", "input[name=nazwisko]", "input[name=numer]", "select[name=dzial]"]) {
+  for (const selektor of ["input[name=firstName]", "input[name=lastName]", "input[name=number]", "select[name=department]"]) {
     await page.click(selektor);
     await page.waitForTimeout(200);
     await page.click('button[data-act="confirm"]'); // klik wybiera, przycisk zatwierdza
@@ -121,12 +121,12 @@ try {
   // 8-9. popup dla strony z profilem i bez profilu
   async function popup(nazwa) {
     await worker.evaluate(
-      ({ id }) => chrome.windows.create({ url: `chrome-extension://${id}/src/popup.html`, type: "popup", width: 340, height: 260 }),
+      ({ id }) => chrome.windows.create({ url: `chrome-extension://${id}/src/popup.html`, type: "popup", width: 356, height: 360 }),
       { id: extId },
     );
     const okno = await context.waitForEvent("page");
     await okno.waitForLoadState();
-    await okno.setViewportSize({ width: 320, height: 215 }); // realny rozmiar popupu
+    await okno.setViewportSize({ width: 320, height: 300 }); // realny rozmiar popupu
     await okno.waitForTimeout(600);
     await shot(okno, nazwa);
     await okno.close();
@@ -135,8 +135,8 @@ try {
   await page.bringToFront();
   await popup("popup");
 
-  await page.click("#nav-ustawienia");
-  await page.waitForSelector("input[name=motyw]");
+  await page.click("#nav-settings");
+  await page.waitForSelector("input[name=theme]");
   await page.waitForTimeout(900);
   await page.bringToFront();
   await popup("popup-no-profile");
@@ -173,7 +173,7 @@ try {
 
   await skanuj(lek, RAMKA_LEK);
   await lek.waitForTimeout(300);
-  const nazwyLek = ["gtin", "dataWaznosci", "partia", "numerSeryjny"];
+  const nazwyLek = ["gtin", "expiry", "batch", "serial"];
   for (let i = 0; i < nazwyLek.length; i += 1) {
     await lek.fill(`input[data-idx="${i}"]`, nazwyLek[i]);
   }
@@ -190,7 +190,7 @@ try {
 
   // Data: panel potwierdzania dokłada rząd przycisków z podglądem formatów.
   // Tu zatwierdzamy bez zmiany (profil z samouczka ma zostawiać ISO).
-  await lek.click("input[name=dataWaznosci]");
+  await lek.click("input[name=expiry]");
   await lek.waitForTimeout(250);
   // wpisany wlasny wzorzec pokazuje podglad na zywo
   await lek.fill("input[data-field='format']", "dd-mm-yy");
@@ -201,13 +201,13 @@ try {
   await lek.click('button[data-act="confirm"]');
   await lek.waitForTimeout(200);
 
-  for (const sel of ["input[name=partia]", "input[name=numerSeryjny]"]) {
+  for (const sel of ["input[name=batch]", "input[name=serial]"]) {
     await lek.click(sel);
     await lek.waitForTimeout(200);
     await lek.click('button[data-act="confirm"]');
     await lek.waitForTimeout(200);
   }
-  await lek.fill('input[data-field="name"]', "Zamówienie leku — mój profil");
+  await lek.fill('input[data-field="name"]', "Medicine order - my profile");
   await shot(lek, "medicine-4-save");
 
   await lek.click('button[data-act="save"]');
