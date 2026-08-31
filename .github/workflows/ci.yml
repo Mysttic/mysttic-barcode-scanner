@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Host tests: CircuitPython firmware
+      - name: Host tests of the CircuitPython firmware
         working-directory: firmware-circuitpython
         run: python tests/test_firmware.py
 
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Host tests: C modules
+      - name: Host tests of the C modules
         working-directory: firmware-pico-sdk
         run: |
           gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c src/config_parse.c src/profile_matcher.c -o test_host
