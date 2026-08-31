@@ -7,8 +7,8 @@ It is read-only, so nothing here can be overwritten or broken.
 QUICK START
 -----------
 1. Open  configurator.html  from this disk in Chrome or Edge.
-2. Click "Polacz" (Connect) and pick the USB serial device.
-3. Set up your profiles and click "Zapisz trwale" (Save permanently).
+2. Click "Connect" and pick the USB serial device.
+3. Set up your profiles and click "Save permanently".
 
 Full manual: MANUAL.md (opens in any text editor).
 
@@ -18,7 +18,8 @@ scan straight off the screen.
 The scanner types like an ordinary keyboard, so day-to-day work needs
 nothing installed and nothing configured.
 
-Note: the configurator's user interface is in Polish.
+The configurator is in English by default; the language selector in
+its top right corner also offers Polish.
 
 Project and sources: https://github.com/Mysttic/mysttic-barcode-scanner
 Licensed under the Apache License 2.0.

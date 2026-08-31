@@ -87,7 +87,7 @@ static uint32_t current_seq_and_slot(int *newest_slot) {
 const char *config_flash_save(const config_t *cfg) {
   static flash_op_t op;  // duzy bufor - statycznie
   size_t len = strlen(cfg->raw_json);
-  if (len == 0 || len > SLOT_SIZE - HDR_LEN) return "konfiguracja za duza do slotu flash";
+  if (len == 0 || len > SLOT_SIZE - HDR_LEN) return "configuration too large for the flash slot";
 
   int newest;
   uint32_t seq = current_seq_and_slot(&newest) + 1;
@@ -117,7 +117,7 @@ const char *config_flash_save(const config_t *cfg) {
   const char *vjson;
   uint16_t vlen;
   if (!slot_valid(op.slot, &vseq, &vjson, &vlen) || vseq != seq || vlen != len)
-    return "weryfikacja zapisu nieudana";
+    return "write verification failed";
   return NULL;
 }
 

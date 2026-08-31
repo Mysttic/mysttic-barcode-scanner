@@ -1,11 +1,14 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Profile formularzy</title>
+<title>Form profiles</title>
 <style>
   body { font-family: system-ui, sans-serif; max-width: 860px; margin: 0 auto; padding: 24px; color: #0f172a; background: #f4f6f9; }
   h1 { font-size: 1.2rem; }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .lang { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: #64748b; }
+  .lang select { padding: 3px 6px; font-size: .85rem; }
   .card { background: #fff; border: 1px solid #d8dee8; border-radius: 12px; padding: 18px; margin-bottom: 18px; }
   .profil { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
   .profil.off { opacity: .55; }
@@ -28,37 +31,38 @@
 </style>
 </head>
 <body>
-  <h1>Profile formularzy</h1>
-  <p class="hint">Profil łączy trzy rzeczy: <b>gdzie</b> działa (adres + wymagane pola),
-  <b>jak</b> rozłożyć kod na pola (parse) i <b>gdzie</b> wstawić wartości (selektory).
-  Układ jest celowo taki sam jak w profilach czytnika.</p>
+  <div class="top">
+    <h1 data-i18n="options.title">Form profiles</h1>
+    <label class="lang">
+      <span data-i18n="lang.label">Language</span>
+      <select id="lang">
+        <option value="en">English</option>
+        <option value="pl">Polski</option>
+      </select>
+    </label>
+  </div>
+  <p class="hint" data-i18n-html="options.intro"></p>
 
   <div class="card">
-    <h2 style="font-size:1rem">Zapisane profile</h2>
-    <p class="hint"><b>Nowy profil:</b> otwórz formularz, na którym ma działać →
-    ikona wtyczki na pasku → <b>Ucz formularza</b> → (1) zeskanuj kod,
-    (2) nazwij segmenty, (3) klikaj wskazywane pola → Zapisz. Samouczek ze
-    zrzutami: <code>BROWSER-EXTENSION.md</code> (na dysku MYSTTIC i w repozytorium,
-    katalog <code>docs/</code>).</p>
-    <p class="hint">Nazwę i adres edytujesz wprost — zmiany zapisują się same.
-    Kolejność ma znaczenie: gdy do strony pasuje kilka profili, wygrywa
-    <b>pierwszy</b> z listy (przesuwaj strzałkami). Pola i parsowanie zmienisz
-    w JSON poniżej albo ucząc profil od nowa.</p>
+    <h2 style="font-size:1rem" data-i18n="options.savedHeading">Saved profiles</h2>
+    <p class="hint" data-i18n-html="options.newHint"></p>
+    <p class="hint" data-i18n-html="options.orderHint"></p>
     <div id="lista"></div>
   </div>
 
   <div class="card">
-    <h2 style="font-size:1rem">Konfiguracja (JSON)</h2>
+    <h2 style="font-size:1rem" data-i18n="options.jsonHeading">Configuration (JSON)</h2>
     <textarea id="json" spellcheck="false"></textarea>
     <div class="log" id="log"></div>
     <p>
-      <button id="zapisz">Zapisz</button>
-      <button class="ghost" id="eksport">Eksportuj do pliku</button>
-      <button class="ghost" id="import">Importuj z pliku</button>
-      <button class="danger" id="reset">Przywróć domyślne</button>
+      <button id="zapisz" data-i18n="options.save">Save</button>
+      <button class="ghost" id="eksport" data-i18n="options.export">Export to a file</button>
+      <button class="ghost" id="import" data-i18n="options.import">Import from a file</button>
+      <button class="danger" id="reset" data-i18n="options.reset">Restore the defaults</button>
     </p>
     <input type="file" id="plik" accept="application/json" hidden>
   </div>
+  <script src="i18n.js"></script>
   <script src="store.js"></script>
   <script src="options.js"></script>
 </body>

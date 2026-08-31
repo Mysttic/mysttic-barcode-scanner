@@ -103,17 +103,18 @@ def test_validation():
         }
     )
     joined = " | ".join(cs.validate(bad))
-    for frag in ("zdublowana", "{m,n}", "grupy >= 1", "nie istnieje w parse.fields", "nieznany klawisz"):
+    for frag in ("duplicate name", "{m,n}", "group number must be >= 1",
+                 "does not exist in parse.fields", "unknown key"):
         check(frag in joined, "walidacja wykrywa: " + frag)
 
 
 def test_profiles_regex():
     demo = load_config()
-    prac = next(x for x in demo["profiles"] if x["name"] == "pracownik-tab")
+    prac = next(x for x in demo["profiles"] if x["name"] == "employee-tab")
     prac["enabled"] = True
     profile, fields, err = pf.match_profile("PRC;JAN;KOWALSKI;12345;IT", demo)
-    check(profile is not None and not err, "profil pracownik-tab dopasowany")
-    check(fields == {"imie": "JAN", "nazwisko": "KOWALSKI", "numer": "12345", "dzial": "IT"}, "pola regexGroups")
+    check(profile is not None and not err, "profil employee-tab dopasowany")
+    check(fields == {"firstName": "JAN", "lastName": "KOWALSKI", "number": "12345", "department": "IT"}, "pola regexGroups")
     acts = pf.build_output_actions(profile, fields)
     vals = [x.get("key", x.get("value")) for x in acts]
     check(vals == ["JAN", "TAB", "KOWALSKI", "TAB", "12345", "TAB", "IT", "ENTER"], "akcje z profilu")
@@ -126,11 +127,11 @@ def test_gs1():
     raw = b"]d2" + b"0105901234567890" + b"17260831" + b"10LOT123" + GS + b"21SER0001"
     fields, aim, err = g.parse(raw)
     check(err is None and aim == "]d2", "wektor z instrukcji: AIM")
-    check(fields["gtin"] == "05901234567890" and fields["dataWaznosciISO"] == "2026-08-31", "GTIN + data ISO")
-    check(fields["partia"] == "LOT123" and fields["numerSeryjny"] == "SER0001", "pola zmienne")
+    check(fields["gtin"] == "05901234567890" and fields["expiryISO"] == "2026-08-31", "GTIN + data ISO")
+    check(fields["batch"] == "LOT123" and fields["serial"] == "SER0001", "pola zmienne")
 
     f2, aim2, err2 = g.parse(b"21SN42" + GS + b"0105901234123457" + b"10ABC")
-    check(err2 is None and aim2 is None and f2["numerSeryjny"] == "SN42", "inna kolejnosc AI")
+    check(err2 is None and aim2 is None and f2["serial"] == "SN42", "inna kolejnosc AI")
 
     check(g.date_to_iso("260200") == "2026-02-28", "dzien 00 -> koniec miesiaca")
     check(g.date_to_iso("280200") == "2028-02-29", "luty przestepny")
@@ -181,7 +182,7 @@ def test_nvm():
     big = json.loads(json.dumps(cs.DEFAULTS))
     big["pad"] = "X" * 5000
     err = cs.save_to_nvm(big, nvm)
-    check(err is not None and "za duza" in err, "limit rozmiaru NVM")
+    check(err is not None and "too large" in err, "limit rozmiaru NVM")
 
     real = load_config()
     check(cs.save_to_nvm(real, bytearray(4096)) is None, "realny config miesci sie w 4KB")

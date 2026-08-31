@@ -148,8 +148,8 @@ There is no enclosure design in the repository yet; it is on the
 ## Updating the firmware
 
 1. Download the new package and verify the SHA-256 sums (`SHA256SUMS.txt`).
-2. In the configurator: the **Aktualizacja** (Update) tab → **Restart do
-   bootloadera** (Reboot to bootloader), or use BOOT+RST by hand.
+2. In the configurator: the **Update** tab → **Restart into the
+   bootloader** (Reboot to bootloader), or use BOOT+RST by hand.
 3. Drag the new `.uf2` onto `RPI-RP2`.
 
 User configuration lives in the board's flash and **survives an update**. To

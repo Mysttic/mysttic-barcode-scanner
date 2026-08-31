@@ -17,7 +17,7 @@ public static class Zrzuty
         var oknoAplikacji = ZnajdzOkno(nazwaProcesu ?? "MystticDemoApp");
         if (oknoAplikacji == IntPtr.Zero)
         {
-            Console.WriteLine("BLAD: nie znaleziono okna aplikacji testowej - uruchom ja najpierw");
+            Console.WriteLine("FAILED: no demo application window found, start it first");
             return 1;
         }
 
@@ -37,7 +37,7 @@ public static class Zrzuty
         kreator.UstawRamkeTestowa("PRC;JAN;KOWALSKI;12345;IT");
         Application.DoEvents();
         Thread.Sleep(300);
-        kreator.NazwijSegmenty(new[] { "_", "imie", "nazwisko", "numer", "dzial" });
+        kreator.NazwijSegmenty(new[] { "_", "firstName", "lastName", "number", "department" });
         Application.DoEvents();
         Thread.Sleep(300);
         Zapisz(kreator, katalogWyjsciowy, "agent-learn-2-segments");
@@ -45,10 +45,10 @@ public static class Zrzuty
         // Krok 3: lista nagranych czynnosci
         kreator.PokazNagranie(new List<Krok>
         {
-            new() { Akcja = "pole", Cel = new Cel { AutomationId = "txtImie" }, Wartosc = "{imie}", Tryb = "wpisz" },
-            new() { Akcja = "pole", Cel = new Cel { AutomationId = "txtNazwisko" }, Wartosc = "{nazwisko}", Tryb = "wpisz" },
-            new() { Akcja = "pole", Cel = new Cel { AutomationId = "txtNumer" }, Wartosc = "{numer}", Tryb = "wpisz" },
-            new() { Akcja = "pole", Cel = new Cel { AutomationId = "cmbDzial" }, Wartosc = "{dzial}", Tryb = "wybierz" },
+            new() { Akcja = "field", Cel = new Cel { AutomationId = "txtFirstName" }, Wartosc = "{firstName}", Tryb = "type" },
+            new() { Akcja = "field", Cel = new Cel { AutomationId = "txtLastName" }, Wartosc = "{lastName}", Tryb = "type" },
+            new() { Akcja = "field", Cel = new Cel { AutomationId = "txtNumber" }, Wartosc = "{number}", Tryb = "type" },
+            new() { Akcja = "field", Cel = new Cel { AutomationId = "cmbDepartment" }, Wartosc = "{department}", Tryb = "select" },
         });
         Application.DoEvents();
         Thread.Sleep(300);
@@ -70,19 +70,19 @@ public static class Zrzuty
             {
                 new()
                 {
-                    Nazwa = "Karta pracownika (demo)",
-                    Match = new Dopasowanie { Proces = "MystticDemoApp", TytulWzorzec = "*Karta pracownika*" },
+                    Nazwa = "Employee card (demo)",
+                    Match = new Dopasowanie { Proces = "MystticDemoApp", TytulWzorzec = "*Employee card*" },
                     Parse = new Parsowanie
                     {
                         Typ = "delimited", Prefiks = "PRC;", Separator = ";",
-                        Pola = new List<string> { "_", "imie", "nazwisko", "numer", "dzial" },
+                        Pola = new List<string> { "_", "firstName", "lastName", "number", "department" },
                     },
                     Kroki = new List<Krok>
                     {
-                        new() { Akcja = "pole", Cel = new Cel { AutomationId = "txtImie" }, Wartosc = "{imie}", Tryb = "wpisz" },
-                        new() { Akcja = "pole", Cel = new Cel { AutomationId = "txtNazwisko" }, Wartosc = "{nazwisko}", Tryb = "wpisz" },
-                        new() { Akcja = "pole", Cel = new Cel { AutomationId = "txtNumer" }, Wartosc = "{numer}", Tryb = "wpisz" },
-                        new() { Akcja = "pole", Cel = new Cel { AutomationId = "cmbDzial" }, Wartosc = "{dzial}", Tryb = "wybierz" },
+                        new() { Akcja = "field", Cel = new Cel { AutomationId = "txtFirstName" }, Wartosc = "{firstName}", Tryb = "type" },
+                        new() { Akcja = "field", Cel = new Cel { AutomationId = "txtLastName" }, Wartosc = "{lastName}", Tryb = "type" },
+                        new() { Akcja = "field", Cel = new Cel { AutomationId = "txtNumber" }, Wartosc = "{number}", Tryb = "type" },
+                        new() { Akcja = "field", Cel = new Cel { AutomationId = "cmbDepartment" }, Wartosc = "{department}", Tryb = "select" },
                     },
                 },
             },
@@ -94,7 +94,7 @@ public static class Zrzuty
         Zapisz(okno, katalogWyjsciowy, "agent-profiles");
         okno.Close();
 
-        Console.WriteLine($"Zrzuty zapisane w {katalogWyjsciowy}");
+        Console.WriteLine($"Screenshots saved in {katalogWyjsciowy}");
         return 0;
     }
 

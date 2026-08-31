@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
-      - name: Testy jednostkowe agenta
+      - name: Agent unit tests
         run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
 
   build:
@@ -49,7 +49,7 @@ jobs:
           ref: master
           fetch-depth: 2
 
-      - name: Czy wersja w VERSION.md zostala podniesiona?
+      - name: Was the version in VERSION.md bumped?
         id: ver
         run: |
           VERSION=$(grep -oP '\b\d+\.\d+\.\d+\b' VERSION.md | head -1)
@@ -63,7 +63,7 @@ jobs:
             echo "Wersja niezmieniona — pomijam wydanie."
           elif git ls-remote --tags origin "refs/tags/v$VERSION" | grep -q .; then
             echo "release=false" >> "$GITHUB_OUTPUT"
-            echo "Tag v$VERSION już istnieje — pomijam wydanie."
+            echo "Tag v$VERSION already exists, skipping the release."
           else
             echo "release=true" >> "$GITHUB_OUTPUT"
           fi
@@ -87,7 +87,7 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
+      - name: Fetch the CircuitPython UF2 and the adafruit_hid library
         if: steps.ver.outputs.release == 'true'
         run: |
           mkdir -p hardware/downloads/extracted
@@ -95,7 +95,7 @@ jobs:
           curl -fsSL -o /tmp/bundle.zip "$BUNDLE_URL"
           unzip -o -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
 
-      - name: Build konfiguratora
+      - name: Build the configurator
         if: steps.ver.outputs.release == 'true'
         working-directory: configurator
         run: |
@@ -104,7 +104,7 @@ jobs:
 
       # Firmware produkcyjny (C) ma konfigurator i instrukcje w srodku (dysk
       # MYSTTIC), wiec kompilujemy go PO buildzie konfiguratora.
-      - name: Narzedzia ARM
+      - name: ARM toolchain
         if: steps.ver.outputs.release == 'true'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
 
@@ -116,24 +116,24 @@ jobs:
           path: ~/pico-sdk
           key: pico-sdk-2-tinyusb
 
-      - name: Pobranie Pico SDK
+      - name: Fetch the Pico SDK
         if: steps.ver.outputs.release == 'true' && steps.sdk-cache.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
           cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
 
-      - name: Kompilacja firmware produkcyjnego (UF2 z dyskiem MYSTTIC)
+      - name: Compile the production firmware (UF2 z dyskiem MYSTTIC)
         if: steps.ver.outputs.release == 'true'
         working-directory: firmware-pico-sdk
         run: |
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
 
-      - name: Budowa paczki wydania (z agentem i aplikacja testowa)
+      - name: Assemble the release package (with the agent and the demo application)
         if: steps.ver.outputs.release == 'true'
         run: python tools/build_release.py --skip-npm
 
-      - name: Publikacja wydania (tworzy tag automatycznie)
+      - name: Publish the release (creates the tag automatically)
         if: steps.ver.outputs.release == 'true'
         uses: softprops/action-gh-release@v2
         with:

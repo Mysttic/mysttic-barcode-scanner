@@ -18,19 +18,19 @@ public class OknoNauki : Form
     private readonly Panel _segmenty = new() { Left = 16, Top = 126, Width = 520, Height = 150, AutoScroll = true, Visible = false };
     private readonly ListBox _podglad = new() { Left = 16, Top = 126, Width = 520, Height = 150, Visible = false, Font = new Font("Consolas", 9f) };
     // Parametry rozpoznanego okna - widoczne i edytowalne przed zapisem
-    private readonly Label _etNazwa = new() { Left = 16, Top = 282, Width = 120, Height = 18, Visible = false, Text = "Nazwa profilu:" };
+    private readonly Label _etNazwa = new() { Left = 16, Top = 282, Width = 120, Height = 18, Visible = false, Text = Teksty.T("learn.profileName") };
     private readonly TextBox _nazwaProfilu = new() { Left = 140, Top = 279, Width = 396, Visible = false };
-    private readonly Label _etProces = new() { Left = 16, Top = 310, Width = 120, Height = 18, Visible = false, Text = "Proces:" };
+    private readonly Label _etProces = new() { Left = 16, Top = 310, Width = 120, Height = 18, Visible = false, Text = Teksty.T("learn.process") };
     private readonly TextBox _procesPole = new() { Left = 140, Top = 307, Width = 396, Visible = false };
-    private readonly Label _etTytul = new() { Left = 16, Top = 338, Width = 120, Height = 18, Visible = false, Text = "Wzorzec tytułu:" };
+    private readonly Label _etTytul = new() { Left = 16, Top = 338, Width = 120, Height = 18, Visible = false, Text = Teksty.T("learn.titlePattern") };
     private readonly TextBox _tytulPole = new() { Left = 140, Top = 335, Width = 396, Visible = false };
     private readonly Label _wskazowka = new()
     {
         Left = 16, Top = 360, Width = 520, Height = 30, Visible = false,
         ForeColor = Color.DimGray, Font = new Font("Segoe UI", 8f),
     };
-    private readonly Button _dalej = new() { Text = "Dalej", Left = 356, Top = 398, Width = 90, Height = 30 };
-    private readonly Button _anuluj = new() { Text = "Anuluj", Left = 452, Top = 398, Width = 84, Height = 30 };
+    private readonly Button _dalej = new() { Text = Teksty.T("learn.next"), Left = 356, Top = 398, Width = 90, Height = 30 };
+    private readonly Button _anuluj = new() { Text = Teksty.T("learn.cancel"), Left = 452, Top = 398, Width = 84, Height = 30 };
     private readonly Label _stan = new() { Left = 16, Top = 404, Width = 330, Height = 20, ForeColor = Color.DimGray };
 
     private readonly List<TextBox> _poleNazwy = new();
@@ -51,7 +51,7 @@ public class OknoNauki : Form
         _proces = Native.ProcesOkna(oknoDocelowe);
         _tytul = Native.TytulOkna(oknoDocelowe);
 
-        Text = "Nauka profilu - Mysttic Barcode Scanner";
+        Text = Teksty.T("learn.title");
         Width = 570;
         Height = 478;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -99,8 +99,8 @@ public class OknoNauki : Form
         _krok = 2;
         PokazKrok();
         OdswiezPodglad();
-        _dalej.Text = "Stop";
-        _stan.Text = "nagrywanie... przejdz do aplikacji";
+        _dalej.Text = Teksty.T("learn.stop");
+        _stan.Text = Teksty.T("learn.recording");
     }
 
     internal void PokazZapis()
@@ -164,43 +164,37 @@ public class OknoNauki : Form
         switch (_krok)
         {
             case 0:
-                _naglowek.Text = "Krok 1 z 4: zeskanuj kod";
-                _opis.Text = $"Aplikacja: {_proces} - \"{_tytul}\"\r\n" +
-                             "Kliknij w pole ponizej i zeskanuj kod, ktorym bedziesz wypelnial ten formularz " +
-                             "(mozesz tez wpisac go recznie).";
+                _naglowek.Text = Teksty.T("learn.step1.head");
+                _opis.Text = Teksty.T("learn.step1.body", _proces, _tytul);
                 _ramka.Focus();
-                _dalej.Text = "Dalej";
+                _dalej.Text = Teksty.T("learn.next");
                 break;
 
             case 1:
-                _naglowek.Text = "Krok 2 z 4: nazwij segmenty";
-                _opis.Text = "Kod zostal pociety. Nadaj nazwy segmentom, ktore chcesz wykorzystac. " +
-                             "Wpisz \"_\" przy segmentach do pominiecia (np. prefiks).";
+                _naglowek.Text = Teksty.T("learn.step2.head");
+                _opis.Text = Teksty.T("learn.step2.body");
                 BudujSegmenty();
-                _dalej.Text = "Dalej";
+                _dalej.Text = Teksty.T("learn.next");
                 break;
 
             case 2:
-                _naglowek.Text = "Krok 3 z 4: nagraj czynnosci";
-                _opis.Text = "Kliknij \"Nagrywaj\", przejdz do aplikacji i wypelnij formularz recznie - " +
-                             "klikajac w pola i wpisujac wartosci z kodu. Potem wroc tutaj i kliknij \"Stop\".";
-                _dalej.Text = "Nagrywaj";
+                _naglowek.Text = Teksty.T("learn.step3.head");
+                _opis.Text = Teksty.T("learn.step3.body");
+                _dalej.Text = Teksty.T("learn.record");
                 OdswiezPodglad();
                 break;
 
             case 3:
-                _naglowek.Text = "Krok 4 z 4: zapisz profil";
-                _opis.Text = "Sprawdz kroki i parametry rozpoznawania okna. Profil zadziala tylko wtedy, " +
-                             "gdy zgadza sie proces ORAZ tytul okna pasuje do wzorca.";
+                _naglowek.Text = Teksty.T("learn.step4.head");
+                _opis.Text = Teksty.T("learn.step4.body");
                 if (_nazwaProfilu.Text.Length == 0)
                 {
                     _nazwaProfilu.Text = string.IsNullOrEmpty(_tytul) ? _proces : _tytul;
                     _procesPole.Text = _proces;
                     _tytulPole.Text = WzorzecTytulu(_tytul);
                 }
-                _wskazowka.Text = $"Wykryto: proces \"{_proces}\", tytul \"{_tytul}\".\r\n" +
-                                  "Wzorzec pusty = dowolny tytul (przydatne, gdy tytul sie zmienia).";
-                _dalej.Text = "Zapisz";
+                _wskazowka.Text = Teksty.T("learn.step4.hint", _proces, _tytul);
+                _dalej.Text = Teksty.T("learn.save");
                 OdswiezPodglad();
                 break;
         }
@@ -213,7 +207,7 @@ public class OknoNauki : Form
             case 0:
                 {
                     var tekst = _ramka.Text.TrimEnd('\r', '\n');
-                    if (tekst.Length < 2) { _stan.Text = "najpierw zeskanuj kod"; return; }
+                    if (tekst.Length < 2) { _stan.Text = Teksty.T("learn.needScan"); return; }
                     _separator = WybierzSeparator(tekst);
                     _czesci = tekst.Split(_separator);
                     _krok = 1;
@@ -229,7 +223,7 @@ public class OknoNauki : Form
                         if (nazwa.Length == 0 || nazwa == "_") continue;
                         _pola[nazwa] = _czesci[i];
                     }
-                    if (_pola.Count == 0) { _stan.Text = "nazwij przynajmniej jeden segment"; return; }
+                    if (_pola.Count == 0) { _stan.Text = Teksty.T("learn.needSegment"); return; }
                     _krok = 2;
                     break;
                 }
@@ -240,8 +234,8 @@ public class OknoNauki : Form
                     _nagrywarka = new Nagrywarka(_oknoDocelowe, Handle);
                     _nagrywarka.Zmiana += (_, _) => BeginInvoke(OdswiezPodglad);
                     _nagrywarka.Start();
-                    _dalej.Text = "Stop";
-                    _stan.Text = "nagrywanie... przejdz do aplikacji";
+                    _dalej.Text = Teksty.T("learn.stop");
+                    _stan.Text = Teksty.T("learn.recording");
                     Native.SetForegroundWindow(_oknoDocelowe);
                     return;
                 }
@@ -250,7 +244,7 @@ public class OknoNauki : Form
                 _nagrywarka.Dispose();
                 _nagrywarka = null;
                 _stan.Text = "";
-                if (_kroki.Count == 0) { _stan.Text = "nic nie nagrano - sprobuj ponownie"; _dalej.Text = "Nagrywaj"; return; }
+                if (_kroki.Count == 0) { _stan.Text = Teksty.T("learn.nothingRecorded"); _dalej.Text = Teksty.T("learn.record"); return; }
                 _krok = 3;
                 break;
 
@@ -282,7 +276,7 @@ public class OknoNauki : Form
                 Top = i * 28,
                 Width = 240,
                 // pierwszy segment to zwykle prefiks
-                Text = i == 0 && _czesci.Length > 1 ? "_" : "pole" + i,
+                Text = i == 0 && _czesci.Length > 1 ? "_" : Teksty.T("learn.fieldPrefix") + i,
             };
             _poleNazwy.Add(nazwa);
             _segmenty.Controls.Add(wartosc);
@@ -321,14 +315,13 @@ public class OknoNauki : Form
         _konfiguracja.Profile.Add(profil);
         // zapis MUSI trafic do tego samego pliku, z ktorego czyta agent
         Magazyn.Zapisz(_konfiguracja, _sciezkaProfili);
-        Log.Pisz($"nauka: zapisano profil \"{profil.Nazwa}\" ({profil.Kroki.Count} krokow)");
+        Log.Pisz($"learning: profile \"{profil.Nazwa}\" saved ({profil.Kroki.Count} steps)");
 
         // profil ma dzialac od razu - nie po restarcie agenta
         _poZapisie?.Invoke(profil);
 
-        MessageBox.Show($"Zapisano profil \"{profil.Nazwa}\" ({profil.Kroki.Count} krokow).\n\n" +
-                        "Profil jest juz aktywny - mozesz skanowac.",
-            "Mysttic Barcode Scanner", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        MessageBox.Show(Teksty.T("learn.savedBody", profil.Nazwa, profil.Kroki.Count),
+            Teksty.T("learn.savedTitle"), MessageBoxButtons.OK, MessageBoxIcon.Information);
         Close();
     }
 

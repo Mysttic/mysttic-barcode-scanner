@@ -294,7 +294,11 @@
   }
 
   // 1 pole / 2-4 pola / 5+ pol - inaczej dymek brzmi jak tlumaczenie z angielskiego.
+  // Po angielsku wystarczy liczba pojedyncza i mnoga.
   function odmianaPol(ile) {
+    if (MBS_I18N.getLang() !== "pl") {
+      return MBS_I18N.t(ile === 1 ? "pill.fields.one" : "pill.fields.many", { count: ile });
+    }
     if (ile === 1) return "1 pole";
     var jednosci = ile % 10;
     var dziesiatki = ile % 100;
@@ -313,9 +317,18 @@
 
     var total = result.filled.length + result.failed.length;
     if (result.failed.length) {
-      pill("Wypełniono " + result.filled.length + "/" + total + " — " + result.failed[0].name + ": " + result.failed[0].error, true, 7000);
+      pill(
+        MBS_I18N.t("pill.failed", {
+          filled: result.filled.length,
+          total: total,
+          name: result.failed[0].name,
+          error: result.failed[0].error,
+        }),
+        true,
+        7000
+      );
     } else {
-      pill("Wypełniono " + odmianaPol(result.filled.length) + " (" + active.name + ")");
+      pill(MBS_I18N.t("pill.filled", { count: odmianaPol(result.filled.length), profile: active.name }));
     }
 
     var after = active.after || { action: "none" };
@@ -336,8 +349,10 @@
 
   var SEPARATORS = [";", "|", "\t", ","];
   // Formaty proponowane, gdy wskazana wartosc wyglada na date ("" = bez zmian).
-  var FORMATY_DATY = ["DD.MM.RRRR", "RRRR-MM-DD", "DD-MM-RR", "RRRRMMDD"];
-  var FORMATY_CZASU = ["DD.MM.RRRR HH:MI", "RRRR-MM-DD HH:MI:SS", "HH:MI"];
+  var FORMATY_DATY_PL = ["DD.MM.RRRR", "RRRR-MM-DD", "DD-MM-RR", "RRRRMMDD"];
+  var FORMATY_CZASU_PL = ["DD.MM.RRRR HH:MI", "RRRR-MM-DD HH:MI:SS", "HH:MI"];
+  var FORMATY_DATY_EN = ["DD.MM.YYYY", "YYYY-MM-DD", "DD-MM-YY", "YYYYMMDD"];
+  var FORMATY_CZASU_EN = ["DD.MM.YYYY HH:MI", "YYYY-MM-DD HH:MI:SS", "HH:MI"];
 
   // Gdy wskazana wartosc wyglada na date, panel potwierdzania dostaje rzad
   // przyciskow z PODGLADEM na realnej wartosci: klikniecie zatwierdza pole
@@ -349,11 +364,18 @@
     if (el && (el.type === "date" || el.type === "time" || el.type === "datetime-local")) return "";
     var t = BRFill.parseDateTime(wartosc);
     if (!t) return "";
-    var presety = t.maCzas ? FORMATY_CZASU.concat(FORMATY_DATY) : FORMATY_DATY;
+    var pl = MBS_I18N.getLang() === "pl";
+    var daty = pl ? FORMATY_DATY_PL : FORMATY_DATY_EN;
+    var czasy = pl ? FORMATY_CZASU_PL : FORMATY_CZASU_EN;
+    var presety = t.maCzas ? czasy.concat(daty) : daty;
     return (
-      "<p style='margin:10px 0 4px'>Wygląda na " +
-      (t.maCzas ? "datę z czasem" : "datę") +
-      " — wstawić jako:</p>" +
+      "<p style='margin:10px 0 4px'>" +
+      esc(
+        MBS_I18N.t("learn.date.looksLike", {
+          kind: MBS_I18N.t(t.maCzas ? "learn.date.withTime" : "learn.date.plain"),
+        })
+      ) +
+      "</p>" +
       presety
         .map(function (wzorzec) {
           return (
@@ -365,8 +387,11 @@
           );
         })
         .join(" ") +
-      "<div class='wlasny'><input data-field='format' placeholder='własny wzorzec, np. DD-MM-RR'>" +
-      "<button data-act='format-custom'>Użyj</button></div><div class='podglad'></div>"
+      "<div class='wlasny'><input data-field='format' placeholder='" +
+      esc(MBS_I18N.t("learn.date.customPlaceholder")) +
+      "'><button data-act='format-custom'>" +
+      esc(MBS_I18N.t("learn.date.use")) +
+      "</button></div><div class='podglad'></div>"
     );
   }
 
@@ -456,8 +481,9 @@
 
     if (learn.step === "scan") {
       u.panel.innerHTML =
-        "<h2>Ucz formularza (1/3)</h2><p>Zeskanuj kod, którym będziesz wypełniał ten formularz. " +
-        "Znaki nie trafią na stronę.</p><button class='ghost' data-act='cancel'>Anuluj</button>";
+        "<h2>" + esc(MBS_I18N.t("learn.step1.title")) + "</h2><p>" +
+        MBS_I18N.t("learn.step1.body") +
+        "</p><button class='ghost' data-act='cancel'>" + esc(MBS_I18N.t("learn.cancel")) + "</button>";
     } else if (learn.step === "names") {
       var parts = learn.frame.split(learn.separator);
       var rows = parts
@@ -474,54 +500,52 @@
         })
         .join("");
       u.panel.innerHTML =
-        "<h2>Ucz formularza (2/3)</h2><p>Nazwij segmenty kodu. Wpisz <b>_</b> przy tych, które mają " +
-        "zostać pominięte (np. prefiks).</p><div class='rows'>" +
+        "<h2>" + esc(MBS_I18N.t("learn.step2.title")) + "</h2><p>" +
+        MBS_I18N.t("learn.step2.body") +
+        "</p><div class='rows'>" +
         rows +
-        "</div><button data-act='names'>Dalej</button>" +
-        "<button class='ghost' data-act='back'>← Wstecz (skanuj ponownie)</button>" +
-        "<button class='ghost' data-act='cancel'>Anuluj</button>";
+        "</div><button data-act='names'>" + esc(MBS_I18N.t("learn.next")) + "</button>" +
+        "<button class='ghost' data-act='back'>" + esc(MBS_I18N.t("learn.backRescan")) + "</button>" +
+        "<button class='ghost' data-act='cancel'>" + esc(MBS_I18N.t("learn.cancel")) + "</button>";
     } else if (learn.step === "pick") {
       var name = learn.names[learn.index];
       var value = learn.frame.split(learn.separator)[learn.index];
       if (learn.pending) {
         // pole wybrane - czeka na potwierdzenie (mozna zmienic albo sie cofnac)
         u.panel.innerHTML =
-          "<h2>Ucz formularza (3/3)</h2><p>Pole dla <b>" +
-          esc(name) +
-          "</b> (wartość: <code>" +
-          esc(value) +
-          "</code>):</p><p><code>" +
+          "<h2>" + esc(MBS_I18N.t("learn.step3.title")) + "</h2><p>" +
+          MBS_I18N.t("learn.step3.chosen", { field: esc(name), value: esc(value) }) +
+          "</p><p><code>" +
           esc(learn.pending.selector) +
           "</code></p>" +
-          "<button data-act='confirm'>Zatwierdź i dalej</button>" +
-          "<button class='ghost' data-act='repick'>Wybierz inne pole</button>" +
-          "<button class='ghost' data-act='back'>← Wstecz</button>" +
-          "<button class='ghost' data-act='cancel'>Anuluj</button>" +
+          "<button data-act='confirm'>" + esc(MBS_I18N.t("learn.confirm")) + "</button>" +
+          "<button class='ghost' data-act='repick'>" + esc(MBS_I18N.t("learn.repick")) + "</button>" +
+          "<button class='ghost' data-act='back'>" + esc(MBS_I18N.t("learn.back")) + "</button>" +
+          "<button class='ghost' data-act='cancel'>" + esc(MBS_I18N.t("learn.cancel")) + "</button>" +
           wierszFormatow(value, resolve(learn.pending.selector));
       } else {
         u.panel.innerHTML =
-          "<h2>Ucz formularza (3/3)</h2><p>Kliknij na stronie pole, do którego ma trafić <b>" +
-          esc(name) +
-          "</b> (wartość: <code>" +
-          esc(value) +
-          "</code>).</p>" +
-          "<button class='ghost' data-act='back'>← Wstecz</button>" +
-          "<button class='ghost' data-act='skip'>Pomiń pole</button>" +
-          "<button class='ghost' data-act='cancel'>Anuluj</button>";
+          "<h2>" + esc(MBS_I18N.t("learn.step3.title")) + "</h2><p>" +
+          MBS_I18N.t("learn.step3.body", { field: esc(name), value: esc(value) }) +
+          "</p>" +
+          "<button class='ghost' data-act='back'>" + esc(MBS_I18N.t("learn.back")) + "</button>" +
+          "<button class='ghost' data-act='skip'>" + esc(MBS_I18N.t("learn.skip")) + "</button>" +
+          "<button class='ghost' data-act='cancel'>" + esc(MBS_I18N.t("learn.cancel")) + "</button>";
       }
     } else if (learn.step === "save") {
       u.panel.innerHTML =
-        "<h2>Zapisz profil</h2><p>Nazwa profilu i adres, na którym ma działać (gwiazdka = dowolny fragment).</p>" +
-        "<input data-field='name' value='" +
-        esc(document.title || "Formularz") +
+        "<h2>" + esc(MBS_I18N.t("learn.save.title")) + "</h2><p>" +
+        MBS_I18N.t("learn.save.body") +
+        "</p><input data-field='name' value='" +
+        esc(document.title || MBS_I18N.t("learn.save.defaultName")) +
         "'><input data-field='url' value='" +
         esc(location.origin + location.pathname + "*") +
         "'><input data-field='prefix' value='" +
         esc(learn.frame.split(learn.separator)[0] + learn.separator) +
-        "' placeholder='prefiks ramki'>" +
-        "<button data-act='save'>Zapisz i włącz</button>" +
-        "<button class='ghost' data-act='back'>← Wstecz</button>" +
-        "<button class='ghost' data-act='cancel'>Anuluj</button>";
+        "' placeholder='" + esc(MBS_I18N.t("learn.save.prefixPlaceholder")) + "'>" +
+        "<button data-act='save'>" + esc(MBS_I18N.t("learn.save.button")) + "</button>" +
+        "<button class='ghost' data-act='back'>" + esc(MBS_I18N.t("learn.back")) + "</button>" +
+        "<button class='ghost' data-act='cancel'>" + esc(MBS_I18N.t("learn.cancel")) + "</button>";
     }
     u.panel.querySelectorAll("button").forEach(function (button) {
       button.addEventListener("click", onLearnButton);
@@ -760,6 +784,7 @@
     return false;
   });
 
+  MBS_I18N.load();
   BRStore.load().then(function (loaded) {
     state = loaded;
     document.addEventListener("keydown", onKeyDown, true);

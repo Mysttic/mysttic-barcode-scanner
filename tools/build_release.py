@@ -130,7 +130,7 @@ def copy_agent(stage: Path, version: str, gotowy_exe: Path | None = None) -> Non
     # profil przykladowy: ten sam, ktorym testujemy agenta
     profil = json.loads((ROOT / "desktop-agent" / "test-app" / "profile" / "profile-testowe.json")
                         .read_text(encoding="utf-8"))
-    profil["Profile"][0]["Nazwa"] = "Karta pracownika (przyklad)"
+    profil["profiles"][0]["name"] = "Employee card (example)"
     (target / "example-profile.json").write_text(
         json.dumps(profil, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -147,7 +147,8 @@ def copy_agent(stage: Path, version: str, gotowy_exe: Path | None = None) -> Non
         "TEACH A FORM\r\n"
         "  Open the application window and press Ctrl+Alt+F9.\r\n\r\n"
         "Full manual: DESKTOP-AGENT.md\r\n"
-        "Note: the agent's user interface is in Polish.\r\n",
+        "The interface is in English; the tray menu has a Language submenu\r\n"
+        "with Polish as the second option.\r\n",
         encoding="utf-8")
 
 
@@ -175,12 +176,12 @@ def buduj_aplikacje_testowa(version: str, gotowy_exe: Path | None = None) -> Pat
         "deliberately in a different order than the data in the code, and there\r\n"
         "are decoy fields plus a combo box with suggestions. The panel at the\r\n"
         "bottom shows what the application REALLY received.\r\n\r\n"
-        "Sample code to scan:  PRC;JAN;KOWALSKI;12345;IT;Specjalista\r\n\r\n"
+        "Sample code to scan:  PRC;JAN;KOWALSKI;12345;IT;Specialist\r\n\r\n"
         "Ready-made profile for the agent: agent-profile.json\r\n"
         "  (copy it to %APPDATA%\\MystticBarcodeScanner\\profile.json, or teach\r\n"
         "   your own with Ctrl+Alt+F9)\r\n"
         f"Kiosk mode for experiments:  {DEMO_EXE_NAZWA} --kiosk\r\n\r\n"
-        "Note: the application's user interface is in Polish.\r\n",
+        "The interface is in English.\r\n",
         encoding="utf-8")
 
     zip_path = ROOT / "release" / f"demo-app-v{version}-win-x64.zip"

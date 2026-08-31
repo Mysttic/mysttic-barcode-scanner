@@ -1,15 +1,15 @@
 # Profile kodow: detekcja -> parsowanie do nazwanych pol -> lista akcji.
 # Typy parsowania:
 #   regexGroups - wzorzec z grupami, mapa pole->numer grupy
-#   gs1         - parser GS1 (AI 01/17/10/21), pola: gtin, dataWaznosci,
-#                 dataWaznosciISO, partia, numerSeryjny (patrz parser_gs1.py)
+#   gs1         - parser GS1 (AI 01/17/10/21), pola: gtin, expiry,
+#                 expiryISO, batch, serial (patrz parser_gs1.py)
 # UWAGA na CircuitPython: modul `re` to okrojone ure - BEZ kwantyfikatorow
 # {m,n}. Walidator w config_store odrzuca wzorce z klamrami.
 import re
 
 import parser_gs1
 
-GS1_FIELD_NAMES = ("gtin", "dataWaznosci", "dataWaznosciISO", "partia", "numerSeryjny")
+GS1_FIELD_NAMES = ("gtin", "expiry", "expiryISO", "batch", "serial")
 
 
 def match_profile(text, config, raw=None):

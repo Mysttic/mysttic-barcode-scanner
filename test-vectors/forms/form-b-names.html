@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Test B — pola po nazwie (bez wtyczki)</title>
+<title>Test B - fields by name (no extension)</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; }
   .wrap { max-width: 860px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
@@ -21,46 +21,46 @@
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Karta pracownika — wariant B (pola po nazwie)</h1>
-    <p class="hint">Czytnik pracuje w zwykłym trybie 1:1 (kod <code>EMP;…</code> nie pasuje
-    do żadnego profilu). Strona sama nasłuchuje „wpisywania z klawiatury”, rozpoznaje ramkę
-    po prefiksie <code>EMP;</code> i rozdziela wartości do pól po ich <b>nazwie</b> —
-    kolejność i fokus nie mają znaczenia. <b>Po prostu zeskanuj kod obok.</b></p>
-    <label>Dział</label><input name="dzial" placeholder="(celowo pierwszy)">
-    <label>Adres e-mail (dystraktor)</label><input name="email" placeholder="tego pola skan nie dotyczy">
-    <label>Numer pracownika</label><input name="numer">
-    <label>Imię</label><input name="imie">
-    <label>Telefon (dystraktor)</label><input name="telefon">
-    <label>Nazwisko</label><input name="nazwisko">
+    <h1>Employee card - variant B (fields by name)</h1>
+    <p class="hint">The scanner works in plain 1:1 mode (the code <code>EMP;…</code> matches no
+    profile). The page itself listens for "keyboard typing", recognises the frame by its
+    <code>EMP;</code> prefix and distributes the values to the fields by <b>name</b>, so the
+    order and the focus do not matter. <b>Just scan the code next to it.</b></p>
+    <label>Department</label><input name="department" placeholder="(deliberately first)">
+    <label>E-mail address (distractor)</label><input name="email" placeholder="the scan does not touch this box">
+    <label>Employee number</label><input name="number">
+    <label>First name</label><input name="firstName">
+    <label>Phone (distractor)</label><input name="phone">
+    <label>Last name</label><input name="lastName">
     <div id="status"></div>
   </div>
   <div class="card qr">
-    <h1>Kod do zeskanowania</h1>
+    <h1>Code to scan</h1>
     <img alt="QR EMP" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAAD4AQAAAADpqhamAAABTElEQVR4nO1YwbLEIAhLmP3/X84biLb7Lt7qOkNpp1W5EMQAUlhKrNV49WuJV3+0fz4A6KFPAvN/r0QD/CjkF+b0wLUSHfCD5YPEK0C8VtAE/5BEzIJ/jH2xEz8TO9UPvzxRYa+POuHnPafyuVeiAX7NCQfx3yv4tX3xsJ66KK8y33ynE6JN/GsQgPkvjwEa1D+RWCvs6ViAyC8CiAPse1rPCnhve7lj0gDOsO/p84+K9ar+yg8+DhX+PfZf6QU7okhQ0PRIHGDflvqHg/McA5RINOp/NObF/zV1Emy0/5qtD2cniEb1n/xx/TOOA3rgp4dKGhyXQDngCfbFDr1SHPcuBO4uIE6wbwP/weWvx/VzJdzq/gNj87/uQOPH9sVOPZG1v4NgpMQ4yb4n8x+cBf/dBKFT/4tqA5wCasA2/c/B9sWrX0qs1Xj1WMofOyWB+3p8c2UAAAAASUVORK5CYII=">
-    <p class="hint">Zawartość: <code>EMP;ANNA;NOWAK;67890;HR</code></p>
+    <p class="hint">Contents: <code>EMP;ANNA;NOWAK;67890;HR</code></p>
   </div>
 </div>
 <script>
-// "Keyboard wedge listener": czytnik to klawiatura, więc łapiemy znaki globalnie.
-// Ramka: zaczyna się od EMP; i kończy Enterem (suffix czytnika).
+// "Keyboard wedge listener": the scanner is a keyboard, so we catch the characters globally.
+// Frame: starts with EMP; and ends with Enter (the scanner's suffix).
 let buf = "";
 let last = 0;
 document.addEventListener("keydown", (ev) => {
   const now = Date.now();
-  if (now - last > 300) buf = "";            // przerwa = nowy strumień
+  if (now - last > 300) buf = "";            // a gap means a new stream
   last = now;
   if (ev.key === "Enter") {
     if (buf.startsWith("EMP;")) {
-      const [, imie, nazwisko, numer, dzial] = buf.split(";");
+      const [, firstName, lastName, number, department] = buf.split(";");
       const put = (name, v) => {
         const el = document.querySelector(`[name=${name}]`);
         el.value = v || "";
         el.classList.add("filled");
       };
-      put("imie", imie); put("nazwisko", nazwisko);
-      put("numer", numer); put("dzial", dzial);
+      put("firstName", firstName); put("lastName", lastName);
+      put("number", number); put("department", department);
       document.getElementById("status").textContent =
-        "✔ rozdzielono po nazwach pól (" + new Date().toLocaleTimeString() + ")";
+        "✔ split by field name (" + new Date().toLocaleTimeString() + ")";
       ev.preventDefault();
     }
     buf = "";
@@ -68,7 +68,7 @@ document.addEventListener("keydown", (ev) => {
   }
   if (ev.key.length === 1) {
     buf += ev.key;
-    // dopóki wygląda to na ramkę czytnika, nie pozwól wpisywać do pól
+    // as long as this looks like a scanner frame, keep it out of the boxes
     if ("EMP;".startsWith(buf) || buf.startsWith("EMP;")) ev.preventDefault();
   }
 });

@@ -1,5 +1,10 @@
 // Walidacja konfiguracji (zod) - lustrzana wobec walidatora w firmware.
+//
+// Komunikaty przechodza przez t() w miejscu walidacji (superRefine), a nie
+// w argumencie .min()/.refine() - inaczej zostalyby zamrozone w jezyku, ktory
+// obowiazywal przy ladowaniu modulu, i przelacznik jezyka by ich nie ruszyl.
 import { z } from "zod";
+import { t } from "./i18n";
 
 export const KEY_NAMES = [
   "TAB", "ENTER", "ESC", "BACKSPACE", "UP", "DOWN", "LEFT", "RIGHT",
@@ -9,23 +14,18 @@ export const KEY_NAMES = [
 const keyName = z.enum(KEY_NAMES);
 
 // CircuitPython `re` nie wspiera {m,n} - blokujemy klamry juz tutaj.
-const cpRegex = z
-  .string()
-  .min(1, "wzorzec nie może być pusty")
-  .refine((p) => !p.includes("{") && !p.includes("}"), {
-    message: "kwantyfikatory {m,n} nie działają na urządzeniu — rozpisz jawnie",
-  })
-  .refine(
-    (p) => {
-      try {
-        new RegExp(p);
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    { message: "błędny wyraz regularny" },
-  );
+const cpRegex = z.string().superRefine((p, ctx) => {
+  const fail = (key: string): void => {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: t(key) });
+  };
+  if (p.length === 0) return fail("val.emptyPattern");
+  if (p.includes("{") || p.includes("}")) return fail("val.braces");
+  try {
+    new RegExp(p);
+  } catch {
+    fail("val.badRegex");
+  }
+});
 
 const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("field"), name: z.string().min(1) }),
@@ -33,7 +33,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("text"), value: z.string() }),
 ]);
 
-export const GS1_FIELDS = ["gtin", "dataWaznosci", "dataWaznosciISO", "partia", "numerSeryjny", "aim"] as const;
+export const GS1_FIELDS = ["gtin", "expiry", "expiryISO", "batch", "serial", "aim"] as const;
 
 const parseSpec = z.discriminatedUnion("type", [
   z.object({
@@ -46,13 +46,19 @@ const parseSpec = z.discriminatedUnion("type", [
 
 const profile = z
   .object({
-    name: z.string().min(1, "profil musi mieć nazwę"),
+    name: z.string(),
     enabled: z.boolean(),
     detect: z.object({ type: z.literal("regex"), pattern: cpRegex }),
     parse: parseSpec,
-    output: z.array(action).min(1, "sekwencja nie może być pusta"),
+    output: z.array(action),
   })
   .superRefine((p, ctx) => {
+    if (p.name.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["name"], message: t("val.profileName") });
+    }
+    if (p.output.length === 0) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["output"], message: t("val.emptySequence") });
+    }
     const known =
       p.parse.type === "gs1" ? (GS1_FIELDS as readonly string[]) : Object.keys(p.parse.fields);
     p.output.forEach((a, i) => {
@@ -60,12 +66,12 @@ const profile = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["output", i],
-          message: `pole "{${a.name}}" nie istnieje (dostępne: ${known.join(", ")})`,
+          message: t("val.unknownField", { field: a.name, known: known.join(", ") }),
         });
       }
     });
     if (p.parse.type === "regexGroups" && Object.keys(p.parse.fields).length === 0) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["parse", "fields"], message: "podaj co najmniej jedno pole" });
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["parse", "fields"], message: t("val.needField") });
     }
   });
 
@@ -100,7 +106,11 @@ export const configSchema = z
     const names = cfg.profiles.map((p) => p.name);
     names.forEach((n, i) => {
       if (names.indexOf(n) !== i) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["profiles", i, "name"], message: `zdublowana nazwa "${n}"` });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["profiles", i, "name"],
+          message: t("val.duplicateName", { name: n }),
+        });
       }
     });
   });

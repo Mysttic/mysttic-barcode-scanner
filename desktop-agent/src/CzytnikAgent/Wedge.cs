@@ -48,7 +48,7 @@ public class Wedge : IDisposable
         _uchwytProcedury = Procedura; // referencja musi zyc tak dlugo jak hook
         _hook = Native.SetWindowsHookExW(Native.WH_KEYBOARD_LL, _uchwytProcedury,
             Native.GetModuleHandleW(null), 0);
-        if (_hook == IntPtr.Zero) throw new InvalidOperationException("nie udalo sie zalozyc hooka klawiatury");
+        if (_hook == IntPtr.Zero) throw new InvalidOperationException("could not install the keyboard hook");
     }
 
     public void Stop()
@@ -103,7 +103,7 @@ public class Wedge : IDisposable
         }
         catch (Exception e)
         {
-            Diagnostyka?.Invoke(this, "blad hooka: " + e.Message);
+            Diagnostyka?.Invoke(this, "hook error: " + e.Message);
             Porzuc(false);
         }
         return Native.CallNextHookEx(_hook, code, wParam, lParam);
@@ -143,7 +143,7 @@ public class Wedge : IDisposable
             if (ramka.Length < konfiguracja.Ustawienia.MinDlugoscRamki) return blokowane;
 
             var wynik = ParserSkanu.Parsuj(ramka, profil.Parse);
-            Log.Pisz($"ramka \"{ramka}\" profil={profil.Nazwa} wynik={(wynik.Pola != null ? "OK" : wynik.Blad)}");
+            Log.Pisz($"frame \"{ramka}\" profile={profil.Nazwa} result={(wynik.Pola != null ? "OK" : wynik.Blad)}");
             if (wynik.Pola != null)
             {
                 var zdarzenie = new ZdarzenieSkanu
@@ -158,7 +158,7 @@ public class Wedge : IDisposable
                 return true; // ENTER tez zjadamy
             }
 
-            Diagnostyka?.Invoke(this, $"nierozpoznana ramka: {wynik.Blad}");
+            Diagnostyka?.Invoke(this, $"unrecognised frame: {wynik.Blad}");
             if (blokowane) OddajStronie(ramka + "\r");
             return blokowane;
         }
@@ -210,7 +210,7 @@ public class Wedge : IDisposable
             Wyczysc();
             if (blokowane)
             {
-                Diagnostyka?.Invoke(this, "ramka bez ENTER-a - oddaje znaki aplikacji");
+                Diagnostyka?.Invoke(this, "frame with no ENTER, handing the characters back to the application");
                 OddajStronie(ramka);
             }
         }, null, 400, Timeout.Infinite);

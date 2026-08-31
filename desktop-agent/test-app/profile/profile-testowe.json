@@ -1,70 +1,71 @@
 {
-  "Wersja": 1,
-  "Wlaczony": true,
-  "Ustawienia": {
-    "OdstepSkanuMs": 60,
-    "MinDlugoscRamki": 3,
-    "PauzaKrokuMs": 40,
-    "WeryfikujOdczytem": true
+  "version": 1,
+  "lang": "en",
+  "enabled": true,
+  "settings": {
+    "scanGapMs": 60,
+    "minFrameLength": 3,
+    "stepPauseMs": 40,
+    "verifyByReadback": true
   },
-  "Profile": [
+  "profiles": [
     {
-      "Id": "karta-pracownika",
-      "Nazwa": "Karta pracownika (test)",
-      "Wlaczony": true,
-      "Match": {
-        "Proces": "MystticDemoApp",
-        "TytulWzorzec": "*Karta pracownika*"
+      "id": "employee-card",
+      "name": "Employee card (test)",
+      "enabled": true,
+      "match": {
+        "process": "MystticDemoApp",
+        "titlePattern": "*Employee card*"
       },
-      "Parse": {
-        "Typ": "delimited",
-        "Prefiks": "PRC;",
-        "Separator": ";",
-        "Pola": [
+      "parse": {
+        "type": "delimited",
+        "prefix": "PRC;",
+        "separator": ";",
+        "fields": [
           "_",
-          "imie",
-          "nazwisko",
-          "numer",
-          "dzial",
-          "stanowisko"
+          "firstName",
+          "lastName",
+          "number",
+          "department",
+          "position"
         ]
       },
-      "Kroki": [
+      "steps": [
         {
-          "Akcja": "pole",
-          "Cel": {
-            "AutomationId": "txtImie"
+          "action": "field",
+          "target": {
+            "automationId": "txtFirstName"
           },
-          "Wartosc": "{imie}"
+          "value": "{firstName}"
         },
         {
-          "Akcja": "pole",
-          "Cel": {
-            "AutomationId": "txtNazwisko"
+          "action": "field",
+          "target": {
+            "automationId": "txtLastName"
           },
-          "Wartosc": "{nazwisko}"
+          "value": "{lastName}"
         },
         {
-          "Akcja": "pole",
-          "Cel": {
-            "AutomationId": "txtNumer"
+          "action": "field",
+          "target": {
+            "automationId": "txtNumber"
           },
-          "Wartosc": "{numer}"
+          "value": "{number}"
         },
         {
-          "Akcja": "pole",
-          "Cel": {
-            "AutomationId": "cmbDzial"
+          "action": "field",
+          "target": {
+            "automationId": "cmbDepartment"
           },
-          "Wartosc": "{dzial}"
+          "value": "{department}"
         },
         {
-          "Akcja": "pole",
-          "Cel": {
-            "AutomationId": "cmbStanowisko"
+          "action": "field",
+          "target": {
+            "automationId": "cmbPosition"
           },
-          "Wartosc": "{stanowisko}",
-          "Tryb": "wpisz"
+          "value": "{position}",
+          "mode": "type"
         }
       ]
     }

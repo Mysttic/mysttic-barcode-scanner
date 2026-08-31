@@ -33,17 +33,27 @@ function ask(tabId, message) {
   });
 }
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
 function render(status) {
   if (!status) {
-    statusEl.innerHTML = "<span class='off'>Wtyczka nie działa na tej stronie (np. sklep Chrome albo strona wewnętrzna).</span>";
+    statusEl.innerHTML = "<span class='off'>" + MBS_I18N.t("popup.noPage") + "</span>";
     return;
   }
   if (status.active) {
-    statusEl.innerHTML = "Rozpoznany formularz:<b>" + status.active + "</b>Skanuj — dane trafią do pól.";
+    statusEl.innerHTML =
+      MBS_I18N.t("popup.recognised") +
+      "<b>" + esc(status.active) + "</b>" +
+      MBS_I18N.t("popup.recognisedHint");
   } else {
     statusEl.innerHTML =
-      "<span class='off'>Brak profilu dla tej strony.<b>Czytnik działa jak zwykła klawiatura.</b>" +
-      "Użyj <i>Ucz formularza</i>, żeby dodać profil.</span>";
+      "<span class='off'>" + MBS_I18N.t("popup.noProfile") +
+      "<b>" + MBS_I18N.t("popup.noProfileBold") + "</b>" +
+      MBS_I18N.t("popup.noProfileHint") + "</span>";
   }
 }
 
@@ -73,7 +83,23 @@ document.getElementById("options").addEventListener("click", function () {
   chrome.runtime.openOptionsPage();
 });
 
-activeTab().then(function (tab) {
-  if (!tab) return render(null);
-  ask(tab.id, { cmd: "status" }).then(render);
+var langEl = document.getElementById("lang");
+langEl.addEventListener("change", function () {
+  MBS_I18N.setLang(langEl.value, function () {
+    MBS_I18N.applyDom();
+    refresh();
+  });
+});
+
+function refresh() {
+  activeTab().then(function (tab) {
+    if (!tab) return render(null);
+    ask(tab.id, { cmd: "status" }).then(render);
+  });
+}
+
+MBS_I18N.load(function (lang) {
+  langEl.value = lang;
+  MBS_I18N.applyDom();
+  refresh();
 });

@@ -30,16 +30,16 @@
       "output": [
         {"type": "field", "name": "gtin"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "dataWaznosciISO"},
+        {"type": "field", "name": "expiryISO"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "partia"},
+        {"type": "field", "name": "batch"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "numerSeryjny"},
+        {"type": "field", "name": "serial"},
         {"type": "key", "key": "ENTER"}
       ]
     },
     {
-      "name": "pracownik-tab",
+      "name": "employee-tab",
       "enabled": false,
       "detect": {
         "type": "regex",
@@ -49,25 +49,25 @@
         "type": "regexGroups",
         "pattern": "^PRC;([^;]+);([^;]+);([^;]+);([^;]+)$",
         "fields": {
-          "imie": 1,
-          "nazwisko": 2,
-          "numer": 3,
-          "dzial": 4
+          "firstName": 1,
+          "lastName": 2,
+          "number": 3,
+          "department": 4
         }
       },
       "output": [
-        {"type": "field", "name": "imie"},
+        {"type": "field", "name": "firstName"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "nazwisko"},
+        {"type": "field", "name": "lastName"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "numer"},
+        {"type": "field", "name": "number"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "dzial"},
+        {"type": "field", "name": "department"},
         {"type": "key", "key": "ENTER"}
       ]
     },
     {
-      "name": "lek-wtyczka",
+      "name": "medicine-extension",
       "enabled": false,
       "detect": {
         "type": "regex",
@@ -77,19 +77,19 @@
         "type": "gs1"
       },
       "output": [
-        {"type": "text", "value": "LEK;"},
+        {"type": "text", "value": "MED;"},
         {"type": "field", "name": "gtin"},
         {"type": "text", "value": ";"},
-        {"type": "field", "name": "dataWaznosciISO"},
+        {"type": "field", "name": "expiryISO"},
         {"type": "text", "value": ";"},
-        {"type": "field", "name": "partia"},
+        {"type": "field", "name": "batch"},
         {"type": "text", "value": ";"},
-        {"type": "field", "name": "numerSeryjny"},
+        {"type": "field", "name": "serial"},
         {"type": "key", "key": "ENTER"}
       ]
     },
     {
-      "name": "demo-prefiks-P",
+      "name": "demo-prefix-P",
       "enabled": false,
       "detect": {
         "type": "regex",
@@ -99,14 +99,14 @@
         "type": "regexGroups",
         "pattern": "^(P[0-9][0-9][0-9])([0-9]+)$",
         "fields": {
-          "naglowek": 1,
-          "numer": 2
+          "header": 1,
+          "number": 2
         }
       },
       "output": [
-        {"type": "field", "name": "naglowek"},
+        {"type": "field", "name": "header"},
         {"type": "key", "key": "TAB"},
-        {"type": "field", "name": "numer"},
+        {"type": "field", "name": "number"},
         {"type": "key", "key": "ENTER"}
       ]
     }

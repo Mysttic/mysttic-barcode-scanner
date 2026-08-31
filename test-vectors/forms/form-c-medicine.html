@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Test C — zamówienie leku (wtyczka + GS1)</title>
+<title>Test C - medicine order (extension + GS1)</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; color: #0f172a; }
   .wrap { max-width: 940px; margin: 0 auto; display: grid; grid-template-columns: 1fr 300px; gap: 24px; }
@@ -23,59 +23,59 @@
 <body>
 <div class="wrap">
   <form class="card" onsubmit="event.preventDefault();this.querySelector('.ok').style.display='block';">
-    <h1>Zamówienie leku — przyjęcie opakowania (wariant C)</h1>
-    <p class="hint">Drugi profil wtyczki: skanujesz <b>DataMatrix z opakowania leku</b> (format
-    GS1 jak na prawdziwych lekach), produkcyjny profil <code>gs1-datamatrix</code>
-    w czytniku rozbiera kod na pola (GTIN, data ważności z przeliczeniem „00" =
-    koniec miesiąca, seria, numer seryjny), a wtyczka przechwytuje jego sekwencję
-    i rozkłada wartości po nazwach pól. Pola są w innej kolejności niż dane,
-    pułapki zostają puste. <b>Po prostu zeskanuj kod.</b></p>
-    <label>Nazwa leku (pułapka — wpisuje człowiek)</label><input name="nazwa" placeholder="tego pola skan nie dotyczy">
-    <label>Numer seryjny opakowania</label><input name="numerSeryjny">
-    <label>Ilość opakowań (pułapka)</label><input name="ilosc" placeholder="tego pola skan nie dotyczy">
-    <label>Data ważności</label><input name="dataWaznosci" placeholder="RRRR-MM-DD">
-    <label>Kod produktu (GTIN)</label><input name="gtin">
-    <label>Seria (partia)</label><input name="partia">
-    <button type="submit">Dodaj do zamówienia</button>
-    <div class="ok">✔ Pozycja dodana do zamówienia</div>
+    <h1>Medicine order - receiving a pack (variant C)</h1>
+    <p class="hint">The extension's second profile: you scan a <b>DataMatrix off a medicine
+    pack</b> (GS1 format, as on real medicines), the production <code>gs1-datamatrix</code>
+    profile in the scanner splits the code into fields (GTIN, expiry date with day "00"
+    resolved to the end of the month, batch, serial number), and the extension captures its
+    sequence and distributes the values by field name. The boxes are in a different order
+    than the data, and the decoys stay empty. <b>Just scan the code.</b></p>
+    <label>Medicine name (decoy, a human types this)</label><input name="name" placeholder="the scan does not touch this box">
+    <label>Pack serial number</label><input name="serial">
+    <label>Number of packs (decoy)</label><input name="quantity" placeholder="the scan does not touch this box">
+    <label>Expiry date</label><input name="expiry" placeholder="YYYY-MM-DD">
+    <label>Product code (GTIN)</label><input name="gtin">
+    <label>Batch</label><input name="batch">
+    <button type="submit">Add to the order</button>
+    <div class="ok">✔ Item added to the order</div>
     <div class="model" id="model"></div>
-    <div class="req hint"><b>Konfiguracja czytnika:</b> produkcyjna — wystarczy włączony
-    profil <code>gs1-datamatrix</code> (sekwencja
-    <code>{gtin} TAB {dataWaznosciISO} TAB {partia} TAB {numerSeryjny} ENTER</code>).
-    Profil wtyczki dla tej strony jest wbudowany i przechwytuje tę sekwencję.
-    Alternatywa bez TAB-ów: profil <code>lek-wtyczka</code> z konfiguracji domyślnej
-    (ramka <code>LEK;…</code>).</div>
+    <div class="req hint"><b>Scanner configuration:</b> production, all it takes is the
+    <code>gs1-datamatrix</code> profile switched on (the sequence
+    <code>{gtin} TAB {expiryISO} TAB {batch} TAB {serial} ENTER</code>).
+    The extension profile for this page is built in and captures that sequence.
+    The alternative without TABs: the <code>medicine-extension</code> profile from the default
+    configuration (a <code>MED;…</code> frame).</div>
   </form>
   <div class="card dm">
-    <h1>Kod z opakowania</h1>
-    <img alt="DataMatrix GS1 leku" src="data:image/png;base64,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">
-    <p class="hint">DataMatrix ECC200, treść jak na realnym opakowaniu (FMD):<br>
-    <code>(01) 05909991055172</code> GTIN (poprawna cyfra kontrolna)<br>
-    <code>(17) 271000</code> ważny do — dzień „00" = <b>31.10.2027</b><br>
-    <code>(10) A23G05</code> seria<br>
-    <code>(21) K7L9XW24MQ1R</code> numer seryjny (za separatorem GS)</p>
-    <p class="hint">Czytnik (profil <code>gs1-datamatrix</code>) wypisze sekwencję:<br>
+    <h1>Code from the pack</h1>
+    <img alt="GS1 DataMatrix of a medicine pack" src="data:image/png;base64,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">
+    <p class="hint">DataMatrix ECC200, contents as on a real pack (FMD):<br>
+    <code>(01) 05909991055172</code> GTIN (valid check digit)<br>
+    <code>(17) 271000</code> use by, day "00" = <b>2027-10-31</b><br>
+    <code>(10) A23G05</code> batch<br>
+    <code>(21) K7L9XW24MQ1R</code> serial number (after the GS separator)</p>
+    <p class="hint">The scanner (profile <code>gs1-datamatrix</code>) types the sequence:<br>
     <code>05909991055172 TAB 2027-10-31 TAB A23G05 TAB K7L9XW24MQ1R ENTER</code></p>
   </div>
 </div>
 
 <script>
-// Panel stanu jak w formie C: strona widzi TYLKO zdarzenia input/change.
-var model = { gtin: "", dataWaznosci: "", partia: "", numerSeryjny: "" };
+// A state panel as in form C: the page sees ONLY input/change events.
+var model = { gtin: "", expiry: "", batch: "", serial: "" };
 var form = document.querySelector("form");
-["input", "change"].forEach(function (typ) {
-  form.addEventListener(typ, function (ev) {
+["input", "change"].forEach(function (type) {
+  form.addEventListener(type, function (ev) {
     if (ev.target.name in model) model[ev.target.name] = ev.target.value;
-    rysujModel();
+    drawModel();
   });
 });
-function rysujModel() {
-  var pelne = Object.keys(model).filter(function (k) { return model[k]; }).length;
-  document.getElementById("model").textContent = "stan strony (to trafi na serwer):\n" +
+function drawModel() {
+  var filled = Object.keys(model).filter(function (k) { return model[k]; }).length;
+  document.getElementById("model").textContent = "page state (this is what goes to the server):\n" +
     JSON.stringify(model, null, 2) + "\n\n" +
-    (pelne === 4 ? "OK: strona zobaczyła wszystkie 4 wartości" : "wypełnione: " + pelne + "/4");
+    (filled === 4 ? "OK: the page saw all 4 values" : "filled in: " + filled + "/4");
 }
-rysujModel();
+drawModel();
 </script>
 </body>
 </html>

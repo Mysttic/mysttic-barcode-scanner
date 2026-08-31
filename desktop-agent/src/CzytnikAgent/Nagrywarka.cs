@@ -4,7 +4,7 @@
 // Nagrywane sa: klikniecia (z kontrolka UI Automation pod kursorem oraz
 // wspolrzednymi zapasowymi), klawisze specjalne (TAB/ENTER/F1...) i wpisywany
 // tekst. Po zakonczeniu teksty rowne wartosciom ze skanu zamieniane sa na
-// {pole}, a para "klik w kontrolke + wpisanie" scala sie w jeden krok "pole"
+// {pole}, a para "klik w kontrolke + wpisanie" scala sie w jeden krok "field"
 // z celem UIA - czyli w najtrwalsza forme, niezalezna od wspolrzednych.
 using System.Runtime.InteropServices;
 using System.Text;
@@ -102,7 +102,7 @@ public class Nagrywarka : IDisposable
             if (Native.ScreenToClient(_oknoDocelowe, ref punkt)) { cel.X = punkt.X; cel.Y = punkt.Y; }
         }
 
-        Dodaj(new Krok { Akcja = "klik", Cel = cel });
+        Dodaj(new Krok { Akcja = "click", Cel = cel });
     }
 
     private void ZapiszKlawisz(Native.KBDLLHOOKSTRUCT dane)
@@ -114,7 +114,7 @@ public class Nagrywarka : IDisposable
         if (nazwa != null)
         {
             FlushTekst();
-            Dodaj(new Krok { Akcja = "klawisz", Klawisz = nazwa });
+            Dodaj(new Krok { Akcja = "key", Klawisz = nazwa });
             return;
         }
 
@@ -125,7 +125,7 @@ public class Nagrywarka : IDisposable
     private void FlushTekst()
     {
         if (_tekst.Length == 0) return;
-        Dodaj(new Krok { Akcja = "tekst", Wartosc = _tekst.ToString() });
+        Dodaj(new Krok { Akcja = "text", Wartosc = _tekst.ToString() });
         _tekst.Clear();
     }
 
@@ -137,7 +137,7 @@ public class Nagrywarka : IDisposable
 
     /// <summary>
     /// Zamienia nagrany tekst na odwolania {pole} i scala "klik + wpisanie"
-    /// w jeden krok "pole" z celem UIA.
+    /// w jeden krok "field" z celem UIA.
     /// </summary>
     /// <summary>
     /// Nazwa pola, ktorego wartosc odpowiada wpisanemu tekstowi. Porownujemy
@@ -174,28 +174,28 @@ public class Nagrywarka : IDisposable
         {
             // Wybor z listy rozwijanej nagrywa sie jako dwa klikniecia:
             // w liste i w pozycje. Jesli nazwa pozycji odpowiada wartosci ze
-            // skanu, scalamy to w krok "pole" - inaczej profil na zawsze
+            // skanu, scalamy to w krok "field" - inaczej profil na zawsze
             // wybieralby te sama pozycje, niezaleznie od zeskanowanego kodu.
-            if (krok.Akcja == "klik" && krok.Cel?.Typ == "ListItem")
+            if (krok.Akcja == "click" && krok.Cel?.Typ == "ListItem")
             {
                 var nazwaPozycji = krok.Cel.Nazwa ?? "";
                 var polePozycji = DopasujPole(pola, nazwaPozycji);
                 if (polePozycji != null && wynik.Count > 0 &&
-                    wynik[^1].Akcja == "klik" && ToLista(wynik[^1].Cel))
+                    wynik[^1].Akcja == "click" && ToLista(wynik[^1].Cel))
                 {
                     var celListy = wynik[^1].Cel!;
                     wynik.RemoveAt(wynik.Count - 1);
                     // operator WYBIERAL z listy - tak samo ma robic agent
                     wynik.Add(new Krok
                     {
-                        Akcja = "pole", Cel = celListy,
-                        Wartosc = "{" + polePozycji + "}", Tryb = "wybierz",
+                        Akcja = "field", Cel = celListy,
+                        Wartosc = "{" + polePozycji + "}", Tryb = "select",
                     });
                     continue;
                 }
             }
 
-            if (krok.Akcja != "tekst")
+            if (krok.Akcja != "text")
             {
                 wynik.Add(krok);
                 continue;
@@ -205,22 +205,22 @@ public class Nagrywarka : IDisposable
             var nazwaPola = DopasujPole(pola, wartosc);
             var szablon = nazwaPola != null ? "{" + nazwaPola + "}" : wartosc;
 
-            // poprzedni krok to klik w kontrolke? -> scal w krok "pole"
-            if (wynik.Count > 0 && wynik[^1].Akcja == "klik" && wynik[^1].Cel != null)
+            // poprzedni krok to klik w kontrolke? -> scal w krok "field"
+            if (wynik.Count > 0 && wynik[^1].Akcja == "click" && wynik[^1].Cel != null)
             {
                 var cel = wynik[^1].Cel!;
                 wynik.RemoveAt(wynik.Count - 1);
                 // operator WPISAL tekst w to pole - agent ma zrobic to samo,
                 // nawet jesli kontrolka wyglada jak lista (pole z podpowiedziami)
-                wynik.Add(new Krok { Akcja = "pole", Cel = cel, Wartosc = szablon, Tryb = "wpisz" });
+                wynik.Add(new Krok { Akcja = "field", Cel = cel, Wartosc = szablon, Tryb = "type" });
             }
             else
             {
                 wynik.Add(new Krok
                 {
-                    Akcja = nazwaPola != null ? "pole" : "tekst",
+                    Akcja = nazwaPola != null ? "field" : "text",
                     Wartosc = szablon,
-                    Tryb = nazwaPola != null ? "wpisz" : "auto",
+                    Tryb = nazwaPola != null ? "type" : "auto",
                 });
             }
         }

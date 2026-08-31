@@ -14,13 +14,22 @@ function log(text, ok) {
 // Krotki opis ramki profilu do listy (bez zagladania w JSON).
 function frameDesc(profile) {
   var spec = profile.parse || {};
-  if (spec.separator === "\t") return "TAB-owa, " + (spec.fields || []).length + " segm.";
-  if (spec.type === "delimited") return (spec.prefix ? "'" + spec.prefix + "'" : "bez prefiksu") + " po '" + (spec.separator || ";") + "'";
+  if (spec.separator === "\t") {
+    return MBS_I18N.t("options.frameTab", { count: (spec.fields || []).length });
+  }
+  if (spec.type === "delimited") {
+    return MBS_I18N.t("options.frameDelimited", {
+      prefix: spec.prefix ? "'" + spec.prefix + "'" : MBS_I18N.t("options.frameNoPrefix"),
+      separator: spec.separator || ";",
+    });
+  }
   return spec.type || "?";
 }
 
 function renderList() {
-  listaEl.innerHTML = state.profiles.length ? "" : "<p class='hint'>brak profili — użyj trybu nauki (ikona wtyczki → Ucz formularza)</p>";
+  listaEl.innerHTML = state.profiles.length
+    ? ""
+    : "<p class='hint'>" + escapeHtml(MBS_I18N.t("options.empty")) + "</p>";
   state.profiles.forEach(function (profile, index) {
     var div = document.createElement("div");
     div.className = "profil" + (profile.enabled === false ? " off" : "");
@@ -28,18 +37,21 @@ function renderList() {
     div.innerHTML =
       "<div class='prow'>" +
       "<label class='chk'><input type='checkbox' data-on='" + index + "'" +
-      (profile.enabled !== false ? " checked" : "") + "> włączony</label>" +
-      "<input type='text' data-name='" + index + "' value='" + escapeHtml(profile.name) + "' placeholder='nazwa profilu'>" +
-      "<button class='ghost' data-up='" + index + "' title='wyżej (pierwszy pasujący wygrywa)'>▲</button>" +
-      "<button class='ghost' data-down='" + index + "' title='niżej'>▼</button>" +
-      "<button class='ghost' data-dup='" + index + "'>Duplikuj</button>" +
-      "<button class='danger' data-del='" + index + "'>Usuń</button>" +
+      (profile.enabled !== false ? " checked" : "") + "> " + escapeHtml(MBS_I18N.t("options.enabled")) + "</label>" +
+      "<input type='text' data-name='" + index + "' value='" + escapeHtml(profile.name) +
+      "' placeholder='" + escapeHtml(MBS_I18N.t("options.namePlaceholder")) + "'>" +
+      "<button class='ghost' data-up='" + index + "' title='" + escapeHtml(MBS_I18N.t("options.up")) + "'>▲</button>" +
+      "<button class='ghost' data-down='" + index + "' title='" + escapeHtml(MBS_I18N.t("options.down")) + "'>▼</button>" +
+      "<button class='ghost' data-dup='" + index + "'>" + escapeHtml(MBS_I18N.t("options.duplicate")) + "</button>" +
+      "<button class='danger' data-del='" + index + "'>" + escapeHtml(MBS_I18N.t("options.delete")) + "</button>" +
       "</div>" +
-      "<div class='prow'><span class='lbl'>adres:</span>" +
+      "<div class='prow'><span class='lbl'>" + escapeHtml(MBS_I18N.t("options.address")) + "</span>" +
       "<input type='text' data-url='" + index + "' value='" +
       escapeHtml((profile.match && profile.match.urlPattern) || "") +
-      "' placeholder='np. https://erp.firma.pl/przyjecie*'></div>" +
-      "<div class='pola'>pola: " + escapeHtml(fields || "—") + " · ramka: " + escapeHtml(frameDesc(profile)) + "</div>";
+      "' placeholder='" + escapeHtml(MBS_I18N.t("options.urlPlaceholder")) + "'></div>" +
+      "<div class='pola'>" + escapeHtml(MBS_I18N.t("options.fieldsLabel")) + " " +
+      escapeHtml(fields || "—") + " · " + escapeHtml(MBS_I18N.t("options.frameLabel")) + " " +
+      escapeHtml(frameDesc(profile)) + "</div>";
     listaEl.appendChild(div);
   });
 
@@ -51,7 +63,8 @@ function renderList() {
   });
   listaEl.querySelectorAll("input[data-name]").forEach(function (input) {
     input.addEventListener("change", function () {
-      state.profiles[Number(input.getAttribute("data-name"))].name = input.value.trim() || "Formularz";
+      state.profiles[Number(input.getAttribute("data-name"))].name =
+        input.value.trim() || MBS_I18N.t("options.defaultFormName");
       persist();
     });
   });
@@ -86,7 +99,7 @@ function renderList() {
       var i = Number(button.getAttribute("data-dup"));
       var kopia = JSON.parse(JSON.stringify(state.profiles[i]));
       kopia.id = "profil-" + Math.random().toString(36).slice(2, 10);
-      kopia.name = (kopia.name || "Formularz") + " (kopia)";
+      kopia.name = (kopia.name || MBS_I18N.t("options.defaultFormName")) + MBS_I18N.t("options.copySuffix");
       state.profiles.splice(i + 1, 0, kopia);
       persist();
     });
@@ -94,7 +107,7 @@ function renderList() {
   listaEl.querySelectorAll("button[data-del]").forEach(function (button) {
     button.addEventListener("click", function () {
       var i = Number(button.getAttribute("data-del"));
-      if (!confirm("Usunąć profil \"" + (state.profiles[i].name || "") + "\"?")) return;
+      if (!confirm(MBS_I18N.t("options.deleteConfirm", { name: state.profiles[i].name || "" }))) return;
       state.profiles.splice(i, 1);
       persist();
     });
@@ -118,7 +131,7 @@ function persist() {
   BRStore.save(state).then(function (saved) {
     state = saved;
     refresh();
-    log("Zapisano.", true);
+    log(MBS_I18N.t("options.saved"), true);
   });
 }
 
@@ -127,9 +140,9 @@ document.getElementById("zapisz").addEventListener("click", function () {
   try {
     parsed = JSON.parse(jsonEl.value);
   } catch (e) {
-    return log("Błędny JSON: " + e.message, false);
+    return log(MBS_I18N.t("options.badJson") + e.message, false);
   }
-  if (!Array.isArray(parsed.profiles)) return log("Brak tablicy 'profiles'.", false);
+  if (!Array.isArray(parsed.profiles)) return log(MBS_I18N.t("options.noProfilesArray"), false);
   state = parsed;
   persist();
 });
@@ -138,7 +151,7 @@ document.getElementById("eksport").addEventListener("click", function () {
   var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   var link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "profile-formularzy.json";
+  link.download = MBS_I18N.t("options.exportFilename");
   link.click();
   URL.revokeObjectURL(link.href);
 });
@@ -152,7 +165,7 @@ document.getElementById("plik").addEventListener("change", function (ev) {
   if (!file) return;
   file.text().then(function (text) {
     jsonEl.value = text;
-    log("Wczytano plik — sprawdź i kliknij Zapisz.", true);
+    log(MBS_I18N.t("options.fileLoaded"), true);
   });
 });
 
@@ -161,7 +174,19 @@ document.getElementById("reset").addEventListener("click", function () {
   persist();
 });
 
-BRStore.load().then(function (loaded) {
-  state = loaded;
-  refresh();
+var langEl = document.getElementById("lang");
+langEl.addEventListener("change", function () {
+  MBS_I18N.setLang(langEl.value, function () {
+    MBS_I18N.applyDom();
+    renderList();
+  });
+});
+
+MBS_I18N.load(function (lang) {
+  langEl.value = lang;
+  MBS_I18N.applyDom();
+  BRStore.load().then(function (loaded) {
+    state = loaded;
+    refresh();
+  });
 });

@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Test C — wtyczka wypełnia po nazwach (SPA)</title>
+<title>Test C - the extension fills by name (SPA)</title>
 <style>
   body { font-family: system-ui, sans-serif; background: #f4f6f9; margin: 0; padding: 24px; color: #0f172a; }
   .wrap { max-width: 940px; margin: 0 auto; display: grid; grid-template-columns: 1fr 280px; gap: 24px; }
@@ -25,99 +25,100 @@
 <body>
 <div class="wrap">
   <nav>
-    <a href="#/pracownik" id="nav-pracownik">Karta pracownika</a>
-    <a href="#/ustawienia" id="nav-ustawienia">Ustawienia</a>
+    <a href="#/employee" id="nav-employee">Employee card</a>
+    <a href="#/settings" id="nav-settings">Settings</a>
   </nav>
-  <div id="widok"></div>
+  <div id="view"></div>
   <div class="card qr">
-    <h1>Kod do zeskanowania</h1>
+    <h1>Code to scan</h1>
     <img alt="QR PRC" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPgAAAD4AQAAAADpqhamAAABUklEQVR4nO1ZSY7DMAwjjf7/yxyIkp3DALkUTg0oauC61iFaqM2lcEvjno2Xf0/j5R9tnw8A5lbeCYSuk9FAfzgHEKAYW10n+LV84xE+aY+LyM86wRnybfb/JKbrC/399EcEfsbAU+8fR+gvrxn+RKzqpD+v35RBwFPkG5v5/N//OQs89f5xAJ8GfTxBPmjj/4FpAAe/KvvHF4+Rbz9f1fMF9gv9aYBD5NvNZyV9OQFGMAQUcIx8W/O/XPloBBTs5wSAFvmfVfiD5PRfkwB65H9V15+xnz1Qo/lHjvlCwGwInAlwhHz753+uSAhjzOmf6tX/MTTOxxZRG/+b5MY/bz6yCKrJ/KPVApQFsiigzfzLvPTy8LcqIbvgf5LrYNb/BD9+L994kK9qej0MNqn/H69z5Jmd37oHRgv9mfvqAWf4o8P9P9///472z3j5t/Stff4A0vNvHDpEU6QAAAAASUVORK5CYII=">
-    <p class="hint">Zawartość: <code>PRC;JAN;KOWALSKI;12345;IT</code></p>
-    <p class="hint">Czytnik zostaje w konfiguracji <b>produkcyjnej</b> — profil
-    <code>pracownik-tab</code> może być WŁĄCZONY (kod zamienia się na sekwencję
-    TAB-ów). Wtyczka przechwytuje całą sekwencję i rozkłada pola po nazwach;
-    bez profilu w czytniku (kod 1:1) też zadziała. Niczego nie przełączasz.</p>
+    <p class="hint">Contents: <code>PRC;JAN;KOWALSKI;12345;IT</code></p>
+    <p class="hint">The scanner stays in its <b>production</b> configuration: the
+    <code>employee-tab</code> profile may well be ON (the code turns into a sequence of
+    TABs). The extension captures the whole sequence and distributes the fields by name;
+    it also works with no profile in the scanner (a 1:1 code). You switch nothing.</p>
   </div>
 </div>
 
 <script>
-// Prosty SPA na hashu - sprawdza, czy wtyczka nadaza za zmiana widoku
-// bez przeladowania strony (rozpoznanie profilu = adres + obecnosc pol).
-var model = { imie: "", nazwisko: "", numer: "", dzial: "" };
+// A simple hash-based SPA: it checks whether the extension keeps up with a view
+// change without a page reload (profile recognition = address + presence of fields).
+var model = { firstName: "", lastName: "", number: "", department: "" };
 
-var WIDOKI = {
-  "#/pracownik": function () {
+var VIEWS = {
+  "#/employee": function () {
     return '<form class="card" onsubmit="event.preventDefault();this.querySelector(\'.ok\').style.display=\'block\';">' +
-      '<h1>Karta pracownika — wariant C (wtyczka)</h1>' +
-      '<p class="hint">Pola są <b>celowo w innej kolejności niż kod</b>, a między nimi siedzą ' +
-      'pola-pułapki. Sekwencja TAB-ów tu nie zadziała. Wtyczka rozpoznaje formularz i wstawia ' +
-      'wartości <b>po nazwach</b> — fokus i kolejność nie mają znaczenia. <b>Po prostu zeskanuj kod.</b></p>' +
-      '<label>Dział</label><select name="dzial">' +
-        '<option value="">— wybierz —</option>' +
-        '<option value="HR">Kadry</option>' +
-        '<option value="IT">Informatyka</option>' +
-        '<option value="FIN">Finanse</option>' +
+      '<h1>Employee card - variant C (extension)</h1>' +
+      '<p class="hint">The boxes are <b>deliberately in a different order than the code</b>, ' +
+      'with decoy boxes in between. A sequence of TABs will not work here. The extension ' +
+      'recognises the form and inserts the values <b>by name</b>, so the focus and the order ' +
+      'do not matter. <b>Just scan the code.</b></p>' +
+      '<label>Department</label><select name="department">' +
+        '<option value="">- select -</option>' +
+        '<option value="HR">Human resources</option>' +
+        '<option value="IT">IT</option>' +
+        '<option value="FIN">Finance</option>' +
       '</select>' +
-      '<label>Adres e-mail (pułapka)</label><input name="email" placeholder="tego pola skan nie dotyczy">' +
-      '<label>Numer pracownika (pole kontrolowane)</label><input name="numer">' +
-      '<label>Imię</label><input name="imie">' +
-      '<label>Telefon (pułapka)</label><input name="telefon">' +
-      '<label>Nazwisko</label><input name="nazwisko">' +
-      '<button type="submit">Zapisz</button>' +
-      '<div class="ok">✔ Formularz zatwierdzony</div>' +
+      '<label>E-mail address (decoy)</label><input name="email" placeholder="the scan does not touch this box">' +
+      '<label>Employee number (controlled box)</label><input name="number">' +
+      '<label>First name</label><input name="firstName">' +
+      '<label>Phone (decoy)</label><input name="phone">' +
+      '<label>Last name</label><input name="lastName">' +
+      '<button type="submit">Save</button>' +
+      '<div class="ok">✔ Form submitted</div>' +
       '<div class="model" id="model"></div>' +
       '</form>';
   },
-  "#/ustawienia": function () {
+  "#/settings": function () {
     return '<form class="card">' +
-      '<h1>Ustawienia (tu profil NIE pasuje)</h1>' +
-      '<p class="hint">Ten widok nie ma pól <code>imie</code>/<code>nazwisko</code>, więc wtyczka ' +
-      'się wyłącza (badge gaśnie). Skan zachowa się jak zwykłe pisanie na klawiaturze — ' +
-      'kliknij w pole poniżej i zeskanuj, żeby to zobaczyć.</p>' +
-      '<label>Motyw</label><input name="motyw">' +
-      '<label>Język</label><input name="jezyk">' +
+      '<h1>Settings (the profile does NOT match here)</h1>' +
+      '<p class="hint">This view has no <code>firstName</code>/<code>lastName</code> boxes, so the ' +
+      'extension switches itself off (the badge goes out). A scan will behave like ordinary ' +
+      'typing on a keyboard: click the box below and scan to see it.</p>' +
+      '<label>Theme</label><input name="theme">' +
+      '<label>Language</label><input name="language">' +
       '</form>';
   }
 };
 
-// "Framework": strona trzyma wlasny stan i aktualizuje go WYLACZNIE ze
-// zdarzen input. Jesli wtyczka podmieni tylko .value bez zdarzen, ponizszy
-// podglad zostanie pusty - i wlasnie o to chodzi w tym tescie.
-function podepnijModel() {
+// "Framework": the page keeps its own state and updates it EXCLUSIVELY from input
+// events. If the extension only replaced .value without events, the preview below
+// would stay empty, which is exactly what this test is looking for.
+function bindModel() {
   var form = document.querySelector("form");
   if (!form) return;
   form.addEventListener("input", function (ev) {
     if (ev.target.name in model) model[ev.target.name] = ev.target.value;
-    rysujModel();
+    drawModel();
   });
   form.addEventListener("change", function (ev) {
     if (ev.target.name in model) model[ev.target.name] = ev.target.value;
-    rysujModel();
+    drawModel();
   });
-  rysujModel();
+  drawModel();
 }
 
-function rysujModel() {
+function drawModel() {
   var box = document.getElementById("model");
   if (!box) return;
-  var pelne = Object.keys(model).filter(function (k) { return model[k]; }).length;
-  box.textContent = "stan strony (to trafi na serwer):\n" +
+  var filled = Object.keys(model).filter(function (k) { return model[k]; }).length;
+  box.textContent = "page state (this is what goes to the server):\n" +
     JSON.stringify(model, null, 2) + "\n\n" +
-    (pelne === 4 ? "OK: strona zobaczyła wszystkie 4 wartości" : "wypełnione: " + pelne + "/4");
+    (filled === 4 ? "OK: the page saw all 4 values" : "filled in: " + filled + "/4");
 }
 
-function rysuj() {
-  var hash = location.hash || "#/pracownik";
-  if (!WIDOKI[hash]) hash = "#/pracownik";
-  document.getElementById("widok").innerHTML = WIDOKI[hash]();
-  document.getElementById("nav-pracownik").className = hash === "#/pracownik" ? "on" : "";
-  document.getElementById("nav-ustawienia").className = hash === "#/ustawienia" ? "on" : "";
-  model = { imie: "", nazwisko: "", numer: "", dzial: "" };
-  podepnijModel();
+function draw() {
+  var hash = location.hash || "#/employee";
+  if (!VIEWS[hash]) hash = "#/employee";
+  document.getElementById("view").innerHTML = VIEWS[hash]();
+  document.getElementById("nav-employee").className = hash === "#/employee" ? "on" : "";
+  document.getElementById("nav-settings").className = hash === "#/settings" ? "on" : "";
+  model = { firstName: "", lastName: "", number: "", department: "" };
+  bindModel();
 }
 
-addEventListener("hashchange", rysuj);
-rysuj();
+addEventListener("hashchange", draw);
+draw();
 </script>
 </body>
 </html>

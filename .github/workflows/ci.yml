@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Testy hostowe firmware CircuitPython
+      - name: Host tests: CircuitPython firmware
         working-directory: firmware-circuitpython
         run: python tests/test_firmware.py
 
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Testy hostowe modulow C
+      - name: Host tests: C modules
         working-directory: firmware-pico-sdk
         run: |
           gcc -Wall -Wextra -Werror -I src tests/test_host.c src/scan_framer.c src/parser_gs1.c src/mini_regex.c src/config_parse.c src/profile_matcher.c -o test_host
@@ -44,7 +44,7 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: configurator/package-lock.json
-      - name: Build (tsc = kontrola typow + vite single-file)
+      - name: Build (tsc type check + vite single-file)
         working-directory: configurator
         run: |
           npm ci --no-fund --no-audit
@@ -67,13 +67,13 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: browser-extension/package-lock.json
-      - name: Instalacja zaleznosci
+      - name: Install dependencies
         working-directory: browser-extension
         run: npm ci --no-fund --no-audit
-      - name: Testy jednostkowe (parsowanie, dopasowanie adresow)
+      - name: Unit tests (parsing, address matching)
         working-directory: browser-extension
         run: npm test
-      - name: Testy e2e (Chromium z zaladowanym rozszerzeniem + formularz demo)
+      - name: E2E tests (Chromium with the extension loaded plus a demo form)
         working-directory: browser-extension
         run: |
           npx playwright install --with-deps chromium
@@ -90,12 +90,12 @@ jobs:
           cache-dependency-path: configurator/package-lock.json
       # Konfigurator jest wbudowywany w obraz dysku MYSTTIC wewnatrz UF2,
       # wiec musi powstac PRZED kompilacja firmware.
-      - name: Build konfiguratora (trafia na dysk MYSTTIC)
+      - name: Build the configurator (it lands on the MYSTTIC disk)
         working-directory: configurator
         run: |
           npm ci --no-fund --no-audit
           npm run build
-      - name: Narzedzia ARM
+      - name: ARM toolchain
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
       - name: Cache Pico SDK
         id: sdk-cache
@@ -103,12 +103,12 @@ jobs:
         with:
           path: ~/pico-sdk
           key: pico-sdk-2-tinyusb
-      - name: Pobranie Pico SDK
+      - name: Fetch the Pico SDK
         if: steps.sdk-cache.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
           cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
-      - name: Kompilacja UF2
+      - name: Compile the UF2
         working-directory: firmware-pico-sdk
         env:
           PICO_SDK_PATH: ~/pico-sdk
@@ -130,7 +130,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
-      - name: Testy jednostkowe agenta
+      - name: Agent unit tests
         run: dotnet run -c Release --project desktop-agent/tests/TestyAgenta --nologo
       # Testy e2e agenta wymagaja pulpitu z prawdziwymi oknami i sterowania mysza,
       # wiec uruchamiamy je lokalnie (desktop-agent/tests/test_e2e.py), nie w CI.
@@ -145,7 +145,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
-      - name: Agent i aplikacja testowa (samodzielne pliki exe dla Windows)
+      - name: Agent and demo application (self-contained Windows exes)
         run: >
           for projekt in desktop-agent/src/CzytnikAgent desktop-agent/test-app; do
           dotnet publish "$projekt" -c Release -r win-x64 --self-contained true
@@ -153,7 +153,7 @@ jobs:
           -p:EnableCompressionInSingleFile=true -p:EnableWindowsTargeting=true
           -p:DebugType=none -o "publish/$(basename "$projekt")" --nologo || exit 1;
           done
-      - name: Czy powstaly pliki exe
+      - name: Check that the exes were produced
         run: |
           test -s publish/CzytnikAgent/MystticBarcodeAgent.exe
           test -s publish/test-app/MystticDemoApp.exe
@@ -176,20 +176,20 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "9.0.x"
-      - name: Pobranie CircuitPython UF2 i biblioteki adafruit_hid
+      - name: Fetch the CircuitPython UF2 and the adafruit_hid library
         run: |
           mkdir -p hardware/downloads/extracted
           curl -fsSL -o "hardware/downloads/$(basename "$CIRCUITPYTHON_URL")" "$CIRCUITPYTHON_URL"
           curl -fsSL -o /tmp/bundle.zip "$BUNDLE_URL"
           unzip -o -q /tmp/bundle.zip "*/lib/adafruit_hid/*" -d hardware/downloads/extracted
-      - name: Build konfiguratora
+      - name: Build the configurator
         working-directory: configurator
         run: |
           npm ci --no-fund --no-audit
           npm run build
       # Firmware produkcyjny budujemy tu od nowa (a nie z artefaktu joba
       # firmware-c) - paczka nie moze zalezec od limitu magazynu artefaktow.
-      - name: Narzedzia ARM
+      - name: ARM toolchain
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cmake ninja-build gcc-arm-none-eabi libnewlib-arm-none-eabi libstdc++-arm-none-eabi-newlib
       - name: Cache Pico SDK
         id: sdk-cache
@@ -197,19 +197,19 @@ jobs:
         with:
           path: ~/pico-sdk
           key: pico-sdk-2-tinyusb
-      - name: Pobranie Pico SDK
+      - name: Fetch the Pico SDK
         if: steps.sdk-cache.outputs.cache-hit != 'true'
         run: |
           git clone --depth 1 https://github.com/raspberrypi/pico-sdk.git ~/pico-sdk
           cd ~/pico-sdk && git submodule update --init --depth 1 lib/tinyusb
-      - name: Kompilacja firmware produkcyjnego
+      - name: Compile the production firmware
         working-directory: firmware-pico-sdk
         run: |
           cmake -G Ninja -B build -DCMAKE_BUILD_TYPE=Release -DPICO_SDK_PATH=$HOME/pico-sdk
           ninja -C build
       # Paczka jest skladana dokladnie tak, jak przy wydaniu - z agentem
       # desktopowym i osobnym zipem aplikacji testowej.
-      - name: Budowa paczki testowej (bez publikacji)
+      - name: Assemble a test package (not published)
         run: python tools/build_release.py --skip-npm
       - uses: actions/upload-artifact@v4
         with:

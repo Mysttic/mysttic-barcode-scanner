@@ -2,6 +2,8 @@
 // Jedno polaczenie, ciagly odczyt, dopasowanie odpowiedzi po requestId,
 // eventy (np. "scan") przez callback.
 
+import { t } from "./i18n";
+
 type Json = Record<string, unknown>;
 
 export class DeviceLink {
@@ -68,7 +70,7 @@ export class DeviceLink {
         try {
           obj = JSON.parse(line);
         } catch {
-          console.warn("niepoprawna linia z urządzenia:", line);
+          console.warn("malformed line from the device:", line);
           continue;
         }
         const rid = obj.requestId;
@@ -85,7 +87,7 @@ export class DeviceLink {
   }
 
   async command(cmd: string, extra: Json = {}, timeoutMs = 4000): Promise<Json> {
-    if (!this.writer) throw new Error("brak połączenia");
+    if (!this.writer) throw new Error(t("serial.noConnection"));
     const requestId = this.nextId++;
     const payload = JSON.stringify({ cmd, requestId, ...extra }) + "\n";
     const promise = new Promise<Json>((resolve, reject) => {

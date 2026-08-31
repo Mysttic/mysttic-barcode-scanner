@@ -11,7 +11,7 @@ public class OknoProfili : Form
     private readonly Action _poZmianie;
 
     private readonly ListBox _lista = new() { Left = 12, Top = 12, Width = 250, Height = 300 };
-    private readonly CheckBox _wlaczony = new() { Left = 276, Top = 14, Width = 220, Text = "profil włączony" };
+    private readonly CheckBox _wlaczony = new() { Left = 276, Top = 14, Width = 220, Text = Teksty.T("profiles.enabled") };
     private readonly TextBox _nazwa = new() { Left = 276, Top = 60, Width = 300 };
     private readonly TextBox _proces = new() { Left = 276, Top = 108, Width = 300 };
     private readonly TextBox _tytul = new() { Left = 276, Top = 156, Width = 300 };
@@ -21,10 +21,10 @@ public class OknoProfili : Form
         ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 8.5f), BackColor = SystemColors.Control,
     };
 
-    private readonly Button _zapisz = new() { Left = 276, Top = 322, Width = 90, Height = 30, Text = "Zapisz" };
-    private readonly Button _usun = new() { Left = 372, Top = 322, Width = 90, Height = 30, Text = "Usuń" };
-    private readonly Button _plik = new() { Left = 468, Top = 322, Width = 108, Height = 30, Text = "Otwórz plik" };
-    private readonly Button _zamknij = new() { Left = 12, Top = 322, Width = 90, Height = 30, Text = "Zamknij" };
+    private readonly Button _zapisz = new() { Left = 276, Top = 322, Width = 90, Height = 30, Text = Teksty.T("profiles.save") };
+    private readonly Button _usun = new() { Left = 372, Top = 322, Width = 90, Height = 30, Text = Teksty.T("profiles.delete") };
+    private readonly Button _plik = new() { Left = 468, Top = 322, Width = 108, Height = 30, Text = Teksty.T("profiles.openFile") };
+    private readonly Button _zamknij = new() { Left = 12, Top = 322, Width = 90, Height = 30, Text = Teksty.T("profiles.close") };
 
     public OknoProfili(Konfiguracja konfiguracja, string? sciezka, Action poZmianie)
     {
@@ -32,7 +32,7 @@ public class OknoProfili : Form
         _sciezka = sciezka;
         _poZmianie = poZmianie;
 
-        Text = "Profile - Mysttic Barcode Scanner";
+        Text = Teksty.T("profiles.title");
         Width = 610;
         Height = 405;
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -43,10 +43,10 @@ public class OknoProfili : Form
         Controls.AddRange(new Control[]
         {
             _lista, _wlaczony,
-            Etykieta("Nazwa", 44), _nazwa,
-            Etykieta("Proces (bez .exe)", 92), _proces,
-            Etykieta("Wzorzec tytułu okna (* = dowolny fragment)", 140), _tytul,
-            Etykieta("Kroki makra", 180), _szczegoly,
+            Etykieta(Teksty.T("profiles.name"), 44), _nazwa,
+            Etykieta(Teksty.T("profiles.process"), 92), _proces,
+            Etykieta(Teksty.T("profiles.titlePattern"), 140), _tytul,
+            Etykieta(Teksty.T("profiles.steps"), 180), _szczegoly,
             _zapisz, _usun, _plik, _zamknij,
         });
 
@@ -93,7 +93,7 @@ public class OknoProfili : Form
             _wlaczony.Checked = false;
             _nazwa.Text = _proces.Text = _tytul.Text = "";
             _szczegoly.Text = _konfiguracja.Profile.Count == 0
-                ? "Brak profili.\r\n\r\nOtwórz formularz i naciśnij Ctrl+Alt+F9,\r\naby nauczyć agenta."
+                ? Teksty.T("profiles.empty")
                 : "";
             return;
         }
@@ -103,9 +103,10 @@ public class OknoProfili : Form
         _proces.Text = profil.Match.Proces;
         _tytul.Text = profil.Match.TytulWzorzec;
         _szczegoly.Text =
-            $"pola: {string.Join(", ", profil.Parse.Pola.Where(p => p != "_"))}\r\n" +
-            $"prefiks: {(profil.Parse.Prefiks.Length > 0 ? profil.Parse.Prefiks : "(brak)")}   " +
-            $"separator: {(profil.Parse.Separator == "\t" ? "TAB" : profil.Parse.Separator)}\r\n" +
+            Teksty.T("profiles.fields", string.Join(", ", profil.Parse.Pola.Where(p => p != "_"))) + "\r\n" +
+            Teksty.T("profiles.prefix",
+                profil.Parse.Prefiks.Length > 0 ? profil.Parse.Prefiks : Teksty.T("profiles.none"),
+                profil.Parse.Separator == "\t" ? "TAB" : profil.Parse.Separator) + "\r\n" +
             string.Join("\r\n", profil.Kroki.Select((k, i) => $"{i + 1}. {k.Opis()}"));
     }
 
@@ -125,7 +126,7 @@ public class OknoProfili : Form
     {
         var profil = Wybrany;
         if (profil == null) return;
-        if (MessageBox.Show($"Usunąć profil \"{profil.Nazwa}\"?", "Profile agenta",
+        if (MessageBox.Show(Teksty.T("profiles.deleteConfirm", profil.Nazwa), Teksty.T("profiles.dialogTitle"),
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
 
         _konfiguracja.Profile.Remove(profil);
@@ -135,7 +136,7 @@ public class OknoProfili : Form
     private void Zapisz()
     {
         Magazyn.Zapisz(_konfiguracja, _sciezka);
-        Log.Pisz($"profile zapisane z okna zarzadzania: {_konfiguracja.Profile.Count}");
+        Log.Pisz($"profiles saved from the management window: {_konfiguracja.Profile.Count}");
         _poZmianie();
         Odswiez();
     }

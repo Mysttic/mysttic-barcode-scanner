@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 
 const here = new URL(".", import.meta.url);
-for (const file of ["parse.js", "fill.js", "store.js"]) {
+for (const file of ["i18n.js", "parse.js", "fill.js", "store.js"]) {
   const source = readFileSync(new URL("../src/" + file, here), "utf8");
   new Function(source)();
 }
@@ -34,29 +34,29 @@ const PRACOWNIK = {
   type: "delimited",
   prefix: "PRC;",
   separator: ";",
-  fields: ["_", "imie", "nazwisko", "numer", "dzial"],
+  fields: ["_", "firstName", "lastName", "number", "department"],
 };
 
 check("delimited: kod pracownika", parseFrame("PRC;JAN;KOWALSKI;12345;IT", PRACOWNIK).fields, {
-  imie: "JAN",
-  nazwisko: "KOWALSKI",
-  numer: "12345",
-  dzial: "IT",
+  firstName: "JAN",
+  lastName: "KOWALSKI",
+  number: "12345",
+  department: "IT",
 });
 checkTrue("delimited: obcy prefiks odrzucony", !!parseFrame("EMP;ANNA;NOWAK;1;HR", PRACOWNIK).error);
 checkTrue("delimited: za malo segmentow", !!parseFrame("PRC;JAN;KOWALSKI", PRACOWNIK).error);
-check("delimited: puste segmenty zachowane", parseFrame("PRC;JAN;;12345;IT", PRACOWNIK).fields.nazwisko, "");
+check("delimited: puste segmenty zachowane", parseFrame("PRC;JAN;;12345;IT", PRACOWNIK).fields.lastName, "");
 checkTrue("delimited: nadmiarowe segmenty ida do kosza", !parseFrame("PRC;A;B;C;D;E;F", PRACOWNIK).error);
 
 // ----------------------------------------------------------------- regex ---
 const REGEX_SPEC = {
   type: "regex",
   pattern: "^P([0-9][0-9][0-9])([0-9]+)$",
-  fields: { naglowek: 1, numer: 2 },
+  fields: { header: 1, number: 2 },
 };
 check("regex: grupy do pol", parseFrame("P0058746601261", REGEX_SPEC).fields, {
-  naglowek: "005",
-  numer: "8746601261",
+  header: "005",
+  number: "8746601261",
 });
 checkTrue("regex: brak dopasowania", !!parseFrame("XYZ", REGEX_SPEC).error);
 checkTrue("regex: bledny wzorzec nie wywala", !!parseFrame("abc", { type: "regex", pattern: "([" }).error);
@@ -65,23 +65,23 @@ checkTrue("regex: bledny wzorzec nie wywala", !!parseFrame("abc", { type: "regex
 const GS1 = { type: "gs1" };
 check("gs1: pelny kod", parseFrame("010590123456789017271231" + GS + "10A22" + GS + "21SN7", GS1).fields, {
   gtin: "05901234567890",
-  dataWaznosci: "271231",
-  partia: "A22",
-  numerSeryjny: "SN7",
-  dataWaznosciISO: "2027-12-31",
+  expiry: "271231",
+  batch: "A22",
+  serial: "SN7",
+  expiryISO: "2027-12-31",
 });
 check("gs1: AIM zdejmowany", parseFrame("]d20105901234567890", GS1).fields, {
   gtin: "05901234567890",
   aim: "]d2",
 });
-check("gs1: dzien 00 = koniec miesiaca", parseFrame("010590123456789017270200", GS1).fields.dataWaznosciISO, "2027-02-28");
-check("gs1: dzien 00 w roku przestepnym", parseFrame("010590123456789017280200", GS1).fields.dataWaznosciISO, "2028-02-29");
+check("gs1: dzien 00 = koniec miesiaca", parseFrame("010590123456789017270200", GS1).fields.expiryISO, "2027-02-28");
+check("gs1: dzien 00 w roku przestepnym", parseFrame("010590123456789017280200", GS1).fields.expiryISO, "2028-02-29");
 checkTrue("gs1: nieznany AI", !!parseFrame("9912345", GS1).error);
 checkTrue("gs1: urwany GTIN", !!parseFrame("0112345", GS1).error);
 checkTrue("gs1: GTIN musi byc cyframi", !!parseFrame("01ABCDEFGHIJKLMN", GS1).error);
 check("gs1: widoczny separator zamiast GS", parseFrame("0105901234567890|10A22", { type: "gs1", gsChar: "|" }).fields, {
   gtin: "05901234567890",
-  partia: "A22",
+  batch: "A22",
 });
 
 check("data: zwykla", dateToIso("271231"), "2027-12-31");
@@ -91,7 +91,7 @@ check("aim: brak", stripAim("0105901234567890").aim, null);
 checkTrue("prefiks: brak prefiksu = zawsze pasuje", matchesPrefix("cokolwiek", { type: "delimited" }));
 
 // ------------------------------------------------------- dopasowanie URL ---
-checkTrue("url: gwiazdka w srodku", urlMatches("*form-c-extension.html*", "file:///C:/repo/test-vectors/forms/form-c-extension.html#/pracownik"));
+checkTrue("url: gwiazdka w srodku", urlMatches("*form-c-extension.html*", "file:///C:/repo/test-vectors/forms/form-c-extension.html#/employee"));
 checkTrue("url: pelna sciezka", urlMatches("https://erp.firma.pl/magazyn/*", "https://erp.firma.pl/magazyn/przyjecie"));
 checkTrue("url: inna domena odrzucona", !urlMatches("https://erp.firma.pl/*", "https://zla.firma.pl/magazyn"));
 checkTrue("url: kropka nie jest metaznakiem", !urlMatches("https://a.b/*", "https://axb/c"));
@@ -101,12 +101,12 @@ checkTrue("url: pusty wzorzec", !urlMatches("", "https://a.b/"));
 const TABSPEC = {
   type: "delimited",
   separator: "\t",
-  fields: ["imie", "nazwisko", "numer", "dzial"],
-  segmentPatterns: { numer: "^[0-9]+$" },
+  fields: ["firstName", "lastName", "number", "department"],
+  segmentPatterns: { number: "^[0-9]+$" },
 };
 check("tab-frame: sekwencja urzadzenia na pola",
   parseFrame("JAN\tKOWALSKI\t12345\tIT", TABSPEC).fields,
-  { imie: "JAN", nazwisko: "KOWALSKI", numer: "12345", dzial: "IT" });
+  { firstName: "JAN", lastName: "KOWALSKI", number: "12345", department: "IT" });
 checkTrue("tab-frame: bez prefiksu wymagana DOKLADNA liczba segmentow",
   !!parseFrame("JAN\tKOWALSKI\t12345\tIT\tEXTRA", TABSPEC).error);
 checkTrue("tab-frame: za malo segmentow odrzucone",

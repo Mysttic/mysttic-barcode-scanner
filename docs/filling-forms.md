@@ -17,11 +17,11 @@ modules, and installing them changes nothing outside the forms they recognise.
 ## A — a sequence of tabs
 
 A profile in the scanner cuts the code into fields and types them interleaved
-with TABs, for example `{imie} TAB {nazwisko} TAB {numer} TAB {dzial} ENTER`. The
+with TABs, for example `{firstName} TAB {lastName} TAB {number} TAB {department} ENTER`. The
 operator clicks the first field and scans; the scanner does the rest.
 
 Demo: `forms/form-a-tab.html` (code `PRC;JAN;KOWALSKI;12345;IT`, profile
-`pracownik-tab`). Also verified on a real third-party page (httpbin.org) with no
+`employee-tab`). Also verified on a real third-party page (httpbin.org) with no
 changes on the page's side.
 
 Limits: the field order has to be fixed, and fields with autocomplete can swallow
@@ -31,8 +31,8 @@ lengthened in the [configuration](configuration.md).
 **GS1 codes** work the same way, with a profile that parses GS1 instead of a
 regular expression: the scanner takes the code apart itself, including the
 invisible GS separator, converts the date to `YYYY-MM-DD` (day "00" meaning the
-last day of the month) and types `{gtin} TAB {dataWaznosciISO} TAB {partia} TAB
-{numerSeryjny} ENTER`. Demo: `forms/form-gs1.html`.
+last day of the month) and types `{gtin} TAB {expiryISO} TAB {batch} TAB
+{serial} ENTER`. Demo: `forms/form-gs1.html`.
 
 ## B — fields by name, on a page we control
 

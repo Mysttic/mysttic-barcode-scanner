@@ -99,7 +99,7 @@ try {
   // wlaczyc dwa produkcyjne - zrzuty pokazuja stan po tym kroku.
   await strona.click('button[data-tab="sec-profiles"]');
   await strona.waitForSelector("#sec-profiles:not([hidden])");
-  for (const nazwa of ["gs1-datamatrix", "pracownik-tab"]) {
+  for (const nazwa of ["gs1-datamatrix", "employee-tab"]) {
     await strona.evaluate((n) => {
       const pole = [...document.querySelectorAll("#sec-profiles input[type=text]")]
         .find((i) => i.value === n);
@@ -126,8 +126,8 @@ try {
       await strona.click("#chk-testmode");
       await strona.waitForTimeout(200);
       await strona.evaluate(() =>
-        globalThis.__skan("PRC;JAN;KOWALSKI;12345;IT", "pracownik-tab", {
-          imie: "JAN", nazwisko: "KOWALSKI", numer: "12345", dzial: "IT",
+        globalThis.__skan("PRC;JAN;KOWALSKI;12345;IT", "employee-tab", {
+          firstName: "JAN", lastName: "KOWALSKI", number: "12345", department: "IT",
         }));
       await strona.evaluate(() => globalThis.__skan("5901234123457", null, {}));
     }
