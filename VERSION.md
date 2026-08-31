@@ -1,6 +1,6 @@
 # Version
 
-1.1.0
+1.2.0
 
 The single source of truth for the release version. Raise it in a `develop` →
 `master` pull request so that CI builds and publishes a release after the merge
