@@ -77,6 +77,9 @@ var MBS_I18N = (function () {
     "fill.rejected": "the box rejected the value (it holds '{value}')",
     "fill.badSelector": "malformed selector",
 
+    "pill.active": "Scanner: {profile}",
+    "pill.unrecognised": "Unrecognised code: {error}",
+    "pill.saved": "Profile saved: {profile}",
     "pill.filled": "Filled in {count} ({profile})",
     "pill.failed": "Filled in {filled}/{total} - {name}: {error}",
     "pill.fields.one": "{count} field",
@@ -187,6 +190,9 @@ var MBS_I18N = (function () {
     "fill.rejected": "pole odrzuciło wartość (jest '{value}')",
     "fill.badSelector": "błędny selektor",
 
+    "pill.active": "Czytnik: {profile}",
+    "pill.unrecognised": "Nierozpoznany kod: {error}",
+    "pill.saved": "Zapisano profil: {profile}",
     "pill.filled": "Wypełniono {count} ({profile})",
     "pill.failed": "Wypełniono {filled}/{total} - {name}: {error}",
     "pill.fields.one": "{count} pole",

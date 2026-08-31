@@ -126,7 +126,7 @@
     notify({ cmd: "activeProfile", name: active ? active.name : null });
     if (changed) {
       resetWedge();
-      if (active) pill("Czytnik: " + active.name);
+      if (active) pill(MBS_I18N.t("pill.active", { profile: active.name }));
       else hidePill();
     }
   }
@@ -238,7 +238,7 @@
       } else if (blocked) {
         // ramka nie byla nasza, a znaki przechwycilismy - oddaj je stronie
         replayBuffer(snapshot, frame);
-        pill("Nierozpoznany kod: " + parsed.error, true);
+        pill(MBS_I18N.t("pill.unrecognised", { error: parsed.error }), true);
       }
       return;
     }
@@ -761,7 +761,7 @@
     BRStore.save(state).then(function (saved) {
       state = saved;
       stopLearn();
-      pill("Zapisano profil: " + profile.name);
+      pill(MBS_I18N.t("pill.saved", { profile: profile.name }));
     });
   }
 

@@ -3,6 +3,15 @@
 Every notable change to the project. The release version is defined by
 [VERSION.md](VERSION.md).
 
+## 2.0.1 — 2026-08-31
+
+- **Three toasts in the browser extension were still Polish** in 2.0.0: the one
+  announcing a recognised profile ("Czytnik: …"), the one for a code that could
+  not be parsed and the one confirming a saved profile. They went through the
+  dictionary like the rest and now read "Scanner: …", "Unrecognised code: …" and
+  "Profile saved: …", with the Polish wording kept for the Polish setting.
+- The extension tutorial no longer quotes the Polish toast.
+
 ## 2.0.0 — 2026-08-31
 
 English interfaces and English configuration formats. **This release changes the
