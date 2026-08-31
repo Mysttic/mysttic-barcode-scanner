@@ -20,5 +20,5 @@ body:
     attributes:
       label: Before submitting
       options:
-        - label: I checked [docs/CAPABILITIES.md](../blob/master/docs/CAPABILITIES.md) and this is not already supported
-        - label: I checked [docs/ROADMAP.md](../blob/master/docs/ROADMAP.md) and it is not already planned
+        - label: I checked [docs/filling-forms.md](../blob/master/docs/filling-forms.md) and this is not already supported
+        - label: I checked [docs/roadmap.md](../blob/master/docs/roadmap.md) and it is not already planned

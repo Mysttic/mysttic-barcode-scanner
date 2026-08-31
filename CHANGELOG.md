@@ -3,6 +3,30 @@
 Every notable change to the project. The release version is defined by
 [VERSION.md](VERSION.md).
 
+## 1.2.1 — 2026-08-31
+
+Documentation only; the firmware, the extension and the agent are unchanged.
+
+- **The documentation is one set with a table of contents.** It went from 26
+  documents and 150 KB to 15 and 87 KB: the root keeps five entries (README,
+  LICENSE, NOTICE, CHANGELOG, VERSION) and everything else sits under `docs/`
+  behind [an index](docs/README.md). Pages were merged rather than moved:
+  hardware and installation into `getting-started.md`, forms and capabilities
+  into `filling-forms.md`, the learning tutorial into `browser-extension.md`,
+  testing into `CONTRIBUTING.md`.
+- **The 59 KB decision log is gone.** The decisions that still shape the project
+  (why a keyboard wedge, why atomic A/B slots, why UI Automation, why the device
+  disk is read-only, and what was rejected) are a section in
+  [architecture.md](docs/architecture.md); the rest stays in the commit history.
+- **Names inside the release package changed** along with it: the root now holds
+  `GETTING-STARTED.md`, `BROWSER-EXTENSION.md` and `DESKTOP-AGENT.md`, and the
+  device disk carries one `BROWSER-EXTENSION.md` with the tutorial inside instead
+  of two separate manuals.
+- A photo of the assembled unit opens the README, and the logo has a variant that
+  stays readable on GitHub's dark theme.
+- The agent's e2e test no longer sends keystrokes before the demo application has
+  taken focus, which made one run in ten fail for no good reason.
+
 ## 1.2.0 — 2026-08-31
 
 Open-source release preparation, so most of the change is in identity and

@@ -30,8 +30,8 @@ labels are given below in brackets.
   test mode → scan (results appear on the page). Untick it when you are done.
 - **Factory settings:** the button in the configurator, or hold the button wired
   to GP2 for about a second while plugging in USB.
-- **The scanner beeps but types nothing:** see `docs/INSTALL.md` in the project
-  repository, section "Common problems". Most likely the scanner module's output
+- **The scanner beeps but types nothing:** see the documentation in the project
+  repository (`docs/getting-started.md`). Most likely the scanner module's output
   is set wrongly, or TXD/RXD are swapped.
 - **Update:** configurator → the *Aktualizacja* (Update) tab → follow the steps.
 

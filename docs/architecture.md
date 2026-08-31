@@ -9,8 +9,8 @@
   `TXD→GP1`, `RXD→GP0`, `VCC→VBUS`, `GND→GND`,
 - optionally: a status LED (GP6), a service and factory-reset button (GP2), a
   buzzer (the module has its own). Extended prototype schematic:
-  [hardware/wokwi](../hardware/wokwi/README.md). Where to buy the parts and which
-  ones we have tested: [HARDWARE.md](HARDWARE.md).
+  `hardware/wokwi/`. Where to buy the parts and which
+  ones we have tested: [getting-started.md](getting-started.md).
 
 ## Two firmware variants
 
@@ -47,7 +47,7 @@ the scanner types like an ordinary keyboard. The firmware knows nothing about th
 extension and stays in one production configuration. Note that non-printable
 characters do not survive HID, so the GS separator 0x1D never reaches the
 extension: there the field boundaries come from the scanner's sequence. Details
-in [BROWSER-EXTENSION.md](BROWSER-EXTENSION.md).
+in [browser-extension.md](browser-extension.md).
 
 Raw bytes live until parsing (the GS separator 0x1D passes through untouched).
 GS1 rules: AI 01 (14 digits), 17 (YYMMDD, with day 00 meaning the last day of the
@@ -101,61 +101,60 @@ docs/MANUAL.md       the engineer's crib sheet
 boot.py, *.py, lib/  firmware - DO NOT TOUCH
 ```
 
-## Repository layout
+## Design decisions worth knowing
 
-| Directory | Contents |
-|---|---|
-| `firmware-circuitpython/` | the CP firmware, `tests/test_firmware.py`, the `diag_*.py` diagnostics and `setup_induction.py` |
-| `firmware-pico-sdk/` | the C firmware (CMake and TinyUSB) plus `tests/test_host.c` |
-| `configurator/` | configurator sources (Vite, TypeScript, zod, built into a single HTML file) |
-| `browser-extension/` | the MV3 extension (no bundler) plus unit and e2e tests |
-| `desktop-agent/` | the agent for Windows applications (C#/.NET, optional), the demo application and tests |
-| `tools/` | `build_release.py`, `install.ps1`, `test_e2e.py`, `device_docs/` |
-| `test-vectors/` | demo forms and QR codes |
-| `hardware/` | schematics (Wokwi) and pinned installer files |
-| `brand/` | logo and icon sources plus the scripts that rasterise them |
-| `docs/` | documentation |
+These are the choices that shape the whole thing, with the reasoning that still
+applies. The rest of the history is in the commit log.
 
-## Building and releases
+**The extension listens to the keyboard instead of talking to the device.** The
+scanner *is* a keyboard, so a keyboard wedge needs zero firmware changes, does not
+fight the configurator over the serial port and works with the factory
+configuration. A structured channel over CDC would carry the GS separator and
+remove the need for a hook, but it costs firmware work; it stays on the
+[roadmap](roadmap.md) until the wedge proves too weak.
 
-- Configurator: `cd configurator && npm ci && npm run build` → `dist/index.html`.
-- C firmware: CMake, Ninja and ARM GCC with `PICO_SDK_PATH` →
-  `build/mysttic_barcode_scanner.uf2` (note that SDK 2.x also needs a host
-  compiler for picotool).
-- Package: `python tools/build_release.py` →
-  `release/mysttic-barcode-scanner-v<version>.zip` (the version comes from
-  [VERSION.md](../VERSION.md)). It contains the **production variant C UF2**
-  (`firmware/`, with the `MYSTTIC` disk inside), the **extension**
-  (`browser-extension/`, its manifest version taken from VERSION.md), the
-  documentation and, separately, the prototype variant
-  (`circuitpython-prototype/`). The order matters: configurator → C firmware
-  (because the configurator goes into its disk image) → package.
-- CI: tests on every pull request to `master`; a test package from *Run
-  workflow*; a release automatically after a merge from `develop`, and only when
-  the version has been raised.
+**Recognising a form means the address plus the presence of fields.** A URL alone
+is not enough in a single-page app where several forms share one address. View
+changes are tracked with a MutationObserver plus polling `location`; patching
+`history.pushState` does not work, because a content script has its own JavaScript
+context.
 
-## Tests and verification
+**Writing a value means firing native events.** `el.value = "X"` alone does
+nothing in React, Vue or Angular: the framework keeps its own state and the form
+submits empty despite the visible value. The extension uses the native setter plus
+`input` and `change` events, then reads the value back. The demo forms show this
+in a "page state" panel, and the e2e tests assert on that state rather than on
+`value` — otherwise they would pass while the real form stayed empty.
 
-| Level | What | How much |
-|---|---|---|
-| Python host tests | framer, parser, profiles, GS1, NVM, CDC (`firmware-circuitpython/tests`) | 52 assertions |
-| C host tests | the same vectors plus mini_regex, config_parse, slots, matcher (`firmware-pico-sdk/tests`) | 87 assertions |
-| extension unit | delimited/regex/GS1 parsing, address matching, transformations | 96 assertions |
-| extension e2e | real Chromium with the extension: TAB frames, silence without a profile, cross-rejection | 22 assertions |
-| desktop agent unit | parser, window matching, processing a recording (`desktop-agent/tests/TestyAgenta`) | 34 assertions |
-| desktop agent e2e | a real WinForms application plus UI Automation (`desktop-agent/tests/test_e2e.py`) | 27 assertions |
-| hardware | `tools/test_e2e.py` (CDC, persistence, HID) plus the out-of-the-box scenario ([TESTING.md](TESTING.md), 7 tests from the disk) | — |
+**The device disk is read-only.** Configuration lives in flash and is reached over
+the serial channel, so the disk carries tools only. There is nothing to break,
+nothing to desynchronise, and formatting is rejected.
 
-Every automated level runs in CI on pull requests to `master`. The rule: any
-change to parsing logic gets the same vector in all implementations
-(CircuitPython, C, extension). Documentation screenshots are regenerated with
-`npm run shots`, so the images do not drift away from the code. The capability
-matrix and the verified code formats: [CAPABILITIES.md](CAPABILITIES.md).
+**Configuration is stored in atomic A/B slots, not a filesystem.** Two flash
+sectors with a magic number, a sequence number and a CRC16; a write always goes to
+the opposite slot and the newer valid one wins. An interrupted write cannot
+destroy the previous configuration. LittleFS was considered and dropped: more code
+for a weaker guarantee.
+
+**The desktop agent targets controls, not coordinates.** Clicking remembered
+points breaks on a moved window, a different resolution or DPI scaling. The agent
+addresses controls through UI Automation and keeps coordinates only as a fallback;
+learning records both at once. Every fill is verified by reading the value back.
+
+**The agent records the operator's intent, not a guess.** A step stores whether
+the operator *typed* text or *picked* a list item, because a search box with
+suggestions looks like a drop-down list in the control tree and no heuristic gets
+it right in both cases.
+
+**Rejected, so they do not come back:** the bookmarklet as a production route
+(unusable in practice, kept only for diagnostics), Web Serial in the extension
+(firmware changes plus a port conflict), LittleFS (above), and a writable device
+disk (above).
 
 ## Scanner module pinout and protocol
 
 The module's manual is copyrighted by its manufacturer and is not redistributed here;
-see [HARDWARE.md](HARDWARE.md) for where to obtain it. The module is configured
+see [getting-started.md](getting-started.md) for where to obtain it. The module is configured
 either with barcodes from that manual (UART output, induction mode) or over UART
 commands (`7E 00 …` plus CRC16-XModem, zone bit 0x0000, see the
 `setup_induction.py` script).

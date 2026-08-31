@@ -26,7 +26,7 @@ pages the extension wins.
 
 The second row of the table matters as much as the first: outside recognised
 forms nothing about the behaviour changes, so variants A and B from
-[FORMS.md](FORMS.md) keep working exactly as before.
+[filling-forms.md](filling-forms.md) keep working exactly as before.
 
 ![The extension popup on a page with a recognised form](img/extension-popup.png)
 ![The extension popup on a page with no profile](img/extension-popup-no-profile.png)
@@ -130,42 +130,72 @@ the toast always say which profile fired. Note that the `gs1-datamatrix` profile
 (TABs, variant A) catches the same codes as `lek-wtyczka`, so it has to be
 disabled for this demo.
 
-## Adding your own form
+## Teaching it a new form
 
-> A step-by-step tutorial on a full example (a medicine order with the GS1 code
-> from the box): **[LEARNING-PROFILES.md](LEARNING-PROFILES.md)**.
+Learning mode adds support for **any form** without writing anything: you scan a
+code, name its segments and click the fields they belong to. The profile works
+immediately and can be exported to other workstations.
 
-Open the form you want a profile for and click the extension icon → **Ucz
-formularza** (Teach a form). The wizard has three steps.
+The walkthrough below uses the medicine order page
+(`forms/form-c-medicine.html`, both on the `MYSTTIC` disk and in the repository).
+The code is a GS1 DataMatrix like the one on a real box, and the scanner stays in
+its normal production configuration, typing
+`GTIN TAB date TAB batch TAB serial-number ENTER`. What you teach the extension is
+what to do with that sequence on this particular page.
 
-**Step 1 — scan the code** you will be filling this form with. The characters do
-not reach the page, so the form stays clean. You are teaching from what the
-**scanner types**: if its profile turns the code into a TAB sequence, learning
-captures the whole thing and splits the segments on the tabs.
+> For the exercise, switch off the built-in demo profile for this page
+> ("Zamówienie leku (demo)" under **Profile formularzy**), otherwise it fills the
+> form before your profile gets a chance: the first matching profile wins.
 
-![Learning mode, step 1: scanning a code](img/extension-learn-1-scan.png)
+**Step 1 — start learning and scan.** Extension icon → **Ucz formularza** (Teach
+a form). Scan the code; the characters **do not reach the form**, the extension
+only observes them. You are teaching from what the **scanner types**, so if its
+profile produces a TAB sequence, learning captures the whole series and splits it
+on the tabs.
 
-**Step 2 — name the segments.** The extension cuts the code up by itself (picking
-the separator among `;` `|` `,` and tab) and shows the result: your values on the
-left, name fields on the right. Mark segments to skip, usually a prefix, with `_`.
+![Learning mode, step 1: waiting for a scan](img/extension-medicine-1-start.png)
 
-![Learning mode, step 2: naming the segments](img/extension-learn-2-segments.png)
+**Step 2 — name the segments.** The extension has already cut up what the scanner
+typed (recognising the separator among `;` `|` `,` and tab) and shows the
+segments: your values on the left, name fields on the right. Type names that mean
+something to you, here `gtin`, `dataWaznosci`, `partia`, `numerSeryjny`. Mark a
+segment that should be skipped, a fixed prefix for instance, with `_`.
 
-**Step 3 — click the fields and confirm.** The extension asks about each name in
-turn and shows the value it will insert. A click **selects** a field (a permanent
-green outline) and the panel waits for a decision: **Zatwierdź i dalej** (Confirm
-and continue), **Wybierz inne pole** (Pick another field, if you misclicked) or
-**← Wstecz** (Back) to the previous name, to correct an earlier choice. Names
-with no counterpart on this form are skipped with a button. Back also works from
-the save screen and from the naming step (returning to the scan).
+![Learning mode, step 2: naming the segments](img/extension-medicine-2-segments.png)
 
-![Learning mode, step 3: pointing at fields by clicking](img/extension-learn-3-fields.png)
+**Step 3 — point at the fields and confirm.** The wizard asks about each name in
+turn and shows the value that will go there. Move over the form (the field under
+the cursor is highlighted) and click the right one. A click **selects** the field
+(a permanent green outline) but does not advance on its own; the panel waits for a
+decision:
 
-**Saving.** At the end you give the profile a name and check the address pattern
-(suggested from the current page) and the frame prefix. The green outlines show
-the fields you have just assigned.
+- **Zatwierdź i dalej** (Confirm and continue) saves the assignment and moves on,
+- **Wybierz inne pole** (Pick another field) — misclicked? just click a different one,
+- **← Wstecz** (Back) returns to the previous name, so you can fix an earlier choice,
+- **Pomiń pole** (Skip field) — this name has no counterpart on this form.
 
-![Learning mode: saving the profile](img/extension-learn-4-save.png)
+![Learning mode, step 3: a field selected, waiting for confirmation](img/extension-medicine-3-fields.png)
+
+When a value looks like a date, the panel adds a row of buttons previewing
+formats on your value, plus a field for your own pattern with a live preview — so
+you pick a finished result instead of inventing a pattern. See
+[Formatting the outgoing value](#formatting-the-outgoing-value).
+
+![The date format buttons](img/extension-date-format.png)
+
+**Step 4 — save.** Give the profile a name and check the suggested **address
+pattern**; the profile will only activate on matching pages (`*` stands for any
+fragment). **← Wstecz** returns to the last field if you want to correct
+something. Click **Zapisz i włącz** (Save and enable).
+
+![Learning mode, step 4: profile name and address pattern](img/extension-medicine-4-save.png)
+
+**Step 5 — check it.** Scan the same code again without clicking into any field:
+the values land where they belong despite the shuffled field order, the decoy
+fields stay empty, and a toast confirms which profile fired. The "stan strony"
+(page state) panel at the bottom shows that the form really accepted the values.
+
+![Learning mode, step 5: the profile works](img/extension-medicine-5-works.png)
 
 The profile is stored locally and works immediately. Finished profiles can be
 exported to a file (**Profile formularzy** → *Eksportuj*) and distributed to

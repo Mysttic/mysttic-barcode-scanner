@@ -18,5 +18,5 @@
   </g>
   <!-- Nazwa produktu w jednej, rownej typografii - zadne slowo nie jest wyrozniane. -->
   <text x="156" y="76" font-family="Segoe UI, Inter, Helvetica, Arial, sans-serif"
-        font-size="36" font-weight="600" letter-spacing="-0.4" fill="#0f172a">Mysttic Barcode Scanner</text>
+        font-size="36" font-weight="600" letter-spacing="-0.4" fill="#e6edf3">Mysttic Barcode Scanner</text>
 </svg>

@@ -5,10 +5,9 @@ Uzycie:  python tools/build_release.py [--skip-npm]
 Wynik:   release/mysttic-barcode-scanner-v<wersja>.zip + SHA256SUMS.txt
 
 Zawartosc paczki:
-  INSTALL.md               instrukcja instalacji i konfiguracji
-  BROWSER-EXTENSION.md     instrukcja wtyczki
-  LEARNING-PROFILES.md     samouczek nauki profilu
-  DESKTOP-AGENT.md         instrukcja agenta desktopowego
+  GETTING-STARTED.md       montaz, instalacja i pierwszy skan
+  BROWSER-EXTENSION.md     wtyczka: instrukcja, format profilu, samouczek nauki
+  DESKTOP-AGENT.md         agent desktopowy
   firmware/*.uf2           PRODUKCJA (wariant C): przeciagnij na RPI-RP2 i gotowe
                            - konfigurator, instrukcje i formularze testowe sa
                              w srodku, na dysku MYSTTIC
@@ -39,8 +38,12 @@ ADAFRUIT_HID = next((UF2_DIR / "extracted").glob("*/lib/adafruit_hid"), None)
 # Produkcyjny firmware (wariant C) - budowany przez CMake/Ninja przed paczka.
 UF2_C_NAZWA = "mysttic_barcode_scanner.uf2"
 UF2_C_DEFAULT = ROOT / "firmware-pico-sdk" / "build" / UF2_C_NAZWA
-# Dokumenty kopiowane do korzenia paczki (obok INSTALL.md).
-DOCS_IN_PACKAGE = ["BROWSER-EXTENSION.md", "LEARNING-PROFILES.md", "DESKTOP-AGENT.md"]
+# Dokumenty w korzeniu paczki: nazwa w paczce -> plik w docs/.
+DOCS_IN_PACKAGE = {
+    "GETTING-STARTED.md": "getting-started.md",
+    "BROWSER-EXTENSION.md": "browser-extension.md",
+    "DESKTOP-AGENT.md": "desktop-agent.md",
+}
 # Agent desktopowy (opcjonalny modul dla aplikacji Windows).
 AGENT_PROJEKT = ROOT / "desktop-agent" / "src" / "CzytnikAgent" / "CzytnikAgent.csproj"
 APLIKACJA_TESTOWA = ROOT / "desktop-agent" / "test-app" / "AplikacjaTestowa.csproj"
@@ -122,7 +125,7 @@ def copy_agent(stage: Path, version: str, gotowy_exe: Path | None = None) -> Non
             shutil.copy2(Path(tmp) / AGENT_EXE_NAZWA, target / AGENT_EXE_NAZWA)
 
     shutil.copy2(ROOT / "desktop-agent" / "install-agent.ps1", target / "install-agent.ps1")
-    shutil.copy2(ROOT / "docs" / "DESKTOP-AGENT.md", target / "DESKTOP-AGENT.md")
+    shutil.copy2(ROOT / "docs" / "desktop-agent.md", target / "DESKTOP-AGENT.md")
 
     # profil przykladowy: ten sam, ktorym testujemy agenta
     profil = json.loads((ROOT / "desktop-agent" / "test-app" / "profile" / "profile-testowe.json")
@@ -265,12 +268,11 @@ def main() -> None:
 
     # --- wspolne: konfigurator luzem, dokumentacja, wtyczka ------------------
     shutil.copy2(configurator, stage / "configurator.html")
-    shutil.copy2(ROOT / "docs" / "INSTALL.md", stage / "INSTALL.md")
-    for doc in DOCS_IN_PACKAGE:
-        shutil.copy2(ROOT / "docs" / doc, stage / doc)
+    for nazwa, plik in DOCS_IN_PACKAGE.items():
+        shutil.copy2(ROOT / "docs" / plik, stage / nazwa)
     shutil.copy2(ROOT / "LICENSE", stage / "LICENSE")
     shutil.copy2(ROOT / "NOTICE", stage / "NOTICE")
-    shutil.copy2(ROOT / "THIRD-PARTY-NOTICES.md", stage / "THIRD-PARTY-NOTICES.md")
+    shutil.copy2(ROOT / "docs" / "THIRD-PARTY-NOTICES.md", stage / "THIRD-PARTY-NOTICES.md")
     copy_extension(stage, version)
 
     zip_aplikacji = None

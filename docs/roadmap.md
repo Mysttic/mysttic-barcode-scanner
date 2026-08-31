@@ -3,12 +3,12 @@
 Starting point (2026-08-21): the product works end to end on hardware — the C
 firmware with the `MYSTTIC` disk, the configurator, the extension with profile
 learning, and a full test suite. The work below is ordered by priority; the
-reasoning behind individual decisions is in [DECISIONS.md](DECISIONS.md).
+reasoning behind individual decisions is in [architecture.md](architecture.md).
 
 ## 1. Closing out release 1.0 (immediate)
 
 - [ ] **Go through the full out-of-the-box scenario** as the owner
-  ([TESTING.md](TESTING.md), section 0) plus `tools/test_e2e.py`. That is the
+  ([CONTRIBUTING.md](CONTRIBUTING.md#out-of-the-box-test)) plus `tools/test_e2e.py`. That is the
   formal acceptance criterion.
 - [ ] **The C firmware version taken from VERSION.md** at build time (today
   `ping` and the configurator report `0.0.0-dev`).
@@ -37,7 +37,7 @@ reasoning behind individual decisions is in [DECISIONS.md](DECISIONS.md).
   deployment).
 - Out of scope, pending a separate decision: PPN (Germany) and the cryptographic
   codes 91-93 (Russia). Different ecosystems, and today they have a safe fallback
-  ([CAPABILITIES.md](CAPABILITIES.md)).
+  ([filling-forms.md](filling-forms.md)).
 
 ## 3. Productising the hardware
 
@@ -64,7 +64,7 @@ reasoning behind individual decisions is in [DECISIONS.md](DECISIONS.md).
 Status: the module works and is released together with the rest of the product
 (34 unit assertions, 27 e2e ones against a live application, an installer, a
 portable demo application and screenshots in the manual). Details:
-[DESKTOP-AGENT.md](DESKTOP-AGENT.md).
+[desktop-agent.md](desktop-agent.md).
 
 - [ ] **A test with a physical scanner** (so far only a simulated key stream) and
   **a manual run through learning mode** by an operator.
