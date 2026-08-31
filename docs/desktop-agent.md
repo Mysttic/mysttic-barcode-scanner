@@ -217,7 +217,7 @@ The `Ustawienia` section of `profile.json`:
 - The agent installs a keyboard hook, and some corporate policies and antivirus
   packages block that. The intended alternative is receiving data over the
   scanner's serial channel (`host` mode), with no hook, see
-  [ROADMAP.md](ROADMAP.md).
+  [roadmap.md](roadmap.md).
 - After an application update the control identifiers may change and the profile
   has to be taught again.
 

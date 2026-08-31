@@ -57,7 +57,7 @@ enabled profile are typed verbatim.
 **Out of the factory, every profile is disabled**, so the scanner types codes
 verbatim until you enable one. The screenshot shows the state after enabling the
 two production profiles, which is what the test scenario in
-[TESTING.md](TESTING.md) asks for:
+[CONTRIBUTING.md](CONTRIBUTING.md) asks for:
 
 - **gs1-datamatrix** (enabled here) catches codes starting with AI `01` (with an
   optional `]d2` symbology identifier), parses them with the built-in GS1 parser
@@ -127,7 +127,7 @@ page:
 | [`form-gs1.html`](../test-vectors/forms/form-gs1.html) | a pharmacy GS1 DataMatrix: GTIN, expiry date, batch, serial number | **gs1-datamatrix** |
 
 Every page carries its own QR code to scan and a description of the expected
-result. The full acceptance scenario: [TESTING.md](TESTING.md).
+result. The full acceptance scenario: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## The "Aktualizacja" (Update) tab
 
@@ -136,7 +136,7 @@ result. The full acceptance scenario: [TESTING.md](TESTING.md).
 Shows the installed firmware version with a link to the releases (and the
 changelog) plus a condensed update procedure. The **Restart do bootloadera**
 button puts the scanner into `RPI-RP2` disk mode without reaching for the BOOT
-button on the board. Full instructions: [INSTALL.md](INSTALL.md).
+button on the board. Full instructions: [getting-started.md](getting-started.md).
 
 ## The "Serwis" (Service) tab
 
@@ -167,5 +167,5 @@ second while plugging in USB.
 ## Configuring the scanner module (once)
 
 The module's own modes (UART output, scanning on presentation) are set with codes
-from the module's manual (see [HARDWARE.md](HARDWARE.md) for where to get it).
-Details in [INSTALL.md](INSTALL.md), section 3.
+from the module's manual (see [getting-started.md](getting-started.md) for where to get it).
+Details in [getting-started.md](getting-started.md), section 3.

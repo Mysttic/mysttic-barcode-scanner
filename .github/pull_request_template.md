@@ -14,4 +14,4 @@
 ## Notes
 
 - [ ] documentation updated (`docs/`, and the copies that ship on the device disk)
-- [ ] `VERSION.md` untouched (release PRs are separate, see [CONTRIBUTING.md](../blob/master/CONTRIBUTING.md))
+- [ ] `VERSION.md` untouched (release PRs are separate, see [docs/CONTRIBUTING.md](../blob/master/docs/CONTRIBUTING.md))

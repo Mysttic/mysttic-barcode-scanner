@@ -1,7 +1,7 @@
 # Third-party notices
 
 Mysttic Barcode Scanner is licensed under the Apache License 2.0 (see
-[LICENSE](LICENSE)). Parts of the source tree and of the published release
+[LICENSE](../LICENSE)). Parts of the source tree and of the published release
 packages come from other projects and stay under their own licenses. This file
 lists them.
 
@@ -44,7 +44,7 @@ from the URLs in `.github/workflows/*.yml`.
 
 The GM65 scanner module is a third-party product. Its datasheet and command
 manual are copyrighted by the manufacturer and are **not** redistributed here;
-see [docs/HARDWARE.md](docs/HARDWARE.md) for where to obtain them.
+see [getting-started.md](getting-started.md) for where to obtain them.
 
 ## License texts
 
@@ -100,4 +100,4 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
 The Apache License 2.0 text used by TypeScript and Playwright is the same as
-the project's own license, in [LICENSE](LICENSE).
+the project's own license, in [LICENSE](../LICENSE).

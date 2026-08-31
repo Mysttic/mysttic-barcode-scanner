@@ -29,8 +29,8 @@ Open **`tests.html`** from this disk: a list of test forms with codes you can
 scan right off the screen. The "wtyczka" (extension) tests need the browser
 extension from the project repository (`browser-extension/`) with access to file
 URLs enabled. The extension manual, covering installation, teaching new profiles
-and managing them, is on this disk as **`BROWSER-EXTENSION.md`**, and the
-step-by-step tutorial is **`LEARNING-PROFILES.md`**.
+and managing them, is on this disk as **`BROWSER-EXTENSION.md`**, together with the
+step-by-step tutorial for teaching a new form.
 
 ## Everyday work (operator)
 

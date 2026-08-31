@@ -56,7 +56,7 @@ To rework it:
    <https://wokwi.com/projects/new/micropython-pi-pico> and paste
    `diagram-minimal.json`, `gm65.chip.json` and `gm65.chip.c` into their tabs).
 2. Rearrange the parts and wires. Keep the wire colours matching
-   [`docs/HARDWARE.md`](../HARDWARE.md), because the table there refers to them.
+   [getting started](../getting-started.md), because the table there refers to them.
 3. Save the project in Wokwi, and copy the edited diagram back into
    `hardware/wokwi/diagram-minimal.json`.
 4. Re-render the picture:
